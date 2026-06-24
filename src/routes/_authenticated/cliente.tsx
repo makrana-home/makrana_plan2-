@@ -37,7 +37,7 @@ function ClientShell() {
                 <SidebarMenu>
                   {items.map((i) => (
                     <SidebarMenuItem key={i.to}>
-                      <SidebarMenuButton asChild isActive={i.exact ? pathname === i.to : pathname.startsWith(i.to)}>
+                      <SidebarMenuButton asChild isActive={(i as any).exact ? pathname === i.to : pathname.startsWith(i.to)}>
                         <Link to={i.to}><i.icon className="h-4 w-4" />{i.label}</Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
