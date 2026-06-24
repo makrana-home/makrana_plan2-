@@ -9,61 +9,248 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as PublicRouteImport } from './routes/_public'
+import { Route as PublicIndexRouteImport } from './routes/_public.index'
+import { Route as PublicTalleresRouteImport } from './routes/_public.talleres'
+import { Route as PublicSobreMakranaRouteImport } from './routes/_public.sobre-makrana'
+import { Route as PublicRegistroRouteImport } from './routes/_public.registro'
+import { Route as PublicContactoRouteImport } from './routes/_public.contacto'
+import { Route as PublicNovedadesIndexRouteImport } from './routes/_public.novedades.index'
+import { Route as PublicCatalogoIndexRouteImport } from './routes/_public.catalogo.index'
+import { Route as PublicNovedadesSlugRouteImport } from './routes/_public.novedades.$slug'
+import { Route as PublicCatalogoSlugRouteImport } from './routes/_public.catalogo.$slug'
 
-const IndexRoute = IndexRouteImport.update({
+const PublicRoute = PublicRouteImport.update({
+  id: '/_public',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicIndexRoute = PublicIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicTalleresRoute = PublicTalleresRouteImport.update({
+  id: '/talleres',
+  path: '/talleres',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicSobreMakranaRoute = PublicSobreMakranaRouteImport.update({
+  id: '/sobre-makrana',
+  path: '/sobre-makrana',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicRegistroRoute = PublicRegistroRouteImport.update({
+  id: '/registro',
+  path: '/registro',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicContactoRoute = PublicContactoRouteImport.update({
+  id: '/contacto',
+  path: '/contacto',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicNovedadesIndexRoute = PublicNovedadesIndexRouteImport.update({
+  id: '/novedades/',
+  path: '/novedades/',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicCatalogoIndexRoute = PublicCatalogoIndexRouteImport.update({
+  id: '/catalogo/',
+  path: '/catalogo/',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicNovedadesSlugRoute = PublicNovedadesSlugRouteImport.update({
+  id: '/novedades/$slug',
+  path: '/novedades/$slug',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicCatalogoSlugRoute = PublicCatalogoSlugRouteImport.update({
+  id: '/catalogo/$slug',
+  path: '/catalogo/$slug',
+  getParentRoute: () => PublicRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof PublicIndexRoute
+  '/contacto': typeof PublicContactoRoute
+  '/registro': typeof PublicRegistroRoute
+  '/sobre-makrana': typeof PublicSobreMakranaRoute
+  '/talleres': typeof PublicTalleresRoute
+  '/catalogo/$slug': typeof PublicCatalogoSlugRoute
+  '/novedades/$slug': typeof PublicNovedadesSlugRoute
+  '/catalogo/': typeof PublicCatalogoIndexRoute
+  '/novedades/': typeof PublicNovedadesIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/contacto': typeof PublicContactoRoute
+  '/registro': typeof PublicRegistroRoute
+  '/sobre-makrana': typeof PublicSobreMakranaRoute
+  '/talleres': typeof PublicTalleresRoute
+  '/': typeof PublicIndexRoute
+  '/catalogo/$slug': typeof PublicCatalogoSlugRoute
+  '/novedades/$slug': typeof PublicNovedadesSlugRoute
+  '/catalogo': typeof PublicCatalogoIndexRoute
+  '/novedades': typeof PublicNovedadesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_public': typeof PublicRouteWithChildren
+  '/_public/contacto': typeof PublicContactoRoute
+  '/_public/registro': typeof PublicRegistroRoute
+  '/_public/sobre-makrana': typeof PublicSobreMakranaRoute
+  '/_public/talleres': typeof PublicTalleresRoute
+  '/_public/': typeof PublicIndexRoute
+  '/_public/catalogo/$slug': typeof PublicCatalogoSlugRoute
+  '/_public/novedades/$slug': typeof PublicNovedadesSlugRoute
+  '/_public/catalogo/': typeof PublicCatalogoIndexRoute
+  '/_public/novedades/': typeof PublicNovedadesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/contacto'
+    | '/registro'
+    | '/sobre-makrana'
+    | '/talleres'
+    | '/catalogo/$slug'
+    | '/novedades/$slug'
+    | '/catalogo/'
+    | '/novedades/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/contacto'
+    | '/registro'
+    | '/sobre-makrana'
+    | '/talleres'
+    | '/'
+    | '/catalogo/$slug'
+    | '/novedades/$slug'
+    | '/catalogo'
+    | '/novedades'
+  id:
+    | '__root__'
+    | '/_public'
+    | '/_public/contacto'
+    | '/_public/registro'
+    | '/_public/sobre-makrana'
+    | '/_public/talleres'
+    | '/_public/'
+    | '/_public/catalogo/$slug'
+    | '/_public/novedades/$slug'
+    | '/_public/catalogo/'
+    | '/_public/novedades/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  PublicRoute: typeof PublicRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_public': {
+      id: '/_public'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PublicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_public/': {
+      id: '/_public/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof PublicIndexRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/talleres': {
+      id: '/_public/talleres'
+      path: '/talleres'
+      fullPath: '/talleres'
+      preLoaderRoute: typeof PublicTalleresRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/sobre-makrana': {
+      id: '/_public/sobre-makrana'
+      path: '/sobre-makrana'
+      fullPath: '/sobre-makrana'
+      preLoaderRoute: typeof PublicSobreMakranaRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/registro': {
+      id: '/_public/registro'
+      path: '/registro'
+      fullPath: '/registro'
+      preLoaderRoute: typeof PublicRegistroRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/contacto': {
+      id: '/_public/contacto'
+      path: '/contacto'
+      fullPath: '/contacto'
+      preLoaderRoute: typeof PublicContactoRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/novedades/': {
+      id: '/_public/novedades/'
+      path: '/novedades'
+      fullPath: '/novedades/'
+      preLoaderRoute: typeof PublicNovedadesIndexRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/catalogo/': {
+      id: '/_public/catalogo/'
+      path: '/catalogo'
+      fullPath: '/catalogo/'
+      preLoaderRoute: typeof PublicCatalogoIndexRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/novedades/$slug': {
+      id: '/_public/novedades/$slug'
+      path: '/novedades/$slug'
+      fullPath: '/novedades/$slug'
+      preLoaderRoute: typeof PublicNovedadesSlugRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/catalogo/$slug': {
+      id: '/_public/catalogo/$slug'
+      path: '/catalogo/$slug'
+      fullPath: '/catalogo/$slug'
+      preLoaderRoute: typeof PublicCatalogoSlugRouteImport
+      parentRoute: typeof PublicRoute
     }
   }
 }
 
+interface PublicRouteChildren {
+  PublicContactoRoute: typeof PublicContactoRoute
+  PublicRegistroRoute: typeof PublicRegistroRoute
+  PublicSobreMakranaRoute: typeof PublicSobreMakranaRoute
+  PublicTalleresRoute: typeof PublicTalleresRoute
+  PublicIndexRoute: typeof PublicIndexRoute
+  PublicCatalogoSlugRoute: typeof PublicCatalogoSlugRoute
+  PublicNovedadesSlugRoute: typeof PublicNovedadesSlugRoute
+  PublicCatalogoIndexRoute: typeof PublicCatalogoIndexRoute
+  PublicNovedadesIndexRoute: typeof PublicNovedadesIndexRoute
+}
+
+const PublicRouteChildren: PublicRouteChildren = {
+  PublicContactoRoute: PublicContactoRoute,
+  PublicRegistroRoute: PublicRegistroRoute,
+  PublicSobreMakranaRoute: PublicSobreMakranaRoute,
+  PublicTalleresRoute: PublicTalleresRoute,
+  PublicIndexRoute: PublicIndexRoute,
+  PublicCatalogoSlugRoute: PublicCatalogoSlugRoute,
+  PublicNovedadesSlugRoute: PublicNovedadesSlugRoute,
+  PublicCatalogoIndexRoute: PublicCatalogoIndexRoute,
+  PublicNovedadesIndexRoute: PublicNovedadesIndexRoute,
+}
+
+const PublicRouteWithChildren =
+  PublicRoute._addFileChildren(PublicRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  PublicRoute: PublicRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
