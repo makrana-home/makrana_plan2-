@@ -956,6 +956,14 @@ export type Database = {
         }
         Returns: string
       }
+      confirm_sale: {
+        Args: { _sale_id: string }
+        Returns: {
+          receipt_id: string
+          receipt_number: string
+          sale_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
