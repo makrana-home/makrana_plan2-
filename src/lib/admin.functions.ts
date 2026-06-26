@@ -14,7 +14,12 @@ const productSchema = z.object({
   id: z.string().uuid().optional(),
   type: z.enum(["producto_terminado", "material", "kit", "curso"]),
   sku: z.string().trim().max(60).optional().nullable(),
-  slug: z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/, "slug en minúsculas, sin espacios"),
+  slug: z
+    .string()
+    .trim()
+    .min(2)
+    .max(120)
+    .regex(/^[a-z0-9-]+$/, "slug en minúsculas, sin espacios"),
   name: z.string().trim().min(2).max(160),
   short_description: z.string().trim().max(280).optional().nullable(),
   description: z.string().trim().max(4000).optional().nullable(),
@@ -36,12 +41,16 @@ const productSchema = z.object({
 
 export const adminListProducts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { type?: "producto_terminado" | "material" | "kit" | "curso" } | undefined) => d ?? {})
+  .inputValidator(
+    (d: { type?: "producto_terminado" | "material" | "kit" | "curso" } | undefined) => d ?? {},
+  )
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     let q = context.supabase
       .from("products")
-      .select("id, type, sku, slug, name, price, status, is_visible, is_featured, category:categories(id, name)")
+      .select(
+        "id, type, sku, slug, name, price, status, is_visible, is_featured, category:categories(id, name)",
+      )
       .order("created_at", { ascending: false });
     if (data.type) q = q.eq("type", data.type);
     const { data: rows, error } = await q;
@@ -93,7 +102,17 @@ export const adminDeleteProduct = createServerFn({ method: "POST" })
 const presentationSchema = z.object({
   id: z.string().uuid().optional(),
   product_id: z.string().uuid(),
-  unit: z.enum(["unidad", "metro", "rollo", "madeja", "paquete", "docena", "ciento", "combo", "otro"]),
+  unit: z.enum([
+    "unidad",
+    "metro",
+    "rollo",
+    "madeja",
+    "paquete",
+    "docena",
+    "ciento",
+    "combo",
+    "otro",
+  ]),
   label: z.string().trim().max(80).optional().nullable(),
   price: z.coerce.number().nonnegative(),
   units_in_presentation: z.coerce.number().positive(),
@@ -118,7 +137,10 @@ export const adminDeletePresentation = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
-    const { error } = await context.supabase.from("material_presentations").delete().eq("id", data.id);
+    const { error } = await context.supabase
+      .from("material_presentations")
+      .delete()
+      .eq("id", data.id);
     if (error) throw error;
     return { ok: true };
   });
@@ -139,7 +161,12 @@ export const adminListCategories = createServerFn({ method: "GET" })
 // ============ WAREHOUSES ============
 const warehouseSchema = z.object({
   id: z.string().uuid().optional(),
-  code: z.string().trim().min(2).max(20).regex(/^[A-Z0-9_-]+$/i),
+  code: z
+    .string()
+    .trim()
+    .min(2)
+    .max(20)
+    .regex(/^[A-Z0-9_-]+$/i),
   name: z.string().trim().min(2).max(120),
   address: z.string().trim().max(280).optional().nullable(),
   is_active: z.boolean(),
@@ -190,7 +217,9 @@ export const adminListStock = createServerFn({ method: "GET" })
     await assertStaff(context);
     let q = context.supabase
       .from("inventory_stock")
-      .select("id, quantity, updated_at, product:products(id, name, type, sku, min_stock), warehouse:warehouses(id, code, name)")
+      .select(
+        "id, quantity, updated_at, product:products(id, name, type, sku, min_stock), warehouse:warehouses(id, code, name)",
+      )
       .order("updated_at", { ascending: false });
     if (data.warehouseId) q = q.eq("warehouse_id", data.warehouseId);
     const { data: rows, error } = await q;
@@ -216,7 +245,9 @@ export const adminListMovements = createServerFn({ method: "GET" })
     await assertStaff(context);
     const { data: rows, error } = await context.supabase
       .from("inventory_movements")
-      .select("id, movement_type, quantity, reason, notes, created_at, product:products(name, sku), warehouse:warehouses!inventory_movements_warehouse_id_fkey(code, name), warehouse_dest:warehouses!inventory_movements_warehouse_dest_id_fkey(code, name)")
+      .select(
+        "id, movement_type, quantity, reason, notes, created_at, product:products(name, sku), warehouse:warehouses!inventory_movements_warehouse_id_fkey(code, name), warehouse_dest:warehouses!inventory_movements_warehouse_dest_id_fkey(code, name)",
+      )
       .order("created_at", { ascending: false })
       .limit(data.limit ?? 100);
     if (error) throw error;

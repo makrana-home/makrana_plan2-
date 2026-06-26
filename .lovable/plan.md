@@ -28,15 +28,19 @@ Te propongo este plan. **En esta primera iteración construyo la Fase 1 completa
 Resultado de Fase 1: web pública 100% funcional, login/registro real, datos reales en Supabase, base lista para construir los módulos internos encima.
 
 ## Fase 2 — Admin: Productos, Materiales, Almacenes, Stock
+
 CRUD completo de productos terminados, materiales con múltiples presentaciones/precios, gestión de almacenes, entradas/salidas/transferencias/ajustes, historial de movimientos, subida de imágenes.
 
 ## Fase 3 — Ventas + Comprobantes + Clientes
+
 Flujo de venta (cliente, almacén origen, ítems, descuentos, pagos mixtos), descuento automático de stock con movimiento ligado, anulación con reverso, generación de PDF de nota de venta interna (correlativo `MKR-000001`), enviar por correo / link WhatsApp, módulo de clientes con historial.
 
 ## Fase 4 — Novedades, Talleres, Ferias
+
 Admin de novedades (borrador/publicado/oculto, CTA, destacado), talleres y cursos con inscripciones y pago, ferias con stock enviado/retornado y reporte de feria.
 
 ## Fase 5 — Intranet del cliente + Reportes
+
 `/cliente/*`: perfil, pedidos, comprobantes descargables, cursos y talleres inscritos, contenido educativo. Reportes con filtros y export CSV/PDF.
 
 ---
@@ -51,6 +55,7 @@ Admin de novedades (borrador/publicado/oculto, CTA, destacado), talleres y curso
 - `/admin/*` y `/cliente/*` viven dentro de `_authenticated/` con verificación de rol en cada ruta vía `has_role`.
 
 ### Lo que NO entra en Fase 1 (lo dejo claro para evitar expectativas)
+
 - CRUD de productos/materiales/ventas/comprobantes PDF/movimientos de stock/reportes/intranet de cliente — todo eso son las Fases 2–5.
 
 ¿Apruebas que arranque con la **Fase 1** tal cual? Si quieres priorizar otra fase primero (por ejemplo saltar directo a Ventas + Stock antes que la web pública), dímelo y reordeno.

@@ -15,7 +15,10 @@ export const Route = createFileRoute("/_public/catalogo/")({
   head: () => ({
     meta: [
       { title: "Catálogo · Makrana Home Art" },
-      { name: "description", content: "Decoración, accesorios, materiales y kits de macramé hechos a mano." },
+      {
+        name: "description",
+        content: "Decoración, accesorios, materiales y kits de macramé hechos a mano.",
+      },
       { property: "og:title", content: "Catálogo · Makrana Home Art" },
       { property: "og:description", content: "Decoración, accesorios y materiales de macramé." },
     ],
@@ -43,8 +46,8 @@ function Catalogo() {
         <p className="text-xs uppercase tracking-widest text-accent">Catálogo</p>
         <h1 className="font-display text-5xl mt-2">Nuestras piezas</h1>
         <p className="mt-3 max-w-prose text-muted-foreground">
-          Decoración, accesorios y materiales tejidos a mano en algodón natural. Filtra por categoría
-          para descubrir lo que se acomoda a tu hogar.
+          Decoración, accesorios y materiales tejidos a mano en algodón natural. Filtra por
+          categoría para descubrir lo que se acomoda a tu hogar.
         </p>
 
         <div className="mt-8 flex flex-wrap gap-2">
@@ -54,22 +57,39 @@ function Catalogo() {
               "px-4 py-2 rounded-full text-sm border border-sand transition-colors",
               activeCat === null ? "bg-foreground text-warm-white" : "bg-cream/60 hover:bg-cream",
             )}
-          >Todo</button>
+          >
+            Todo
+          </button>
           {categories.map((c) => (
-            <Link key={c.id} to="/catalogo/categoria/$slug" params={{ slug: c.slug }}
-              onClick={(e) => { e.preventDefault(); setActiveCat(c.slug); }}
+            <Link
+              key={c.id}
+              to="/catalogo/categoria/$slug"
+              params={{ slug: c.slug }}
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveCat(c.slug);
+              }}
               className={cn(
                 "px-4 py-2 rounded-full text-sm border border-sand transition-colors",
-                activeCat === c.slug ? "bg-foreground text-warm-white" : "bg-cream/60 hover:bg-cream",
-              )}>{c.name}</Link>
+                activeCat === c.slug
+                  ? "bg-foreground text-warm-white"
+                  : "bg-cream/60 hover:bg-cream",
+              )}
+            >
+              {c.name}
+            </Link>
           ))}
         </div>
 
         <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filtered.map((p: any) => <ProductCard key={p.id} product={p} />)}
+          {filtered.map((p: any) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
         </div>
         {filtered.length === 0 && (
-          <div className="mt-16 text-center text-muted-foreground">No hay productos en esta categoría todavía.</div>
+          <div className="mt-16 text-center text-muted-foreground">
+            No hay productos en esta categoría todavía.
+          </div>
         )}
       </div>
     </section>

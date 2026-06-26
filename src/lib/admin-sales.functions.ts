@@ -46,8 +46,13 @@ export const adminUpsertCustomer = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const payload: any = { ...data };
-    for (const k of ["email","phone","document","location","interests","source","notes"]) if (payload[k]==="") payload[k]=null;
-    const { data: row, error } = await context.supabase.from("customers").upsert(payload, { onConflict: "id" }).select("id").single();
+    for (const k of ["email", "phone", "document", "location", "interests", "source", "notes"])
+      if (payload[k] === "") payload[k] = null;
+    const { data: row, error } = await context.supabase
+      .from("customers")
+      .upsert(payload, { onConflict: "id" })
+      .select("id")
+      .single();
     if (error) throw error;
     return row;
   });
@@ -80,12 +85,25 @@ export const adminConvertLead = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
-    const { data: lead, error } = await context.supabase.from("leads").select("*").eq("id", data.id).single();
+    const { data: lead, error } = await context.supabase
+      .from("leads")
+      .select("*")
+      .eq("id", data.id)
+      .single();
     if (error) throw error;
-    const { data: c, error: e2 } = await context.supabase.from("customers").insert({
-      full_name: lead.full_name, email: lead.email, phone: lead.phone, location: lead.location, source: lead.source ?? "lead-web",
-      interests: lead.interest, notes: lead.message,
-    }).select("id").single();
+    const { data: c, error: e2 } = await context.supabase
+      .from("customers")
+      .insert({
+        full_name: lead.full_name,
+        email: lead.email,
+        phone: lead.phone,
+        location: lead.location,
+        source: lead.source ?? "lead-web",
+        interests: lead.interest,
+        notes: lead.message,
+      })
+      .select("id")
+      .single();
     if (e2) throw e2;
     await context.supabase.from("leads").delete().eq("id", data.id);
     return c;
@@ -109,7 +127,9 @@ const saleSchema = z.object({
   channel: z.string().trim().max(60).optional().nullable(), // stored in notes prefix
   discount: z.coerce.number().nonnegative().default(0),
   notes: z.string().trim().max(1000).optional().nullable(),
-  delivery_status: z.enum(["pendiente","en_preparacion","entregado","enviado","cancelado"]).optional(),
+  delivery_status: z
+    .enum(["pendiente", "en_preparacion", "entregado", "enviado", "cancelado"])
+    .optional(),
 });
 
 export const adminListSales = createServerFn({ method: "GET" })
@@ -118,7 +138,9 @@ export const adminListSales = createServerFn({ method: "GET" })
     await assertSales(context);
     const { data, error } = await context.supabase
       .from("sales")
-      .select("id, status, payment_status, delivery_status, subtotal, discount, total, notes, created_at, confirmed_at, customer:customers(id, full_name), warehouse:warehouses(code, name), receipt:receipts(id, number)")
+      .select(
+        "id, status, payment_status, delivery_status, subtotal, discount, total, notes, created_at, confirmed_at, customer:customers(id, full_name), warehouse:warehouses(code, name), receipt:receipts(id, number)",
+      )
       .order("created_at", { ascending: false });
     if (error) throw error;
     return data ?? [];
@@ -131,8 +153,11 @@ export const adminGetSale = createServerFn({ method: "GET" })
     await assertSales(context);
     const { data: sale, error } = await context.supabase
       .from("sales")
-      .select("*, customer:customers(*), warehouse:warehouses(*), items:sale_items(*, product:products(name, sku)), payments:sale_payments(*), receipt:receipts(*)")
-      .eq("id", data.id).maybeSingle();
+      .select(
+        "*, customer:customers(*), warehouse:warehouses(*), items:sale_items(*, product:products(name, sku)), payments:sale_payments(*), receipt:receipts(*)",
+      )
+      .eq("id", data.id)
+      .maybeSingle();
     if (error) throw error;
     return sale;
   });
@@ -142,14 +167,20 @@ export const adminCreateSale = createServerFn({ method: "POST" })
   .inputValidator((d) => saleSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertSales(context);
-    const notes = data.channel ? `[${data.channel}] ${data.notes ?? ""}`.trim() : (data.notes ?? null);
-    const { data: row, error } = await context.supabase.from("sales").insert({
-      customer_id: data.customer_id ?? null,
-      warehouse_id: data.warehouse_id,
-      discount: data.discount ?? 0,
-      notes,
-      delivery_status: data.delivery_status ?? "pendiente",
-    }).select("id").single();
+    const notes = data.channel
+      ? `[${data.channel}] ${data.notes ?? ""}`.trim()
+      : (data.notes ?? null);
+    const { data: row, error } = await context.supabase
+      .from("sales")
+      .insert({
+        customer_id: data.customer_id ?? null,
+        warehouse_id: data.warehouse_id,
+        discount: data.discount ?? 0,
+        notes,
+        delivery_status: data.delivery_status ?? "pendiente",
+      })
+      .select("id")
+      .single();
     if (error) throw error;
     return row;
   });
@@ -159,13 +190,16 @@ export const adminUpdateSale = createServerFn({ method: "POST" })
   .inputValidator((d) => saleSchema.extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertSales(context);
-    const { error } = await context.supabase.from("sales").update({
-      customer_id: data.customer_id ?? null,
-      warehouse_id: data.warehouse_id,
-      discount: data.discount ?? 0,
-      notes: data.notes ?? null,
-      delivery_status: data.delivery_status ?? "pendiente",
-    }).eq("id", data.id);
+    const { error } = await context.supabase
+      .from("sales")
+      .update({
+        customer_id: data.customer_id ?? null,
+        warehouse_id: data.warehouse_id,
+        discount: data.discount ?? 0,
+        notes: data.notes ?? null,
+        delivery_status: data.delivery_status ?? "pendiente",
+      })
+      .eq("id", data.id);
     if (error) throw error;
     return { ok: true };
   });
@@ -187,7 +221,11 @@ export const adminAddSaleItem = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertSales(context);
     const subtotal = Number((data.quantity * data.unit_price - (data.discount ?? 0)).toFixed(2));
-    const { data: row, error } = await context.supabase.from("sale_items").upsert({ ...data, subtotal }, { onConflict: "id" }).select("id").single();
+    const { data: row, error } = await context.supabase
+      .from("sale_items")
+      .upsert({ ...data, subtotal }, { onConflict: "id" })
+      .select("id")
+      .single();
     if (error) throw error;
     return row;
   });
@@ -204,7 +242,7 @@ export const adminDeleteSaleItem = createServerFn({ method: "POST" })
 
 const paymentSchema = z.object({
   sale_id: z.string().uuid(),
-  method: z.enum(["efectivo","yape","plin","transferencia","tarjeta","mixto","otro"]),
+  method: z.enum(["efectivo", "yape", "plin", "transferencia", "tarjeta", "mixto", "otro"]),
   amount: z.coerce.number().positive(),
   operation_code: z.string().trim().max(80).optional().nullable(),
   notes: z.string().trim().max(280).optional().nullable(),
@@ -244,7 +282,7 @@ export const adminCancelSale = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertSales(context);
-    const { error } = await context.supabase.from("sales").update({ status: "anulada" }).eq("id", data.id).eq("status","borrador");
+    const { error } = await context.supabase.rpc("cancel_sale", { _sale_id: data.id });
     if (error) throw error;
     return { ok: true };
   });
@@ -256,7 +294,9 @@ export const adminListReceipts = createServerFn({ method: "GET" })
     await assertSales(context);
     const { data, error } = await context.supabase
       .from("receipts")
-      .select("id, number, issued_at, sale:sales(id, total, customer:customers(full_name), warehouse:warehouses(name))")
+      .select(
+        "id, number, issued_at, sale:sales(id, total, customer:customers(full_name), warehouse:warehouses(name))",
+      )
       .order("issued_at", { ascending: false });
     if (error) throw error;
     return data ?? [];
@@ -269,8 +309,11 @@ export const adminGetReceipt = createServerFn({ method: "GET" })
     await assertSales(context);
     const { data: r, error } = await context.supabase
       .from("receipts")
-      .select("*, sale:sales(*, customer:customers(*), warehouse:warehouses(*), items:sale_items(*, product:products(name, sku)), payments:sale_payments(*))")
-      .eq("id", data.id).maybeSingle();
+      .select(
+        "*, sale:sales(*, customer:customers(*), warehouse:warehouses(*), items:sale_items(*, product:products(name, sku)), payments:sale_payments(*))",
+      )
+      .eq("id", data.id)
+      .maybeSingle();
     if (error) throw error;
     return r;
   });

@@ -30,7 +30,11 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
 export function ProductCard({ product }: { product: Product }) {
   return (
     <article className="makrana-card group flex flex-col">
-      <Link to="/catalogo/$slug" params={{ slug: product.slug }} className="block aspect-[4/5] overflow-hidden bg-cream">
+      <Link
+        to="/catalogo/$slug"
+        params={{ slug: product.slug }}
+        className="block aspect-[4/5] overflow-hidden bg-cream"
+      >
         {product.main_image_url ? (
           <img
             src={product.main_image_url}
@@ -44,15 +48,23 @@ export function ProductCard({ product }: { product: Product }) {
       </Link>
       <div className="p-5 flex flex-col gap-2 flex-1">
         <div className="flex items-center justify-between">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">{product.category?.name}</span>
-          <Badge variant={statusVariant[product.status] ?? "outline"}>{statusLabel[product.status] ?? product.status}</Badge>
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">
+            {product.category?.name}
+          </span>
+          <Badge variant={statusVariant[product.status] ?? "outline"}>
+            {statusLabel[product.status] ?? product.status}
+          </Badge>
         </div>
         <h3 className="font-display text-lg leading-tight text-foreground">{product.name}</h3>
         <p className="text-sm text-muted-foreground line-clamp-2">{product.short_description}</p>
         <div className="mt-3 flex items-center justify-between">
-          <span className="font-display text-xl text-foreground">S/ {Number(product.price).toFixed(2)}</span>
+          <span className="font-display text-xl text-foreground">
+            S/ {Number(product.price).toFixed(2)}
+          </span>
           <Button asChild size="sm" variant="soft">
-            <Link to="/catalogo/$slug" params={{ slug: product.slug }}>Ver detalle</Link>
+            <Link to="/catalogo/$slug" params={{ slug: product.slug }}>
+              Ver detalle
+            </Link>
           </Button>
         </div>
       </div>

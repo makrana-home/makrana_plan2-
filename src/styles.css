@@ -70,22 +70,22 @@
   --radius: 0.75rem;
 
   /* Brand palette — warm earth tones */
-  --warm-white: oklch(0.985 0.008 80);     /* fondo principal */
-  --cream:      oklch(0.965 0.018 78);     /* superficies suaves */
-  --sand:       oklch(0.905 0.035 75);     /* bordes, divisores cálidos */
-  --clay:       oklch(0.78 0.06 60);       /* arena oscura */
-  --terracotta: oklch(0.66 0.13 38);       /* acento principal */
-  --copper:     oklch(0.7 0.12 55);        /* acento metálico cobre/dorado */
+  --warm-white: oklch(0.985 0.008 80); /* fondo principal */
+  --cream: oklch(0.965 0.018 78); /* superficies suaves */
+  --sand: oklch(0.905 0.035 75); /* bordes, divisores cálidos */
+  --clay: oklch(0.78 0.06 60); /* arena oscura */
+  --terracotta: oklch(0.66 0.13 38); /* acento principal */
+  --copper: oklch(0.7 0.12 55); /* acento metálico cobre/dorado */
 
   --background: var(--warm-white);
-  --foreground: oklch(0.24 0.02 60);       /* marrón cacao muy oscuro */
+  --foreground: oklch(0.24 0.02 60); /* marrón cacao muy oscuro */
 
   --card: oklch(1 0 0);
   --card-foreground: var(--foreground);
   --popover: oklch(1 0 0);
   --popover-foreground: var(--foreground);
 
-  --primary: oklch(0.36 0.04 55);          /* marrón profundo */
+  --primary: oklch(0.36 0.04 55); /* marrón profundo */
   --primary-foreground: var(--warm-white);
 
   --secondary: var(--cream);
@@ -141,10 +141,25 @@
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
-  html, body { background-color: var(--color-background); color: var(--color-foreground); }
-  body { font-family: var(--font-sans); font-feature-settings: "ss01","cv11"; }
-  h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
+  * {
+    border-color: var(--color-border);
+  }
+  html,
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+  body {
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+  }
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
 }
 
 @utility container-makrana {
@@ -163,11 +178,18 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: box-shadow .25s ease, transform .25s ease;
-  &:hover { box-shadow: 0 10px 30px -12px oklch(0.4 0.05 55 / 0.18); transform: translateY(-2px); }
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+  &:hover {
+    box-shadow: 0 10px 30px -12px oklch(0.4 0.05 55 / 0.18);
+    transform: translateY(-2px);
+  }
 }
 
 @utility section-padded {
   padding-block: 4rem;
-  @media (min-width: 768px) { padding-block: 6rem; }
+  @media (min-width: 768px) {
+    padding-block: 6rem;
+  }
 }

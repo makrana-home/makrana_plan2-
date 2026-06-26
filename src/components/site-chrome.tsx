@@ -38,8 +38,12 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="hidden md:flex items-center gap-2">
-          <Button asChild variant="ghost" size="sm"><Link to="/auth">Ingresar</Link></Button>
-          <Button asChild variant="hero" size="sm"><Link to="/registro">Registrarme</Link></Button>
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/auth">Ingresar</Link>
+          </Button>
+          <Button asChild variant="hero" size="sm">
+            <Link to="/registro">Registrarme</Link>
+          </Button>
         </div>
         <button
           className="md:hidden p-2 text-foreground"
@@ -52,13 +56,22 @@ export function SiteHeader() {
       <div className={cn("md:hidden border-t border-sand/60", open ? "block" : "hidden")}>
         <div className="container-makrana py-4 flex flex-col gap-3">
           {links.map((l) => (
-            <Link key={l.to} to={l.to} className="text-foreground/80" onClick={() => setOpen(false)}>
+            <Link
+              key={l.to}
+              to={l.to}
+              className="text-foreground/80"
+              onClick={() => setOpen(false)}
+            >
               {l.label}
             </Link>
           ))}
           <div className="flex gap-2 pt-2">
-            <Button asChild variant="soft" size="sm" className="flex-1"><Link to="/auth">Ingresar</Link></Button>
-            <Button asChild variant="hero" size="sm" className="flex-1"><Link to="/registro">Registrarme</Link></Button>
+            <Button asChild variant="soft" size="sm" className="flex-1">
+              <Link to="/auth">Ingresar</Link>
+            </Button>
+            <Button asChild variant="hero" size="sm" className="flex-1">
+              <Link to="/registro">Registrarme</Link>
+            </Button>
           </div>
         </div>
       </div>
@@ -76,27 +89,58 @@ export function SiteFooter() {
             <span className="font-display text-lg">Makrana Home Art</span>
           </div>
           <p className="mt-3 text-sm text-muted-foreground">
-            Piezas de macramé hechas a mano en Perú. Diseño cálido, natural y artesanal para tu hogar.
+            Piezas de macramé hechas a mano en Perú. Diseño cálido, natural y artesanal para tu
+            hogar.
           </p>
         </div>
         <div>
-          <h4 className="text-sm font-medium mb-3 uppercase tracking-wider text-foreground/70">Tienda</h4>
+          <h4 className="text-sm font-medium mb-3 uppercase tracking-wider text-foreground/70">
+            Tienda
+          </h4>
           <ul className="space-y-2 text-sm">
-            <li><Link to="/catalogo" className="hover:text-accent">Catálogo</Link></li>
-            <li><Link to="/talleres" className="hover:text-accent">Talleres y cursos</Link></li>
-            <li><Link to="/novedades" className="hover:text-accent">Novedades</Link></li>
+            <li>
+              <Link to="/catalogo" className="hover:text-accent">
+                Catálogo
+              </Link>
+            </li>
+            <li>
+              <Link to="/talleres" className="hover:text-accent">
+                Talleres y cursos
+              </Link>
+            </li>
+            <li>
+              <Link to="/novedades" className="hover:text-accent">
+                Novedades
+              </Link>
+            </li>
           </ul>
         </div>
         <div>
-          <h4 className="text-sm font-medium mb-3 uppercase tracking-wider text-foreground/70">Makrana</h4>
+          <h4 className="text-sm font-medium mb-3 uppercase tracking-wider text-foreground/70">
+            Makrana
+          </h4>
           <ul className="space-y-2 text-sm">
-            <li><Link to="/sobre-makrana" className="hover:text-accent">Nuestra historia</Link></li>
-            <li><Link to="/registro" className="hover:text-accent">Registrarme</Link></li>
-            <li><Link to="/contacto" className="hover:text-accent">Contacto</Link></li>
+            <li>
+              <Link to="/sobre-makrana" className="hover:text-accent">
+                Nuestra historia
+              </Link>
+            </li>
+            <li>
+              <Link to="/registro" className="hover:text-accent">
+                Registrarme
+              </Link>
+            </li>
+            <li>
+              <Link to="/contacto" className="hover:text-accent">
+                Contacto
+              </Link>
+            </li>
           </ul>
         </div>
         <div>
-          <h4 className="text-sm font-medium mb-3 uppercase tracking-wider text-foreground/70">Contacto</h4>
+          <h4 className="text-sm font-medium mb-3 uppercase tracking-wider text-foreground/70">
+            Contacto
+          </h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li>WhatsApp: +51 999 999 999</li>
             <li>hola@makranahomeart.pe</li>

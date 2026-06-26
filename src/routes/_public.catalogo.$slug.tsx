@@ -6,12 +6,21 @@ import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/product-card";
 
 const statusLabel: Record<string, string> = {
-  disponible: "Disponible", por_encargo: "Por encargo", agotado: "Agotado", reservado: "Reservado",
+  disponible: "Disponible",
+  por_encargo: "Por encargo",
+  agotado: "Agotado",
+  reservado: "Reservado",
 };
 
 const productQ = (slug: string) =>
-  queryOptions({ queryKey: ["public", "product", slug], queryFn: () => getProductBySlug({ data: { slug } }) });
-const relatedQ = queryOptions({ queryKey: ["public","related"], queryFn: () => listProducts({ data: { limit: 4 } }) });
+  queryOptions({
+    queryKey: ["public", "product", slug],
+    queryFn: () => getProductBySlug({ data: { slug } }),
+  });
+const relatedQ = queryOptions({
+  queryKey: ["public", "related"],
+  queryFn: () => listProducts({ data: { limit: 4 } }),
+});
 
 export const Route = createFileRoute("/_public/catalogo/$slug")({
   head: ({ loaderData }) => {
@@ -36,7 +45,9 @@ export const Route = createFileRoute("/_public/catalogo/$slug")({
   notFoundComponent: () => (
     <div className="container-makrana py-24 text-center">
       <h1 className="font-display text-3xl">Producto no encontrado</h1>
-      <Button asChild className="mt-6"><Link to="/catalogo">Volver al catálogo</Link></Button>
+      <Button asChild className="mt-6">
+        <Link to="/catalogo">Volver al catálogo</Link>
+      </Button>
     </div>
   ),
   errorComponent: () => <div className="container-makrana py-24">Error cargando el producto.</div>,
@@ -53,17 +64,22 @@ function ProductDetail() {
   const { data: related } = useSuspenseQuery(relatedQ);
   if (!product) return null;
   const p: any = product;
-  const totalStock = (p.stock ?? []).reduce((acc: number, s: any) => acc + Number(s.quantity ?? 0), 0);
+  const totalStock = (p.stock ?? []).reduce(
+    (acc: number, s: any) => acc + Number(s.quantity ?? 0),
+    0,
+  );
   const images: { url: string; alt?: string }[] = [];
   if (p.main_image_url) images.push({ url: p.main_image_url, alt: p.name });
-  for (const im of (p.images ?? [])) images.push({ url: im.url, alt: im.alt ?? p.name });
+  for (const im of p.images ?? []) images.push({ url: im.url, alt: im.alt ?? p.name });
 
   return (
     <section className="section-padded">
       <div className="container-makrana grid lg:grid-cols-2 gap-12">
         <div>
           <div className="aspect-[4/5] overflow-hidden rounded-2xl bg-cream">
-            {images[0] && <img src={images[0].url} alt={images[0].alt} className="h-full w-full object-cover" />}
+            {images[0] && (
+              <img src={images[0].url} alt={images[0].alt} className="h-full w-full object-cover" />
+            )}
           </div>
           {images.length > 1 && (
             <div className="mt-3 grid grid-cols-4 gap-2">
@@ -76,20 +92,46 @@ function ProductDetail() {
           )}
         </div>
         <div>
-          <Link to="/catalogo" className="text-sm text-accent">← Volver al catálogo</Link>
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mt-4">{p.category?.name}</p>
+          <Link to="/catalogo" className="text-sm text-accent">
+            ← Volver al catálogo
+          </Link>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mt-4">
+            {p.category?.name}
+          </p>
           <h1 className="font-display text-4xl mt-2">{p.name}</h1>
           <div className="mt-3 flex items-center gap-3">
             <span className="font-display text-3xl">S/ {Number(p.price).toFixed(2)}</span>
             <Badge>{statusLabel[p.status] ?? p.status}</Badge>
           </div>
-          <p className="mt-5 text-muted-foreground whitespace-pre-line">{p.description ?? p.short_description}</p>
+          <p className="mt-5 text-muted-foreground whitespace-pre-line">
+            {p.description ?? p.short_description}
+          </p>
 
           <dl className="mt-6 grid grid-cols-2 gap-y-3 text-sm">
-            {p.measurements && (<><dt className="text-muted-foreground">Medidas</dt><dd>{p.measurements}</dd></>)}
-            {p.material && (<><dt className="text-muted-foreground">Material</dt><dd>{p.material}</dd></>)}
-            {p.color && (<><dt className="text-muted-foreground">Color</dt><dd>{p.color}</dd></>)}
-            {p.artisan && (<><dt className="text-muted-foreground">Artesana</dt><dd>{p.artisan}</dd></>)}
+            {p.measurements && (
+              <>
+                <dt className="text-muted-foreground">Medidas</dt>
+                <dd>{p.measurements}</dd>
+              </>
+            )}
+            {p.material && (
+              <>
+                <dt className="text-muted-foreground">Material</dt>
+                <dd>{p.material}</dd>
+              </>
+            )}
+            {p.color && (
+              <>
+                <dt className="text-muted-foreground">Color</dt>
+                <dd>{p.color}</dd>
+              </>
+            )}
+            {p.artisan && (
+              <>
+                <dt className="text-muted-foreground">Artesana</dt>
+                <dd>{p.artisan}</dd>
+              </>
+            )}
             <dt className="text-muted-foreground">Stock disponible</dt>
             <dd>{totalStock > 0 ? `${totalStock} unidades` : "Consulta por encargo"}</dd>
           </dl>
@@ -110,9 +152,13 @@ function ProductDetail() {
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg" variant="hero">
-              <a href={waLink(p.name)} target="_blank" rel="noreferrer">Consultar por WhatsApp</a>
+              <a href={waLink(p.name)} target="_blank" rel="noreferrer">
+                Consultar por WhatsApp
+              </a>
             </Button>
-            <Button asChild size="lg" variant="outline"><Link to="/catalogo">Seguir explorando</Link></Button>
+            <Button asChild size="lg" variant="outline">
+              <Link to="/catalogo">Seguir explorando</Link>
+            </Button>
           </div>
         </div>
       </div>
@@ -120,7 +166,12 @@ function ProductDetail() {
       <div className="container-makrana mt-24">
         <h2 className="font-display text-3xl mb-6">También te puede gustar</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {related.filter((r: any) => r.slug !== p.slug).slice(0, 4).map((r: any) => <ProductCard key={r.id} product={r} />)}
+          {related
+            .filter((r: any) => r.slug !== p.slug)
+            .slice(0, 4)
+            .map((r: any) => (
+              <ProductCard key={r.id} product={r} />
+            ))}
         </div>
       </div>
     </section>

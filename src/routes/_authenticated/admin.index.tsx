@@ -2,7 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Boxes, Warehouse, Newspaper, GraduationCap, Users, ShoppingCart } from "lucide-react";
+import {
+  Package,
+  Boxes,
+  Warehouse,
+  Newspaper,
+  GraduationCap,
+  Users,
+  ShoppingCart,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/")({ component: AdminDashboard });
 
@@ -12,10 +20,19 @@ function AdminDashboard() {
     (async () => {
       const counts = await Promise.all([
         supabase.from("products").select("id", { count: "exact", head: true }),
-        supabase.from("products").select("id", { count: "exact", head: true }).eq("type", "material"),
+        supabase
+          .from("products")
+          .select("id", { count: "exact", head: true })
+          .eq("type", "material"),
         supabase.from("warehouses").select("id", { count: "exact", head: true }),
-        supabase.from("news_posts").select("id", { count: "exact", head: true }).eq("status", "publicado"),
-        supabase.from("workshops").select("id", { count: "exact", head: true }).eq("is_visible", true),
+        supabase
+          .from("news_posts")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "publicado"),
+        supabase
+          .from("workshops")
+          .select("id", { count: "exact", head: true })
+          .eq("is_visible", true),
         supabase.from("customers").select("id", { count: "exact", head: true }),
         supabase.from("sales").select("id", { count: "exact", head: true }),
       ]);
@@ -52,7 +69,9 @@ function AdminDashboard() {
               <CardTitle className="text-sm font-medium text-muted-foreground">{t.label}</CardTitle>
               <t.icon className="h-4 w-4 text-accent" />
             </CardHeader>
-            <CardContent><div className="font-display text-3xl">{t.value}</div></CardContent>
+            <CardContent>
+              <div className="font-display text-3xl">{t.value}</div>
+            </CardContent>
           </Card>
         ))}
       </div>

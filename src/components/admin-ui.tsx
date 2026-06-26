@@ -1,9 +1,25 @@
 import { useState, type ReactNode } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
-export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
+export function PageHeader({
+  title,
+  description,
+  actions,
+}: {
+  title: string;
+  description?: string;
+  actions?: ReactNode;
+}) {
   return (
     <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
       <div>
@@ -16,11 +32,25 @@ export function PageHeader({ title, description, actions }: { title: string; des
 }
 
 export function FormDialog({
-  trigger, title, description, children, open, onOpenChange, onSubmit, submitting, submitLabel = "Guardar",
+  trigger,
+  title,
+  description,
+  children,
+  open,
+  onOpenChange,
+  onSubmit,
+  submitting,
+  submitLabel = "Guardar",
 }: {
-  trigger?: ReactNode; title: string; description?: string; children: ReactNode;
-  open?: boolean; onOpenChange?: (v: boolean) => void;
-  onSubmit: (e: React.FormEvent) => void; submitting?: boolean; submitLabel?: string;
+  trigger?: ReactNode;
+  title: string;
+  description?: string;
+  children: ReactNode;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+  onSubmit: (e: React.FormEvent) => void;
+  submitting?: boolean;
+  submitLabel?: string;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -33,7 +63,9 @@ export function FormDialog({
         <form onSubmit={onSubmit} className="space-y-4">
           {children}
           <DialogFooter>
-            <Button type="submit" disabled={submitting}>{submitting ? "Guardando…" : submitLabel}</Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Guardando…" : submitLabel}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -42,21 +74,35 @@ export function FormDialog({
 }
 
 export function NewButton({ onClick, label = "Nuevo" }: { onClick?: () => void; label?: string }) {
-  return <Button onClick={onClick} variant="hero" size="sm"><Plus className="h-4 w-4" /> {label}</Button>;
+  return (
+    <Button onClick={onClick} variant="hero" size="sm">
+      <Plus className="h-4 w-4" /> {label}
+    </Button>
+  );
 }
 
 export function useDialog<T = any>() {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<T | null>(null);
   return {
-    open, setOpen, data,
-    openWith: (d: T | null = null) => { setData(d); setOpen(true); },
+    open,
+    setOpen,
+    data,
+    openWith: (d: T | null = null) => {
+      setData(d);
+      setOpen(true);
+    },
     close: () => setOpen(false),
   };
 }
 
 export function slugify(s: string) {
-  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
 export function moneyPEN(n: number | string | null | undefined) {
@@ -66,5 +112,9 @@ export function moneyPEN(n: number | string | null | undefined) {
 
 export function formatDate(s?: string | null) {
   if (!s) return "—";
-  try { return new Date(s).toLocaleString("es-PE", { dateStyle: "medium", timeStyle: "short" }); } catch { return s; }
+  try {
+    return new Date(s).toLocaleString("es-PE", { dateStyle: "medium", timeStyle: "short" });
+  } catch {
+    return s;
+  }
 }

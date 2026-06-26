@@ -10,13 +10,21 @@ export function useUserRoles() {
     let active = true;
     (async () => {
       const { data: u } = await supabase.auth.getUser();
-      if (!u.user) { if (active) { setRoles([]); setLoading(false); } return; }
+      if (!u.user) {
+        if (active) {
+          setRoles([]);
+          setLoading(false);
+        }
+        return;
+      }
       const { data } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
       if (!active) return;
       setRoles((data ?? []).map((r: any) => r.role as AppRole));
       setLoading(false);
     })();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
   const has = (r: AppRole) => roles.includes(r);
   const isStaff = has("admin") || has("ventas") || has("almacen");
