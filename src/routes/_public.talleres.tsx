@@ -1,8 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { listWorkshops } from "@/lib/public.functions";
+import { enrollWorkshop } from "@/lib/admin-content.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 const q = queryOptions({ queryKey: ["public","workshops"], queryFn: () => listWorkshops({ data: {} }) });
 
@@ -18,7 +26,19 @@ export const Route = createFileRoute("/_public/talleres")({
 });
 
 function Workshops() {
-  const { data: items } = useSuspenseQuery(q);
+  const { data: items, refetch } = useSuspenseQuery(q);
+  const enroll = useServerFn(enrollWorkshop);
+  const [active, setActive] = useState<any>(null);
+  const [form, setForm] = useState({ full_name: "", email: "", phone: "", notes: "" });
+  const [saving, setSaving] = useState(false);
+
+  async function onEnroll(e: React.FormEvent) {
+    e.preventDefault(); setSaving(true);
+    try { await enroll({ data: { workshop_id: active.id, ...form } }); toast.success("¡Inscripción registrada! Te contactaremos pronto."); setActive(null); setForm({ full_name: "", email: "", phone: "", notes: "" }); refetch(); }
+    catch (e: any) { toast.error(e.message ?? "No se pudo registrar"); }
+    finally { setSaving(false); }
+  }
+
   return (
     <section className="section-padded">
       <div className="container-makrana">
@@ -46,8 +66,8 @@ function Workshops() {
                 </dl>
                 <div className="mt-4 flex items-center justify-between">
                   <span className="font-display text-xl">S/ {Number(w.price).toFixed(2)}</span>
-                  <Button asChild variant="hero" size="sm">
-                    <a href={`https://wa.me/51999999999?text=${encodeURIComponent(`Hola, quiero inscribirme al taller "${w.title}".`)}`} target="_blank" rel="noreferrer">Inscribirme</a>
+                  <Button variant="hero" size="sm" disabled={w.status !== "abierto" || w.enrolled_count >= w.capacity} onClick={() => setActive(w)}>
+                    {w.status !== "abierto" ? "No disponible" : (w.enrolled_count >= w.capacity ? "Lleno" : "Inscribirme")}
                   </Button>
                 </div>
               </div>
@@ -55,7 +75,21 @@ function Workshops() {
           ))}
         </div>
         {items.length === 0 && <p className="mt-12 text-center text-muted-foreground">Pronto publicaremos nuevos talleres.</p>}
+
+        <Dialog open={!!active} onOpenChange={(v) => !v && setActive(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle className="font-display text-2xl">Inscribirme: {active?.title}</DialogTitle></DialogHeader>
+            <form onSubmit={onEnroll} className="space-y-3">
+              <div><Label>Nombre completo *</Label><Input required value={form.full_name} onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))} /></div>
+              <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} /></div>
+              <div><Label>Teléfono / WhatsApp</Label><Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} /></div>
+              <div><Label>Notas</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} /></div>
+              <DialogFooter><Button type="submit" variant="hero" disabled={saving}>{saving ? "Enviando…" : "Confirmar inscripción"}</Button></DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </section>
   );
 }
+
