@@ -36,9 +36,12 @@ import {
   LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { clearDevAdminSession, hasDevAdminSession } from "@/lib/dev-admin";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
+    if (hasDevAdminSession()) return;
+
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) throw redirect({ to: "/auth" });
     const { data: roles } = await supabase
@@ -72,6 +75,7 @@ function AdminShell() {
   const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   async function signOut() {
+    clearDevAdminSession();
     await supabase.auth.signOut();
     router.navigate({ to: "/" });
   }

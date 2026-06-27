@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { enableDevAdminSession, hasDevAdminSession, isDevAdminLogin } from "@/lib/dev-admin";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -24,6 +25,10 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (hasDevAdminSession()) {
+      router.navigate({ to: "/admin" });
+      return;
+    }
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) router.navigate({ to: "/cliente" });
     });
@@ -37,6 +42,13 @@ function AuthPage() {
     const full_name = String(fd.get("full_name") ?? "").trim();
     setLoading(true);
     try {
+      if (mode === "login" && isDevAdminLogin(email, password)) {
+        enableDevAdminSession();
+        toast.success("Acceso administrativo local activado.");
+        router.navigate({ to: "/admin" });
+        return;
+      }
+
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
