@@ -1,127 +1,103 @@
 # Deployment Plan - Makrana Home Art
 
-## A. Render Static Site
+## Destino principal
 
-No es la opcion recomendada para el estado actual del proyecto.
+El destino principal de deploy sera Render Web Service.
 
-El proyecto usa TanStack Start, SSR/server entry y server functions. Varias rutas
-y acciones leen variables de servidor con `process.env` y dependen de middleware
-de autenticacion. Un Static Site de Render serviria archivos estaticos, pero no
-ejecutaria correctamente esas server functions.
+El proyecto usa TanStack Start con SSR/server functions, por lo que no debe
+publicarse como Render Static Site. Static Site no ejecuta server functions ni
+middleware de autenticacion.
 
-Solo seria viable como Static Site si el proyecto se refactoriza a SPA estatica
-y todas las acciones pasan a Supabase desde el cliente o a otro backend.
+## Servicio Render
 
-## B. Render Web Service
+- Type: Web Service.
+- Runtime: Node.
+- Branch: `main` cuando se haga deploy productivo.
+- Build Command: `npm install && npm run build`.
+- Start Command: `npm start`.
+- Health Check Path: `/`.
 
-Es la opcion correcta si se decide hospedar en Render, pero requiere una salida
-Node-compatible.
+No hay `package-lock.json` en el repo, por eso se documenta `npm install` en vez
+de `npm ci`.
 
-El build actual genera Nitro con preset `cloudflare-module` y comandos de
-Wrangler. Eso encaja mejor con Cloudflare Workers/Pages que con un proceso Node
-directo en Render. Para usar Render Web Service, antes hay que validar o ajustar
-la configuracion de TanStack/Nitro para generar un servidor Node.
+## Preset Nitro/TanStack
 
-Configuracion esperada:
+El wrapper `@lovable.dev/vite-tanstack-config` usa Cloudflare como fallback por
+defecto. Para Render se fija una salida Node-compatible desde `vite.config.ts`:
 
-- Build command: `npm install && npm run build`
-- Start command: definir despues de generar una salida Node-compatible; puede
-  ser similar a `node .output/server/index.mjs` solo si ese archivo arranca un
-  servidor HTTP Node.
-- Runtime: Node.js.
-- Branch: `main`.
+```ts
+nitro: {
+  preset: "render-com",
+}
+```
 
-Antes de crear el servicio en Render, validar localmente:
+`render-com` extiende el preset `node-server` de Nitro y genera el servidor en:
 
-1. Que el build no use preset `cloudflare-module`.
-2. Que el comando de start abra un puerto HTTP.
-3. Que server functions respondan con variables de entorno reales.
+```text
+.output/server/index.mjs
+```
 
-Si se mantiene el preset actual, la recomendacion tecnica es desplegar en
-Cloudflare y dejar Render solo como alternativa futura.
+## Variables publicas
 
-## C. Variables en Render
-
-Variables publicas necesarias tambien durante build:
+Estas variables pueden tener prefijo `VITE_` porque se exponen al bundle del
+navegador:
 
 ```env
 VITE_SUPABASE_URL=
 VITE_SUPABASE_PUBLISHABLE_KEY=
+VITE_SUPABASE_ANON_KEY=
 VITE_APP_NAME=Makrana Home Art
 VITE_APP_ENV=production
+VITE_ENABLE_DEV_ADMIN=false
 ```
 
-Variables de servidor:
+`VITE_SUPABASE_ANON_KEY` queda documentada por compatibilidad con el nombre que
+puede mostrar Supabase. El codigo actual usa `VITE_SUPABASE_PUBLISHABLE_KEY`.
+
+## Variables secretas
+
+Estas variables deben configurarse solo como Environment Variables del Web
+Service en Render. No deben tener prefijo `VITE_`:
 
 ```env
 SUPABASE_URL=
 SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-El acceso local `dev-admin` debe permanecer apagado:
+`SUPABASE_SERVICE_ROLE_KEY` nunca debe exponerse al frontend. El codigo la lee
+desde `process.env` en el cliente server-side.
 
-```env
-VITE_ENABLE_DEV_ADMIN=false
+## Seguridad
+
+- Nunca configurar `SUPABASE_SERVICE_ROLE_KEY` con prefijo `VITE_`.
+- Mantener `VITE_ENABLE_DEV_ADMIN=false` o sin configurar en Render.
+- No usar `dev-admin` en produccion.
+- Crear usuario admin real en Supabase Auth y asignar rol en `user_roles`.
+- No conectar MongoDB en esta fase.
+
+## Supabase
+
+Supabase sera la base principal:
+
+- Postgres.
+- Auth.
+- RLS.
+- Storage.
+- RPCs de inventario/ventas.
+
+Hasta crear el proyecto real, Render puede tener variables vacias o placeholder
+solo en documentacion, pero el servicio real necesitara valores validos para
+cargar paginas que consultan Supabase.
+
+## Comandos locales de verificacion
+
+```bash
+npm run lint
+npm run build
+npm start
 ```
 
-## D. Variables publicas `VITE_`
-
-Las variables `VITE_` se inyectan en el bundle del navegador. Solo deben contener
-valores publicos:
-
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_PUBLISHABLE_KEY`
-- `VITE_SUPABASE_ANON_KEY`, solo como equivalencia documentada
-- `VITE_APP_NAME`
-- `VITE_APP_ENV`
-- `VITE_ENABLE_DEV_ADMIN=false`
-
-## E. Variables secretas
-
-Nunca deben tener prefijo `VITE_`:
-
-- `SUPABASE_SERVICE_ROLE_KEY`
-- claves de Resend futuras
-- secretos de webhooks
-- credenciales privadas de proveedores
-
-`SUPABASE_SERVICE_ROLE_KEY` debe existir solo en servidor y Render debe guardarla
-como secret environment variable.
-
-## F. Backend separado o server functions
-
-No hace falta crear un backend separado ahora. El proyecto ya usa server
-functions de TanStack Start y middleware de Supabase.
-
-Si en el futuro se agregan tareas programadas, facturacion electronica, colas,
-emails transaccionales o integraciones SUNAT, se puede sumar un servicio backend
-separado o workers, pero no es necesario para esta fase.
-
-## G. Servicios recomendados
-
-- GitHub: repositorio fuente y control de cambios.
-- Supabase: Postgres, Auth, RLS, Storage y RPCs.
-- Render: hosting del Web Service de la app.
-- Cloudflare: DNS, dominio, cache y proteccion basica.
-- Resend: correos transaccionales futuros.
-- MongoDB: no usar por ahora; Supabase cubre la base relacional principal.
-
-## Costos recomendados
-
-Fase pruebas:
-
-- Supabase Free.
-- Cloudflare Free/Workers para el preset actual, o Render Web Service de prueba
-  solo despues de configurar salida Node-compatible.
-- Cloudflare Free para DNS si ya hay dominio.
-
-MVP real:
-
-- Supabase Pro si se necesita mas estabilidad, backups y limites mayores.
-- Render Web Service pago si se migra a salida Node-compatible, o Cloudflare
-  Workers/Pages si se conserva el preset actual.
-- Resend Free/Starter segun volumen.
-
-No agregar MongoDB mientras el dominio principal siga siendo ventas, stock,
-clientes, talleres y contenido relacional.
+Si `npm start` falla por variables Supabase faltantes, configurar las variables
+reales en `.env.local` o en Render antes de hacer pruebas funcionales completas.
