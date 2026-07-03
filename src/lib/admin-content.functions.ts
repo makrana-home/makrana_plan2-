@@ -11,12 +11,7 @@ async function assertStaff(ctx: { supabase: any; userId: string }) {
 // ============ NEWS ============
 const newsSchema = z.object({
   id: z.string().uuid().optional(),
-  slug: z
-    .string()
-    .trim()
-    .min(2)
-    .max(160)
-    .regex(/^[a-z0-9-]+$/),
+  slug: z.string().trim().max(160).optional().nullable(),
   title: z.string().trim().min(2).max(200),
   category: z.enum([
     "evento",
@@ -56,6 +51,7 @@ export const adminUpsertNews = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const payload: any = { ...data };
+    payload.slug = await uniqueNewsSlug(context.supabase, data.slug, data.title, data.id);
     if (payload.cover_image_url === "") payload.cover_image_url = null;
     if (payload.status === "publicado" && !payload.published_at)
       payload.published_at = new Date().toISOString();
@@ -67,6 +63,40 @@ export const adminUpsertNews = createServerFn({ method: "POST" })
     if (error) throw error;
     return row;
   });
+
+async function uniqueNewsSlug(
+  supabase: any,
+  rawSlug: string | null | undefined,
+  title: string,
+  id?: string,
+) {
+  const base = safeSlug(rawSlug || title || "publicacion");
+  const { data, error } = await supabase
+    .from("news_posts")
+    .select("id, slug")
+    .like("slug", `${base}%`);
+  if (error) throw error;
+
+  const existing = new Set(
+    (data ?? []).filter((row: any) => row.id !== id).map((row: any) => row.slug),
+  );
+  if (!existing.has(base)) return base;
+
+  let index = 2;
+  while (existing.has(`${base}-${index}`)) index += 1;
+  return `${base}-${index}`;
+}
+
+function safeSlug(value: string) {
+  const slug = String(value ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 150);
+  return slug.length >= 2 ? slug : `publicacion-${Date.now()}`;
+}
 
 export const adminDeleteNews = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -326,7 +356,6 @@ export const adminReports = createServerFn({ method: "GET" })
       salesMonth,
       salesDay,
       lowStock,
-      topItems,
       paymentsByMethod,
       leadsCount,
       customersCount,
@@ -337,26 +366,27 @@ export const adminReports = createServerFn({ method: "GET" })
         .from("sales")
         .select("total, status")
         .gte("created_at", startMonth)
-        .eq("status", "confirmada"),
+        .eq("status", "confirmada")
+        .eq("payment_status", "pagado"),
       sb
         .from("sales")
         .select("total, status")
         .gte("created_at", startDay)
-        .eq("status", "confirmada"),
+        .eq("status", "confirmada")
+        .eq("payment_status", "pagado"),
       sb
         .from("inventory_stock")
         .select(
           "quantity, product:products(id, name, sku, min_stock), warehouse:warehouses(code, name)",
         )
         .limit(500),
-      sb.from("sale_items").select("quantity, subtotal, product:products(id, name)"),
       sb.from("sale_payments").select("method, amount").gte("paid_at", startMonth),
       sb.from("leads").select("id", { count: "exact", head: true }),
       sb.from("customers").select("id", { count: "exact", head: true }),
       sb
         .from("sales")
         .select(
-          "id, created_at, confirmed_at, status, payment_status, delivery_status, subtotal, discount, total, notes, customer:customers(full_name, email, phone), warehouse:warehouses(code, name), receipt:receipts(number), payments:sale_payments(method, amount, paid_at)",
+          "id, created_at, confirmed_at, status, payment_status, delivery_status, subtotal, discount, total, notes, customer:customers(full_name, email, phone), warehouse:warehouses(code, name), receipt:receipts(number), items:sale_items(quantity, subtotal, product:products(id, name, sku)), payments:sale_payments(method, amount, paid_at)",
         )
         .order("created_at", { ascending: false })
         .limit(1000),
@@ -381,13 +411,16 @@ export const adminReports = createServerFn({ method: "GET" })
       .slice(0, 50);
 
     const map = new Map<string, { name: string; qty: number; revenue: number }>();
-    for (const it of (topItems.data ?? []) as any[]) {
-      const id = it.product?.id;
-      if (!id) continue;
-      const cur = map.get(id) ?? { name: it.product.name, qty: 0, revenue: 0 };
-      cur.qty += Number(it.quantity);
-      cur.revenue += Number(it.subtotal);
-      map.set(id, cur);
+    for (const sale of (salesRows.data ?? []) as any[]) {
+      if (sale.status !== "confirmada" || sale.payment_status !== "pagado") continue;
+      for (const it of sale.items ?? []) {
+        const id = it.product?.id;
+        if (!id) continue;
+        const cur = map.get(id) ?? { name: it.product.name, qty: 0, revenue: 0 };
+        cur.qty += Number(it.quantity);
+        cur.revenue += Number(it.subtotal);
+        map.set(id, cur);
+      }
     }
     const top = [...map.values()].sort((a, b) => b.qty - a.qty).slice(0, 10);
 

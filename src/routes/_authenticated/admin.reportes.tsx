@@ -34,7 +34,22 @@ import { formatUnits } from "@/lib/format-units";
 export const Route = createFileRoute("/_authenticated/admin/reportes")({ component: ReportsPage });
 
 type ReportPeriod = "dia" | "mes" | "anio" | "todo";
-type ReportType = "ventas" | "confirmadas" | "borradores" | "anuladas" | "devoluciones";
+type ReportType =
+  | "ventas"
+  | "pendientes"
+  | "confirmadas"
+  | "borradores"
+  | "anuladas"
+  | "devoluciones";
+
+const reportTypeLabels: Record<ReportType, string> = {
+  ventas: "Ventas pagadas",
+  pendientes: "Ventas pendientes de pago",
+  confirmadas: "Ventas confirmadas",
+  borradores: "Ventas en borrador",
+  anuladas: "Ventas anuladas",
+  devoluciones: "Devoluciones",
+};
 
 function ReportsPage() {
   const fn = useServerFn(adminReports);
@@ -49,16 +64,32 @@ function ReportsPage() {
   const sales = useMemo(() => (r?.saleRows ?? []) as any[], [r]);
   const returns = useMemo(() => (r?.returnRows ?? []) as any[], [r]);
 
+  const periodSales = useMemo(
+    () => sales.filter((sale) => isInPeriod(sale.created_at, period)),
+    [period, sales],
+  );
+  const paidSales = useMemo(() => periodSales.filter(isPaidSale), [periodSales]);
+  const pendingSales = useMemo(() => periodSales.filter(isPendingPaymentSale), [periodSales]);
+  const paidTotal = useMemo(
+    () => paidSales.reduce((sum, sale) => sum + Number(sale.total ?? 0), 0),
+    [paidSales],
+  );
+  const pendingTotal = useMemo(
+    () => pendingSales.reduce((sum, sale) => sum + getPendingAmount(sale), 0),
+    [pendingSales],
+  );
+
   const filteredSales = useMemo(
     () =>
-      sales.filter((sale) => {
-        if (!isInPeriod(sale.created_at, period)) return false;
+      periodSales.filter((sale) => {
+        if (reportType === "ventas") return isPaidSale(sale);
+        if (reportType === "pendientes") return isPendingPaymentSale(sale);
         if (reportType === "confirmadas") return sale.status === "confirmada";
         if (reportType === "borradores") return sale.status === "borrador";
         if (reportType === "anuladas") return sale.status === "anulada";
-        return reportType === "ventas";
+        return false;
       }),
-    [period, reportType, sales],
+    [periodSales, reportType],
   );
 
   const filteredReturns = useMemo(
@@ -70,30 +101,46 @@ function ReportsPage() {
   );
 
   const channelRows = useMemo(() => buildChannelRows(filteredSales), [filteredSales]);
+  const paymentMethodRows = useMemo(() => buildPaymentMethodRows(filteredSales), [filteredSales]);
   const reportRows = reportType === "devoluciones" ? filteredReturns : filteredSales;
   const reportTotal =
     reportType === "devoluciones"
       ? filteredReturns.reduce((sum, row) => sum + Number(row.quantity ?? 0), 0)
-      : filteredSales.reduce((sum, row) => sum + Number(row.total ?? 0), 0);
-  const confirmedCount = filteredSales.filter((sale) => sale.status === "confirmada").length;
-  const cancelledCount = filteredSales.filter((sale) => sale.status === "anulada").length;
-  const draftCount = filteredSales.filter((sale) => sale.status === "borrador").length;
+      : filteredSales.reduce(
+          (sum, row) =>
+            sum + (reportType === "pendientes" ? getPendingAmount(row) : Number(row.total ?? 0)),
+          0,
+        );
+  const confirmedCount = periodSales.filter((sale) => sale.status === "confirmada").length;
+  const cancelledCount = periodSales.filter((sale) => sale.status === "anulada").length;
+  const draftCount = periodSales.filter((sale) => sale.status === "borrador").length;
 
   if (!r) return <div className="p-8 text-center text-muted-foreground">Cargando reportes...</div>;
 
-  const methods = Object.entries(r.paymentsByMethod ?? {});
-  const totalPay = methods.reduce((a, [, v]) => a + Number(v), 0);
+  const totalPay = paymentMethodRows.reduce((a, row) => a + row.total, 0);
+  const selectedPendingTotal =
+    reportType === "devoluciones"
+      ? 0
+      : filteredSales.reduce((sum, sale) => sum + getPendingAmount(sale), 0);
 
   function downloadReport() {
-    const csv =
+    const html =
       reportType === "devoluciones"
-        ? buildReturnsCsv(filteredReturns)
-        : buildSalesCsv(filteredSales);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        ? buildReturnsWorkbook(filteredReturns, { period, reportType })
+        : buildSalesWorkbook({
+            selectedRows: filteredSales,
+            paidRows: paidSales,
+            pendingRows: pendingSales,
+            period,
+            reportType,
+          });
+    const blob = new Blob(["\ufeff", html], {
+      type: "application/vnd.ms-excel;charset=utf-8",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `makrana-reporte-${reportType}-${period}.csv`;
+    a.download = `makrana-reporte-${reportType}-${period}.xls`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -102,7 +149,7 @@ function ReportsPage() {
     <div>
       <PageHeader
         title="Reportes"
-        description="Reportes de ventas por canal, estado y periodo. Filtra y descarga la información para control interno."
+        description="Reportes de ventas pagadas, pendientes y devoluciones. Filtra por periodo y descarga el detalle para control interno."
       />
 
       <div className="mb-6 grid gap-4 rounded-3xl border border-sand/80 bg-warm-white/80 p-5 shadow-sm md:grid-cols-[minmax(220px,280px)_minmax(220px,280px)_auto]">
@@ -115,8 +162,9 @@ function ReportsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ventas">Ventas por canal</SelectItem>
-              <SelectItem value="confirmadas">Ventas confirmadas</SelectItem>
+              <SelectItem value="ventas">Ventas pagadas</SelectItem>
+              <SelectItem value="pendientes">Ventas pendientes de pago</SelectItem>
+              <SelectItem value="confirmadas">Ventas confirmadas (todas)</SelectItem>
               <SelectItem value="anuladas">Ventas anuladas</SelectItem>
               <SelectItem value="borradores">Ventas en borrador</SelectItem>
               <SelectItem value="devoluciones">Devoluciones</SelectItem>
@@ -150,20 +198,37 @@ function ReportsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KPI
           icon={DollarSign}
-          label="Total filtrado"
-          value={reportType === "devoluciones" ? formatUnits(reportTotal) : moneyPEN(reportTotal)}
-          sub={`${reportRows.length} registro(s)`}
+          label="Vendido pagado"
+          value={moneyPEN(paidTotal)}
+          sub={`${paidSales.length} venta(s) pagada(s)`}
         />
-        <KPI icon={TrendingUp} label="Confirmadas" value={String(confirmedCount)} sub="ventas" />
-        <KPI icon={AlertTriangle} label="Anuladas" value={String(cancelledCount)} sub="ventas" />
-        <KPI icon={Users} label="Borradores" value={String(draftCount)} sub="ventas pendientes" />
+        <KPI
+          icon={CreditCard}
+          label="Pendiente de cobro"
+          value={moneyPEN(pendingTotal)}
+          sub={`${pendingSales.length} venta(s) pendiente(s)`}
+        />
+        <KPI
+          icon={TrendingUp}
+          label="Total del filtro"
+          value={reportType === "devoluciones" ? formatUnits(reportTotal) : moneyPEN(reportTotal)}
+          sub={`${reportRows.length} registro(s) · ${reportTypeLabels[reportType]}`}
+        />
+        <KPI
+          icon={Users}
+          label="Control de estado"
+          value={`${confirmedCount} / ${cancelledCount} / ${draftCount}`}
+          sub="confirmadas / anuladas / borrador"
+        />
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <Card>
           <CardHeader>
             <CardTitle className="font-display">
-              {reportType === "devoluciones" ? "Detalle de devoluciones" : "Detalle de ventas"}
+              {reportType === "devoluciones"
+                ? "Detalle de devoluciones"
+                : reportTypeLabels[reportType]}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -292,37 +357,48 @@ function ReportsPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="font-display flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-accent" /> Caja del mes por método de pago
+              <CreditCard className="h-5 w-5 text-accent" /> Pagos del filtro por método
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {methods.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Sin pagos registrados este mes.</p>
-            ) : (
-              <div className="space-y-2">
-                {methods.map(([m, v]) => {
-                  const pct = totalPay > 0 ? (Number(v) / totalPay) * 100 : 0;
+            <div className="space-y-3">
+              {paymentMethodRows.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Sin pagos registrados para el filtro actual.
+                </p>
+              ) : (
+                paymentMethodRows.map((row) => {
+                  const pct = totalPay > 0 ? (row.total / totalPay) * 100 : 0;
                   return (
-                    <div key={m}>
+                    <div key={row.method}>
                       <div className="flex justify-between text-sm">
-                        <span className="capitalize">{m}</span>
+                        <span className="capitalize">{row.method}</span>
                         <span className="tabular-nums">
-                          {moneyPEN(Number(v))}{" "}
+                          {moneyPEN(row.total)}{" "}
                           <span className="text-xs text-muted-foreground">({pct.toFixed(0)}%)</span>
                         </span>
                       </div>
+                      <p className="text-xs text-muted-foreground">{row.count} pago(s)</p>
                       <div className="h-2 bg-sand/50 rounded-full overflow-hidden mt-1">
                         <div className="h-full bg-terracotta" style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   );
-                })}
-                <div className="flex justify-between text-base font-display mt-3 pt-3 border-t border-sand">
-                  <span>Total mes</span>
-                  <span>{moneyPEN(totalPay)}</span>
+                })
+              )}
+              <div className="grid gap-2 border-t border-sand pt-3 text-sm sm:grid-cols-2">
+                <div className="flex justify-between gap-4 rounded-2xl bg-cream/50 px-3 py-2">
+                  <span>Total cobrado</span>
+                  <span className="font-semibold tabular-nums">{moneyPEN(totalPay)}</span>
+                </div>
+                <div className="flex justify-between gap-4 rounded-2xl bg-cream/50 px-3 py-2">
+                  <span>Saldo pendiente</span>
+                  <span className="font-semibold tabular-nums">
+                    {moneyPEN(selectedPendingTotal)}
+                  </span>
                 </div>
               </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -333,7 +409,7 @@ function ReportsPage() {
 function SalesTable({ rows }: { rows: any[] }) {
   return (
     <div className="overflow-x-auto">
-      <Table className="min-w-[920px]">
+      <Table className="min-w-[1220px]">
         <TableHeader>
           <TableRow>
             <TableHead>Fecha</TableHead>
@@ -341,6 +417,9 @@ function SalesTable({ rows }: { rows: any[] }) {
             <TableHead>Canal</TableHead>
             <TableHead>Estado</TableHead>
             <TableHead>Pago</TableHead>
+            <TableHead>Método de pago</TableHead>
+            <TableHead className="text-right">Pagado</TableHead>
+            <TableHead className="text-right">Pendiente</TableHead>
             <TableHead>Almacén</TableHead>
             <TableHead className="text-right">Total</TableHead>
           </TableRow>
@@ -348,7 +427,7 @@ function SalesTable({ rows }: { rows: any[] }) {
         <TableBody>
           {rows.length === 0 && (
             <TableRow>
-              <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+              <TableCell colSpan={10} className="py-8 text-center text-sm text-muted-foreground">
                 Sin ventas para este filtro.
               </TableCell>
             </TableRow>
@@ -362,6 +441,13 @@ function SalesTable({ rows }: { rows: any[] }) {
               <TableCell className="capitalize">{extractChannel(sale.notes)}</TableCell>
               <TableCell>{sale.status}</TableCell>
               <TableCell>{sale.payment_status}</TableCell>
+              <TableCell className="max-w-[280px] text-xs">{formatPaymentDetails(sale)}</TableCell>
+              <TableCell className="text-right tabular-nums">
+                {moneyPEN(getPaidAmount(sale))}
+              </TableCell>
+              <TableCell className="text-right tabular-nums">
+                {moneyPEN(getPendingAmount(sale))}
+              </TableCell>
               <TableCell className="text-xs">{sale.warehouse?.name ?? "—"}</TableCell>
               <TableCell className="text-right tabular-nums">{moneyPEN(sale.total)}</TableCell>
             </TableRow>
@@ -461,41 +547,299 @@ function buildChannelRows(rows: any[]) {
   return [...map.values()].sort((a, b) => b.total - a.total);
 }
 
-function buildSalesCsv(rows: any[]) {
-  const header = ["fecha", "cliente", "canal", "estado", "pago", "almacen", "total"];
-  const lines = rows.map((sale) =>
-    [
-      formatDate(sale.created_at),
-      sale.customer?.full_name ?? "",
-      extractChannel(sale.notes),
-      sale.status ?? "",
-      sale.payment_status ?? "",
-      sale.warehouse?.name ?? "",
-      Number(sale.total ?? 0).toFixed(2),
-    ]
-      .map(csvCell)
-      .join(","),
-  );
-  return [header.join(","), ...lines].join("\n");
+function isPaidSale(sale: any) {
+  return sale.status === "confirmada" && sale.payment_status === "pagado";
 }
 
-function buildReturnsCsv(rows: any[]) {
-  const header = ["fecha", "item", "sku", "almacen", "cantidad", "motivo"];
-  const lines = rows.map((row) =>
-    [
-      formatDate(row.created_at),
-      row.product?.name ?? "",
-      row.product?.sku ?? "",
-      row.warehouse?.name ?? "",
-      formatUnits(row.quantity),
-      row.reason ?? "",
-    ]
-      .map(csvCell)
-      .join(","),
+function isPendingPaymentSale(sale: any) {
+  return (
+    sale.status === "confirmada" &&
+    (sale.payment_status === "pendiente" || sale.payment_status === "parcial")
   );
-  return [header.join(","), ...lines].join("\n");
 }
 
-function csvCell(value: any) {
-  return `"${String(value ?? "").replace(/"/g, '""')}"`;
+function getPaymentEntries(sale: any) {
+  const payments = Array.isArray(sale.payments) ? sale.payments : [];
+  if (payments.length > 0) return payments;
+  if (isPaidSale(sale)) {
+    return [
+      {
+        method: "sin método registrado",
+        amount: Number(sale.total ?? 0),
+        paid_at: sale.confirmed_at ?? sale.created_at,
+      },
+    ];
+  }
+  return [];
+}
+
+function getPaidAmount(sale: any) {
+  const total = Number(sale.total ?? 0);
+  const paid = getPaymentEntries(sale).reduce(
+    (sum: number, payment: any) => sum + Number(payment.amount ?? 0),
+    0,
+  );
+  if (paid > 0) return paid;
+  return isPaidSale(sale) ? total : 0;
+}
+
+function getPendingAmount(sale: any) {
+  if (sale.status === "anulada") return 0;
+  return Math.max(Number(sale.total ?? 0) - getPaidAmount(sale), 0);
+}
+
+function formatPaymentDetails(sale: any) {
+  const entries = getPaymentEntries(sale);
+  if (entries.length === 0) return "Sin pagos registrados";
+  return entries
+    .map((payment: any) => {
+      const method = formatPaymentMethod(payment.method);
+      const paidAt = payment.paid_at ? ` · ${formatDate(payment.paid_at)}` : "";
+      return `${method}: ${moneyPEN(Number(payment.amount ?? 0))}${paidAt}`;
+    })
+    .join("; ");
+}
+
+function formatPaymentMethods(sale: any) {
+  const methods = [
+    ...new Set(getPaymentEntries(sale).map((payment: any) => formatPaymentMethod(payment.method))),
+  ];
+  return methods.length > 0 ? methods.join(", ") : "Sin método";
+}
+
+function formatPaymentMethod(method: any) {
+  return String(method ?? "sin método").replace(/_/g, " ");
+}
+
+function buildPaymentMethodRows(rows: any[]) {
+  const map = new Map<string, { method: string; count: number; total: number }>();
+  for (const sale of rows) {
+    for (const payment of getPaymentEntries(sale)) {
+      const method = formatPaymentMethod(payment.method);
+      const current = map.get(method) ?? { method, count: 0, total: 0 };
+      current.count += 1;
+      current.total += Number(payment.amount ?? 0);
+      map.set(method, current);
+    }
+  }
+  return [...map.values()].sort((a, b) => b.total - a.total);
+}
+
+function formatSaleItems(sale: any) {
+  const items = Array.isArray(sale.items) ? sale.items : [];
+  if (items.length === 0) return "";
+  return items
+    .map((item: any) => {
+      const name = item.product?.name ?? "Ítem";
+      const sku = item.product?.sku ? ` (${item.product.sku})` : "";
+      return `${name}${sku} x ${formatUnits(item.quantity)} = ${moneyPEN(Number(item.subtotal ?? 0))}`;
+    })
+    .join("; ");
+}
+
+function buildSalesWorkbook({
+  selectedRows,
+  paidRows,
+  pendingRows,
+  period,
+  reportType,
+}: {
+  selectedRows: any[];
+  paidRows: any[];
+  pendingRows: any[];
+  period: ReportPeriod;
+  reportType: ReportType;
+}) {
+  const selectedPaid = selectedRows.reduce((sum, sale) => sum + getPaidAmount(sale), 0);
+  const selectedPending = selectedRows.reduce((sum, sale) => sum + getPendingAmount(sale), 0);
+  const paymentRows = buildPaymentMethodRows(selectedRows).map((row) => [
+    row.method,
+    row.count,
+    row.total,
+  ]);
+
+  return excelDocument([
+    {
+      title: "Resumen del reporte",
+      headers: ["Concepto", "Valor"],
+      rows: [
+        ["Reporte", reportTypeLabels[reportType]],
+        ["Periodo", periodLabels[period]],
+        ["Fecha de descarga", new Date().toLocaleString("es-PE")],
+        ["Registros del filtro", selectedRows.length],
+        ["Cobrado en el filtro", selectedPaid],
+        ["Saldo pendiente en el filtro", selectedPending],
+        ["Ventas pagadas del periodo", paidRows.length],
+        [
+          "Total vendido pagado del periodo",
+          paidRows.reduce((sum, sale) => sum + Number(sale.total ?? 0), 0),
+        ],
+        ["Ventas pendientes del periodo", pendingRows.length],
+        [
+          "Saldo pendiente del periodo",
+          pendingRows.reduce((sum, sale) => sum + getPendingAmount(sale), 0),
+        ],
+      ],
+    },
+    {
+      title: "Métodos de pago del filtro",
+      headers: ["Método", "Cantidad de pagos", "Total cobrado (S/)"],
+      rows: paymentRows,
+    },
+    {
+      title: `Detalle seleccionado - ${reportTypeLabels[reportType]}`,
+      headers: salesExportHeaders,
+      rows: selectedRows.map(saleExportRow),
+    },
+    {
+      title: "Ventas pagadas del periodo",
+      headers: salesExportHeaders,
+      rows: paidRows.map(saleExportRow),
+    },
+    {
+      title: "Ventas pendientes de pago del periodo",
+      headers: salesExportHeaders,
+      rows: pendingRows.map(saleExportRow),
+    },
+  ]);
+}
+
+function buildReturnsWorkbook(
+  rows: any[],
+  { period, reportType }: { period: ReportPeriod; reportType: ReportType },
+) {
+  return excelDocument([
+    {
+      title: "Resumen del reporte",
+      headers: ["Concepto", "Valor"],
+      rows: [
+        ["Reporte", reportTypeLabels[reportType]],
+        ["Periodo", periodLabels[period]],
+        ["Fecha de descarga", new Date().toLocaleString("es-PE")],
+        ["Registros", rows.length],
+        ["Unidades devueltas", rows.reduce((sum, row) => sum + Number(row.quantity ?? 0), 0)],
+      ],
+    },
+    {
+      title: "Detalle de devoluciones",
+      headers: ["Fecha", "Ítem", "SKU", "Almacén", "Cantidad", "Motivo", "Notas"],
+      rows: rows.map((row) => [
+        formatDate(row.created_at),
+        row.product?.name ?? "",
+        row.product?.sku ?? "",
+        row.warehouse?.name ?? "",
+        Number(row.quantity ?? 0),
+        row.reason ?? "",
+        row.notes ?? "",
+      ]),
+    },
+  ]);
+}
+
+const periodLabels: Record<ReportPeriod, string> = {
+  dia: "Hoy",
+  mes: "Este mes",
+  anio: "Este año",
+  todo: "Todo",
+};
+
+const salesExportHeaders = [
+  "Fecha",
+  "Confirmada",
+  "Cliente",
+  "Email",
+  "Teléfono",
+  "Canal",
+  "Estado de venta",
+  "Estado de pago",
+  "Método(s) de pago",
+  "Detalle de pagos",
+  "Almacén",
+  "Comprobante",
+  "Ítems",
+  "Subtotal (S/)",
+  "Descuento (S/)",
+  "Total (S/)",
+  "Pagado (S/)",
+  "Pendiente (S/)",
+  "Notas",
+];
+
+function saleExportRow(sale: any) {
+  return [
+    formatDate(sale.created_at),
+    sale.confirmed_at ? formatDate(sale.confirmed_at) : "",
+    sale.customer?.full_name ?? "Sin cliente",
+    sale.customer?.email ?? "",
+    sale.customer?.phone ?? "",
+    extractChannel(sale.notes),
+    sale.status ?? "",
+    sale.payment_status ?? "",
+    formatPaymentMethods(sale),
+    formatPaymentDetails(sale),
+    sale.warehouse?.name ?? "",
+    sale.receipt?.number ?? "",
+    formatSaleItems(sale),
+    Number(sale.subtotal ?? 0),
+    Number(sale.discount ?? 0),
+    Number(sale.total ?? 0),
+    getPaidAmount(sale),
+    getPendingAmount(sale),
+    sale.notes ?? "",
+  ];
+}
+
+function excelDocument(
+  sections: Array<{
+    title: string;
+    headers: string[];
+    rows: any[][];
+  }>,
+) {
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body { font-family: Arial, sans-serif; color: #2f211b; }
+    h2 { margin: 22px 0 8px; color: #5c2d24; }
+    table { border-collapse: collapse; margin-bottom: 24px; }
+    th, td { border: 1px solid #d8c9b8; padding: 7px 9px; vertical-align: top; }
+    th { background: #8f332b; color: #ffffff; font-weight: 700; }
+    td.number { mso-number-format: "0.00"; text-align: right; }
+    td.empty { color: #7a6b60; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>Makrana - Reporte</h1>
+  ${sections.map(excelSection).join("")}
+</body>
+</html>`;
+}
+
+function excelSection(section: { title: string; headers: string[]; rows: any[][] }) {
+  const body =
+    section.rows.length > 0
+      ? section.rows.map((row) => `<tr>${row.map(excelCell).join("")}</tr>`).join("")
+      : `<tr><td class="empty" colspan="${section.headers.length}">Sin registros</td></tr>`;
+  return `<h2>${escapeHtml(section.title)}</h2>
+<table>
+  <thead><tr>${section.headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr></thead>
+  <tbody>${body}</tbody>
+</table>`;
+}
+
+function excelCell(value: any) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return `<td class="number">${value.toFixed(2)}</td>`;
+  }
+  return `<td>${escapeHtml(value)}</td>`;
+}
+
+function escapeHtml(value: any) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }

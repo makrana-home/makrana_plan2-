@@ -30,6 +30,7 @@ import {
   adminApplyMovement,
 } from "@/lib/admin.functions";
 import { formatUnits } from "@/lib/format-units";
+import { getPresentationUnitLabel } from "@/lib/presentation-units";
 
 export const Route = createFileRoute("/_authenticated/admin/movimientos")({
   component: MovementsPage,
@@ -49,8 +50,11 @@ function MovementsPage() {
   const [form, setForm] = useState<any>({
     movement_type: "entrada",
     item_type: "producto_terminado",
+    product_option: "",
     product_search: "",
     product_id: "",
+    presentation_id: null,
+    presentation_note: "",
     warehouse_id: "",
     warehouse_dest_id: "",
     quantity: 1,
@@ -71,11 +75,9 @@ function MovementsPage() {
   }
   const filteredProducts = useMemo(() => {
     const q = normalizeSearch(form.product_search ?? "");
-    return products.filter((product) => {
-      const matchesType =
-        form.item_type === "material" ? product.type === "material" : product.type !== "material";
-      const searchable = normalizeSearch(`${product.name ?? ""} ${product.sku ?? ""}`);
-      return matchesType && (!q || searchable.includes(q));
+    return buildMovementItemOptions(products, form.item_type).filter((option) => {
+      const searchable = normalizeSearch(option.searchText);
+      return !q || searchable.includes(q);
     });
   }, [form.item_type, form.product_search, products]);
 
@@ -87,8 +89,11 @@ function MovementsPage() {
     setForm({
       movement_type: "entrada",
       item_type: "producto_terminado",
+      product_option: "",
       product_search: "",
       product_id: "",
+      presentation_id: null,
+      presentation_note: "",
       warehouse_id: "",
       warehouse_dest_id: "",
       quantity: 1,
@@ -106,15 +111,17 @@ function MovementsPage() {
         toast.error("El almacén origen y destino deben ser diferentes.");
         return;
       }
+      const notes = [form.presentation_note, form.notes].filter(Boolean).join("\n") || null;
       await apply({
         data: {
           product_id: form.product_id,
+          presentation_id: form.presentation_id || null,
           movement_type: form.movement_type,
           quantity: Number(form.quantity),
           warehouse_id: form.warehouse_id,
           warehouse_dest_id: form.movement_type === "transferencia" ? form.warehouse_dest_id : null,
           reason: form.reason || null,
-          notes: form.notes || null,
+          notes,
         },
       });
       toast.success("Movimiento registrado");
@@ -156,35 +163,47 @@ function MovementsPage() {
                 </TableCell>
               </TableRow>
             )}
-            {movs.map((m) => (
-              <TableRow key={m.id}>
-                <TableCell className="text-xs text-muted-foreground">
-                  {formatDate(m.created_at)}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={badgeVariant(m.movement_type)}
-                    className={
-                      m.movement_type === "venta"
-                        ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
-                        : undefined
-                    }
+            {movs.map((m) => {
+              const presentationLabel = getMovementPresentationLabel(m);
+              return (
+                <TableRow key={m.id}>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {formatDate(m.created_at)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={badgeVariant(m.movement_type)}
+                      className={
+                        m.movement_type === "venta"
+                          ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
+                          : undefined
+                      }
+                    >
+                      {m.movement_type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {m.product?.name}
+                    {presentationLabel && (
+                      <div className="text-xs font-medium text-muted-foreground">
+                        {presentationLabel}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-xs">{m.warehouse?.code}</TableCell>
+                  <TableCell className="text-xs">{m.warehouse_dest?.code ?? "—"}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {formatUnits(m.quantity)}
+                  </TableCell>
+                  <TableCell
+                    className="text-xs text-muted-foreground max-w-[240px] truncate"
+                    title={m.reason}
                   >
-                    {m.movement_type}
-                  </Badge>
-                </TableCell>
-                <TableCell>{m.product?.name}</TableCell>
-                <TableCell className="text-xs">{m.warehouse?.code}</TableCell>
-                <TableCell className="text-xs">{m.warehouse_dest?.code ?? "—"}</TableCell>
-                <TableCell className="text-right tabular-nums">{formatUnits(m.quantity)}</TableCell>
-                <TableCell
-                  className="text-xs text-muted-foreground max-w-[240px] truncate"
-                  title={m.reason}
-                >
-                  {m.reason ?? "—"}
-                </TableCell>
-              </TableRow>
-            ))}
+                    {m.reason ?? "—"}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -228,7 +247,10 @@ function MovementsPage() {
                 setForm((f: any) => ({
                   ...f,
                   item_type: v,
+                  product_option: "",
                   product_id: "",
+                  presentation_id: null,
+                  presentation_note: "",
                   product_search: "",
                 }))
               }
@@ -243,7 +265,7 @@ function MovementsPage() {
             </Select>
           </div>
           <div>
-            <Label>Buscar por nombre o SKU</Label>
+            <Label>Buscar por nombre, SKU o presentación</Label>
             <Input
               value={form.product_search}
               onChange={(e) => setForm((f: any) => ({ ...f, product_search: e.target.value }))}
@@ -251,18 +273,31 @@ function MovementsPage() {
             />
           </div>
           <div>
-            <Label>Ítem *</Label>
+            <Label>Ítem o presentación *</Label>
             <Select
-              value={form.product_id}
-              onValueChange={(v) => setForm((f: any) => ({ ...f, product_id: v }))}
+              value={form.product_option}
+              onValueChange={(value) => {
+                const option = filteredProducts.find((entry) => entry.value === value);
+                if (!option) return;
+                setForm((f: any) => ({
+                  ...f,
+                  product_option: option.value,
+                  product_id: option.product_id,
+                  presentation_id: option.presentation_id ?? null,
+                  presentation_note: option.presentationNote,
+                }));
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar ítem" />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
-                {filteredProducts.map((p: any) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name} {p.sku && `(${p.sku})`}
+                {filteredProducts.map((p) => (
+                  <SelectItem key={p.value} value={p.value} textValue={p.label}>
+                    <span className="flex flex-col gap-0.5">
+                      <span>{p.label}</span>
+                      <span className="text-xs text-muted-foreground">{p.sku || "Sin SKU"}</span>
+                    </span>
                   </SelectItem>
                 ))}
                 {filteredProducts.length === 0 && (
@@ -350,6 +385,58 @@ function MovementsPage() {
       </FormDialog>
     </div>
   );
+}
+
+function buildMovementItemOptions(products: any[], itemType: string) {
+  return products.flatMap((product) => {
+    const matchesType =
+      itemType === "material" ? product.type === "material" : product.type !== "material";
+    if (!matchesType) return [];
+
+    const presentations =
+      product.type === "material" ? (product.presentations ?? []).filter(Boolean) : [];
+
+    if (presentations.length > 0) {
+      return presentations.map((presentation: any, index: number) => {
+        const presentationLabel = getPresentationUnitLabel(presentation.unit, presentation.label);
+        const sku = presentation.sku || product.sku || "";
+        return {
+          value: `presentation:${product.id}:${presentation.id ?? sku ?? index}`,
+          product_id: product.id,
+          presentation_id: presentation.id ?? null,
+          label: `${product.name} - ${presentationLabel}`,
+          sku,
+          presentationNote: `Presentación: ${presentationLabel}${sku ? ` · SKU ${sku}` : ""}`,
+          searchText: `${product.name ?? ""} ${product.sku ?? ""} ${sku} ${
+            presentation.unit ?? ""
+          } ${presentation.label ?? ""} ${presentationLabel}`,
+        };
+      });
+    }
+
+    return [
+      {
+        value: `product:${product.id}`,
+        product_id: product.id,
+        presentation_id: null,
+        label: product.name ?? "Ítem",
+        sku: product.sku ?? "",
+        presentationNote: "",
+        searchText: `${product.name ?? ""} ${product.sku ?? ""}`,
+      },
+    ];
+  });
+}
+
+function getMovementPresentationLabel(movement: any) {
+  if (movement.presentation) {
+    return getPresentationUnitLabel(movement.presentation.unit, movement.presentation.label);
+  }
+  const line = String(movement.notes ?? "")
+    .split(/\r?\n/)
+    .find((entry) => entry.trim().toLowerCase().startsWith("presentaci"));
+  if (!line) return "";
+  return line.split(":").slice(1).join(":").split("·")[0]?.trim() ?? "";
 }
 
 function badgeVariant(t: string): any {

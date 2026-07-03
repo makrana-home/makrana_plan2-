@@ -1,0 +1,14 @@
+alter type public.presentation_unit add value if not exists 'centimetro';
+alter type public.presentation_unit add value if not exists 'bolsa';
+alter type public.presentation_unit add value if not exists 'caja';
+alter type public.presentation_unit add value if not exists 'cono';
+alter type public.presentation_unit add value if not exists 'bobina';
+alter type public.presentation_unit add value if not exists 'ovillo';
+alter type public.presentation_unit add value if not exists 'par';
+alter type public.presentation_unit add value if not exists 'media_docena';
+alter type public.presentation_unit add value if not exists 'gramo';
+alter type public.presentation_unit add value if not exists 'kilogramo';
+alter type public.presentation_unit add value if not exists 'litro';
+alter type public.presentation_unit add value if not exists 'mililitro';
+alter type public.presentation_unit add value if not exists 'set';
+alter type public.presentation_unit add value if not exists 'kit';

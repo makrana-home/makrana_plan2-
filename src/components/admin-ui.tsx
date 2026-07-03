@@ -70,7 +70,12 @@ export function FormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className={`${contentClassName} max-h-[90vh] overflow-y-auto`}>
+      <DialogContent
+        className={`${contentClassName} max-h-[90vh] overflow-y-auto`}
+        onEscapeKeyDown={(event) => event.preventDefault()}
+        onInteractOutside={(event) => event.preventDefault()}
+        onPointerDownOutside={(event) => event.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="font-display">{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}

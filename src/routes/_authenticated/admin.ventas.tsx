@@ -49,6 +49,7 @@ import {
 import { adminListWarehouses, adminListProducts } from "@/lib/admin.functions";
 import { ReceiptPreviewDialog, type ReceiptVariant } from "@/components/admin/receipt-documents";
 import { formatUnits } from "@/lib/format-units";
+import { getPresentationUnitLabel } from "@/lib/presentation-units";
 
 export const Route = createFileRoute("/_authenticated/admin/ventas")({ component: SalesPage });
 
@@ -418,6 +419,69 @@ function normalizeSaleSearch(value: string) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function buildSaleItemOptions(products: any[]) {
+  return products.flatMap((product) => {
+    const presentations =
+      product.type === "material" ? (product.presentations ?? []).filter(Boolean) : [];
+
+    if (presentations.length > 0) {
+      return presentations.map((presentation: any, index: number) => {
+        const presentationLabel = formatSalePresentationLabel(presentation);
+        const presentationSku = presentation.sku || product.sku || "";
+        return {
+          value: `presentation:${product.id}:${presentation.id ?? presentationSku ?? index}`,
+          product_id: product.id,
+          presentation_id: presentation.id ?? null,
+          label: `${product.name} - ${presentationLabel}`,
+          sku: presentationSku,
+          price: Number(presentation.price ?? product.price ?? 0),
+          description: `Presentación: ${presentationLabel}${
+            presentationSku ? ` · SKU ${presentationSku}` : ""
+          }`,
+          searchText: `${product.name ?? ""} ${product.sku ?? ""} ${presentationSku} ${
+            presentation.label ?? ""
+          } ${presentation.unit ?? ""} ${getPresentationUnitLabel(
+            presentation.unit,
+            presentation.label,
+          )}`,
+        };
+      });
+    }
+
+    return [
+      {
+        value: `product:${product.id}`,
+        product_id: product.id,
+        presentation_id: null,
+        label: product.name ?? "Ítem",
+        sku: product.sku ?? "",
+        price: Number(product.price ?? 0),
+        description: "",
+        searchText: `${product.name ?? ""} ${product.sku ?? ""}`,
+      },
+    ];
+  });
+}
+
+function formatSalePresentationLabel(presentation: any) {
+  return getPresentationUnitLabel(presentation.unit, presentation.label);
+}
+
+function getSaleItemPresentationLabel(item: any) {
+  if (item.presentation) {
+    return getPresentationUnitLabel(item.presentation.unit, item.presentation.label);
+  }
+  const description = String(item.description ?? "").trim();
+  if (!description.toLowerCase().startsWith("presentaci")) return "";
+  return description.split(":").slice(1).join(":").split("·")[0]?.trim() ?? "";
+}
+
+function getSaleItemDescription(item: any) {
+  const description = String(item.description ?? "").trim();
+  if (!description || description.toLowerCase().startsWith("presentaci")) return "";
+  return description;
+}
+
 function getSaleReceipt(sale: any) {
   const receipt = sale?.receipt;
   return Array.isArray(receipt) ? receipt[0] : receipt;
@@ -456,7 +520,9 @@ function SaleDrawer({
   const [sale, setSale] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [item, setItem] = useState<any>({
+    product_option: "",
     product_id: "",
+    presentation_id: null,
     product_search: "",
     quantity: 1,
     unit_price: 0,
@@ -480,13 +546,14 @@ function SaleDrawer({
       ]).then((arr) => setProducts(arr.flat()));
     } /* eslint-disable-line */
   }, [saleId]);
+  const saleItemOptions = useMemo(() => buildSaleItemOptions(products), [products]);
   const filteredProducts = useMemo(() => {
     const q = normalizeSaleSearch(item.product_search ?? "");
-    return products.filter((product) => {
-      const searchable = normalizeSaleSearch(`${product.name ?? ""} ${product.sku ?? ""}`);
+    return saleItemOptions.filter((product) => {
+      const searchable = normalizeSaleSearch(product.searchText);
       return !q || searchable.includes(q);
     });
-  }, [item.product_search, products]);
+  }, [item.product_search, saleItemOptions]);
 
   async function onSaveHeader() {
     try {
@@ -514,6 +581,7 @@ function SaleDrawer({
         data: {
           sale_id: sale.id,
           product_id: item.product_id,
+          presentation_id: item.presentation_id || null,
           quantity: Number(item.quantity),
           unit_price: Number(item.unit_price),
           discount: Number(item.discount ?? 0),
@@ -521,7 +589,9 @@ function SaleDrawer({
         },
       });
       setItem({
+        product_option: "",
         product_id: "",
+        presentation_id: null,
         product_search: "",
         quantity: 1,
         unit_price: 0,
@@ -585,9 +655,17 @@ function SaleDrawer({
     }
   }
 
-  function autoPrice(productId: string) {
-    const p = products.find((x) => x.id === productId);
-    if (p) setItem((s: any) => ({ ...s, unit_price: p.price }));
+  function selectSaleItemOption(optionValue: string) {
+    const option = saleItemOptions.find((entry) => entry.value === optionValue);
+    if (!option) return;
+    setItem((current: any) => ({
+      ...current,
+      product_option: option.value,
+      product_id: option.product_id,
+      presentation_id: option.presentation_id ?? null,
+      unit_price: option.price,
+      description: option.description,
+    }));
   }
 
   return (
@@ -716,32 +794,41 @@ function SaleDrawer({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {(sale.items ?? []).map((it: any) => (
-                      <TableRow key={it.id}>
-                        <TableCell>
-                          {it.product?.name}
-                          <div className="text-xs text-muted-foreground">
-                            {it.description ?? ""}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {formatUnits(it.quantity)}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {moneyPEN(it.unit_price)}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {moneyPEN(it.subtotal)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {sale.status === "borrador" && (
-                            <Button size="icon" variant="ghost" onClick={() => onDelItem(it.id)}>
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {(sale.items ?? []).map((it: any) => {
+                      const presentationLabel = getSaleItemPresentationLabel(it);
+                      const itemDescription = getSaleItemDescription(it);
+                      return (
+                        <TableRow key={it.id}>
+                          <TableCell>
+                            {it.product?.name}
+                            {presentationLabel && (
+                              <div className="text-xs font-medium text-muted-foreground">
+                                {presentationLabel}
+                              </div>
+                            )}
+                            {itemDescription && (
+                              <div className="text-xs text-muted-foreground">{itemDescription}</div>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {formatUnits(it.quantity)}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {moneyPEN(it.unit_price)}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {moneyPEN(it.subtotal)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {sale.status === "borrador" && (
+                              <Button size="icon" variant="ghost" onClick={() => onDelItem(it.id)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                     {(sale.items ?? []).length === 0 && (
                       <TableRow>
                         <TableCell
@@ -758,7 +845,9 @@ function SaleDrawer({
               {sale.status === "borrador" && (
                 <div className="grid grid-cols-12 gap-2 mt-3 items-end">
                   <div className="col-span-12 sm:col-span-4">
-                    <Label className="text-xs">Buscar pieza o material por SKU o nombre</Label>
+                    <Label className="text-xs">
+                      Buscar pieza, material o presentación por SKU o nombre
+                    </Label>
                     <Input
                       value={item.product_search}
                       onChange={(e) =>
@@ -768,26 +857,28 @@ function SaleDrawer({
                     />
                   </div>
                   <div className="col-span-12 sm:col-span-4">
-                    <Label className="text-xs">Pieza o material</Label>
+                    <Label className="text-xs">Pieza, material o presentación</Label>
                     <Select
-                      value={item.product_id}
-                      onValueChange={(v) => {
-                        setItem((s: any) => ({ ...s, product_id: v }));
-                        autoPrice(v);
-                      }}
+                      value={item.product_option}
+                      onValueChange={(v) => selectSaleItemOption(v)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar" />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
                         {filteredProducts.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name} {p.sku && `(${p.sku})`}
+                          <SelectItem key={p.value} value={p.value} textValue={p.label}>
+                            <span className="flex flex-col gap-0.5">
+                              <span>{p.label}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {p.sku || "Sin SKU"} · {moneyPEN(p.price)}
+                              </span>
+                            </span>
                           </SelectItem>
                         ))}
                         {filteredProducts.length === 0 && (
                           <div className="px-3 py-2 text-sm text-muted-foreground">
-                            Sin piezas o materiales para esa búsqueda.
+                            Sin piezas, materiales o presentaciones para esa búsqueda.
                           </div>
                         )}
                       </SelectContent>

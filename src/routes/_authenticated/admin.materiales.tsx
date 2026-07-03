@@ -48,6 +48,12 @@ import {
   adminDeletePresentation,
 } from "@/lib/admin.functions";
 import { formatUnits } from "@/lib/format-units";
+import {
+  getPresentationUnitLabel,
+  getUnitsInPresentation,
+  PRESENTATION_UNIT_OPTIONS,
+} from "@/lib/presentation-units";
+import { generateNextProductSku, generatePresentationSku } from "@/lib/sku";
 
 export const Route = createFileRoute("/_authenticated/admin/materiales")({
   component: MaterialsPage,
@@ -107,6 +113,12 @@ function MaterialsPage() {
   const [initialStockByWarehouse, setInitialStockByWarehouse] = useState<Record<string, string>>(
     {},
   );
+  const [presentationStockByKey, setPresentationStockByKey] = useState<
+    Record<string, Record<string, string>>
+  >({});
+  const [initialPresentationStockByKey, setInitialPresentationStockByKey] = useState<
+    Record<string, Record<string, string>>
+  >({});
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("_all");
   const materialCategoryOptions = getMaterialCategoryOptions(cats);
@@ -124,7 +136,10 @@ function MaterialsPage() {
           (presentation: any) =>
             presentation.sku?.toLowerCase().includes(q) ||
             presentation.unit?.toLowerCase().includes(q) ||
-            presentation.label?.toLowerCase().includes(q),
+            presentation.label?.toLowerCase().includes(q) ||
+            getPresentationUnitLabel(presentation.unit, presentation.label)
+              .toLowerCase()
+              .includes(q),
         );
       const matchesCategory = categoryFilter === "_all" || row.category?.id === categoryFilter;
       return matchesSearch && matchesCategory;
@@ -146,18 +161,27 @@ function MaterialsPage() {
   }, []);
 
   function openNew() {
-    setForm(blank());
+    setForm({ ...blank(), sku: generateNextProductSku(rows, "material") });
     setPres([]);
     setStockByWarehouse({});
     setInitialStockByWarehouse({});
+    setPresentationStockByKey({});
+    setInitialPresentationStockByKey({});
     dlg.openWith(null);
   }
-  function openMovement(row: any, movementType: "entrada" | "transferencia") {
+  function openMovement(row: any, movementType: "entrada" | "transferencia", presentation?: any) {
+    const presentations = (row.presentations ?? []).filter((item: any) => !item._deleted);
+    const presentationName = presentation
+      ? getPresentationUnitLabel(presentation.unit, presentation.label)
+      : "";
     setMovementForm({
       ...blankMovement(),
       movement_type: movementType,
       product_id: row.id,
       product_name: row.name,
+      presentation_id: presentation?.id ?? null,
+      presentation_name: presentationName,
+      presentations,
       reason: movementType === "entrada" ? "Entrada de material" : "Transferencia entre almacenes",
     });
     movementDlg.openWith(row);
@@ -168,14 +192,28 @@ function MaterialsPage() {
       listStock({ data: {} }),
     ]);
     const nextStock: Record<string, string> = {};
+    const nextPresentationStock: Record<string, Record<string, string>> = {};
     stockRows
       .filter((item: any) => item.product?.id === row.id)
       .forEach((item: any) => {
-        nextStock[item.warehouse?.id] = formatStockInput(item.quantity);
+        const warehouseId = item.warehouse?.id;
+        if (!warehouseId) return;
+        const presentationId = getStockPresentationId(item);
+        if (presentationId) {
+          const key = presentationStockKey({ id: presentationId });
+          nextPresentationStock[key] = {
+            ...(nextPresentationStock[key] ?? {}),
+            [warehouseId]: formatStockInput(item.quantity),
+          };
+        } else {
+          nextStock[warehouseId] = formatStockInput(item.quantity);
+        }
       });
-    setForm({ ...blank(), ...full });
+    setForm({ ...blank(), ...full, sku: full?.sku || generateNextProductSku(rows, "material") });
     setStockByWarehouse(nextStock);
     setInitialStockByWarehouse(nextStock);
+    setPresentationStockByKey(nextPresentationStock);
+    setInitialPresentationStockByKey(nextPresentationStock);
     setPres(full?.presentations ?? []);
     dlg.openWith(full);
   }
@@ -184,14 +222,23 @@ function MaterialsPage() {
     detailDlg.openWith(full);
   }
   async function editFromDetail(row: any) {
-    detailDlg.close();
-    await openEdit(row);
+    try {
+      await openEdit(row);
+      detailDlg.close();
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudo abrir la edición");
+    }
   }
-  async function saveWarehouseStock(productId: string) {
+  async function saveWarehouseStock(
+    productId: string,
+    presentationId: string | null,
+    values: Record<string, string>,
+    initialValues: Record<string, string>,
+  ) {
     const changes = warehouses
       .map((warehouse: any) => {
-        const raw = stockByWarehouse[warehouse.id];
-        const initial = initialStockByWarehouse[warehouse.id] ?? "";
+        const raw = values[warehouse.id];
+        const initial = initialValues[warehouse.id] ?? "";
         const quantity = raw === "" || raw == null ? null : Number(raw);
         return { warehouse, raw, initial, quantity };
       })
@@ -208,6 +255,7 @@ function MaterialsPage() {
       await applyMovement({
         data: {
           product_id: productId,
+          presentation_id: presentationId,
           movement_type: "ajuste",
           quantity: change.quantity,
           warehouse_id: change.warehouse.id,
@@ -238,10 +286,13 @@ function MaterialsPage() {
         toast.error("El nombre debe tener al menos 2 caracteres para crear la URL interna.");
         return;
       }
+      const activePresentations = pres.filter((presentation) => !presentation._deleted);
       const payload = {
         ...form,
         type: "material",
         slug: generatedSlug,
+        price: activePresentations.length > 0 ? 0 : form.price,
+        cost: activePresentations.length > 0 ? null : form.cost,
         category_id: materialCategoryOptions.some((category) => category.id === form.category_id)
           ? form.category_id
           : null,
@@ -260,16 +311,35 @@ function MaterialsPage() {
       ])
         if (payload[k] === "") payload[k] = null;
       const saved = await upsert({ data: payload });
-      await saveWarehouseStock(saved.id);
-      // save presentations
+      if (activePresentations.length === 0) {
+        await saveWarehouseStock(saved.id, null, stockByWarehouse, initialStockByWarehouse);
+      }
+      const presentationSkuHistory = activePresentations
+        .filter((presentation: any) => presentation.sku)
+        .map((presentation: any) => ({ sku: presentation.sku }));
       for (const p of pres) {
         if (p._deleted) {
           if (p.id) await delPres({ data: { id: p.id } });
           continue;
         }
-        await upsertPres({
-          data: { ...p, product_id: saved.id, units_in_presentation: p.units_in_presentation || 1 },
+        const stockKey = presentationStockKey(p);
+        const presentationSku = p.sku || generatePresentationSku(form.sku, presentationSkuHistory);
+        presentationSkuHistory.push({ sku: presentationSku });
+        const savedPresentation = await upsertPres({
+          data: {
+            ...p,
+            sku: presentationSku,
+            product_id: saved.id,
+            label: p.unit === "otro" ? p.label || "otro" : p.unit,
+            units_in_presentation: getUnitsInPresentation(p.unit, p.units_in_presentation),
+          },
         });
+        await saveWarehouseStock(
+          saved.id,
+          savedPresentation.id,
+          presentationStockByKey[stockKey] ?? {},
+          initialPresentationStockByKey[stockKey] ?? {},
+        );
       }
       toast.success("Guardado");
       dlg.close();
@@ -294,6 +364,7 @@ function MaterialsPage() {
       await applyMovement({
         data: {
           product_id: movementForm.product_id,
+          presentation_id: movementForm.presentation_id || null,
           movement_type: movementForm.movement_type,
           quantity: Number(movementForm.quantity),
           warehouse_id: movementForm.warehouse_id,
@@ -358,6 +429,7 @@ function MaterialsPage() {
               <TableHead>Categoría</TableHead>
               <TableHead>Costo</TableHead>
               <TableHead>Precio</TableHead>
+              <TableHead className="text-right">Stock mínimo</TableHead>
               <TableHead className="text-right">Cantidad total</TableHead>
               <TableHead className="text-right">SA</TableHead>
               <TableHead className="text-right">PL</TableHead>
@@ -369,7 +441,7 @@ function MaterialsPage() {
           <TableBody>
             {filteredRows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={12} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={13} className="text-center text-muted-foreground py-8">
                   Sin materiales con estos filtros.
                 </TableCell>
               </TableRow>
@@ -377,6 +449,9 @@ function MaterialsPage() {
             {filteredRows.map((r) => {
               const stock = getStockSummary(r.id, tableStock, warehouses);
               const presentations = (r.presentations ?? []).filter((p: any) => !p._deleted);
+              const hasPresentations = presentations.length > 0;
+              const baseStock = getStockSummary(r.id, tableStock, warehouses, null);
+              const hasBaseStock = hasPresentations && baseStock.total > 0;
               return (
                 <Fragment key={r.id}>
                   <TableRow>
@@ -387,9 +462,14 @@ function MaterialsPage() {
                     <TableCell className="font-medium">{r.name}</TableCell>
                     <TableCell>{r.category?.name ?? "—"}</TableCell>
                     <TableCell className="text-muted-foreground/75 tabular-nums">
-                      {moneyPEN(r.cost ?? 0)}
+                      {hasPresentations ? "—" : moneyPEN(r.cost ?? 0)}
                     </TableCell>
-                    <TableCell className="font-medium tabular-nums">{moneyPEN(r.price)}</TableCell>
+                    <TableCell className="font-medium tabular-nums">
+                      {hasPresentations ? "—" : moneyPEN(r.price)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatQuantity(r.min_stock ?? 0)}
+                    </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {formatQuantity(stock.total)}
                     </TableCell>
@@ -450,48 +530,138 @@ function MaterialsPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                  {presentations.map((presentation: any) => (
-                    <TableRow
-                      key={presentation.id ?? `${r.id}-${presentation.unit}`}
-                      className="bg-cream/35"
-                    >
+                  {presentations.map((presentation: any) => {
+                    const presentationStock = getStockSummary(
+                      r.id,
+                      tableStock,
+                      warehouses,
+                      presentation.id,
+                    );
+                    return (
+                      <TableRow
+                        key={presentation.id ?? `${r.id}-${presentation.unit}`}
+                        className="bg-cream/35"
+                      >
+                        <TableCell className="pl-10 font-mono text-xs text-muted-foreground">
+                          {presentation.sku || "—"}
+                        </TableCell>
+                        <TableCell />
+                        <TableCell>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="h-px w-5 bg-sand" />
+                            <span className="font-medium capitalize">
+                              {getPresentationUnitLabel(presentation.unit, presentation.label)}
+                            </span>
+                            <span className="text-xs text-muted-foreground">Presentación</span>
+                          </div>
+                        </TableCell>
+                        <TableCell />
+                        <TableCell className="text-muted-foreground/75 tabular-nums">
+                          {presentation.cost == null ? "—" : moneyPEN(presentation.cost)}
+                        </TableCell>
+                        <TableCell className="font-medium tabular-nums">
+                          {moneyPEN(presentation.price ?? 0)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatQuantity(r.min_stock ?? 0)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatQuantity(presentationStock.total)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatQuantity(presentationStock.sa)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatQuantity(presentationStock.pl)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatQuantity(presentationStock.feria)}
+                        </TableCell>
+                        <TableCell />
+                        <TableCell className="text-right">
+                          <div className="flex flex-col items-end gap-1">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => openMovement(r, "transferencia", presentation)}
+                            >
+                              <ArrowRightLeft className="h-3.5 w-3.5" />
+                              Mover
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => openMovement(r, "entrada", presentation)}
+                            >
+                              <PackagePlus className="h-3.5 w-3.5" />
+                              Entrada
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {hasBaseStock && (
+                    <TableRow className="bg-cream/20">
                       <TableCell className="pl-10 font-mono text-xs text-muted-foreground">
-                        {presentation.sku || "—"}
+                        {r.sku || "—"}
                       </TableCell>
                       <TableCell />
                       <TableCell>
                         <div className="flex items-center gap-2 text-sm">
                           <span className="h-px w-5 bg-sand" />
-                          <span className="font-medium capitalize">
-                            {presentation.unit || "unidad"}
-                          </span>
-                          <span className="text-xs text-muted-foreground">Presentación</span>
+                          <span className="font-medium">Stock general sin presentación</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {presentation.label && presentation.label !== presentation.unit
-                          ? presentation.label
-                          : "—"}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">—</TableCell>
-                      <TableCell className="font-medium tabular-nums">
-                        {moneyPEN(presentation.price ?? 0)}
-                      </TableCell>
-                      <TableCell className="text-right text-xs text-muted-foreground">
-                        Unidades por presentación{" "}
-                        {formatQuantity(presentation.units_in_presentation ?? 1)}
-                      </TableCell>
                       <TableCell />
-                      <TableCell />
-                      <TableCell />
-                      <TableCell>
-                        <span className="rounded-full border border-sand px-2 py-0.5 text-xs text-muted-foreground">
-                          subgrupo
-                        </span>
+                      <TableCell className="text-muted-foreground/75 tabular-nums">—</TableCell>
+                      <TableCell className="text-muted-foreground/75 tabular-nums">—</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatQuantity(r.min_stock ?? 0)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatQuantity(baseStock.total)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatQuantity(baseStock.sa)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatQuantity(baseStock.pl)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatQuantity(baseStock.feria)}
                       </TableCell>
                       <TableCell />
+                      <TableCell className="text-right">
+                        <div className="flex flex-col items-end gap-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => openMovement(r, "transferencia")}
+                          >
+                            <ArrowRightLeft className="h-3.5 w-3.5" />
+                            Mover
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => openMovement(r, "entrada")}
+                          >
+                            <PackagePlus className="h-3.5 w-3.5" />
+                            Entrada
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </Fragment>
               );
             })}
@@ -514,6 +684,8 @@ function MaterialsPage() {
           warehouses={warehouses}
           stockByWarehouse={stockByWarehouse}
           setStockByWarehouse={setStockByWarehouse}
+          hideCommercialFields={pres.some((presentation) => !presentation._deleted)}
+          hideStockFields={pres.some((presentation) => !presentation._deleted)}
           allowKit={false}
         />
         <div className="border-t border-sand/60 pt-4">
@@ -527,121 +699,129 @@ function MaterialsPage() {
                 setPres((p) => [
                   ...p,
                   {
+                    _clientKey: newPresentationKey(),
                     unit: "unidad",
-                    sku: "",
+                    sku: generatePresentationSku(
+                      form.sku,
+                      p.filter((presentation: any) => !presentation._deleted),
+                    ),
                     label: "unidad",
                     cost: null,
                     price: 0,
-                    units_in_presentation: 1,
+                    units_in_presentation: getUnitsInPresentation("unidad"),
                   },
                 ])
               }
             >
-              <Plus className="h-4 w-4" /> Agregar unidad
+              <Plus className="h-4 w-4" /> Agregar presentación
             </Button>
           </div>
           <div className="space-y-2">
             {pres
               .filter((p) => !p._deleted)
-              .map((p, idx) => (
-                <div key={p.id ?? `n${idx}`} className="rounded-2xl border border-sand/70 p-3">
-                  <div className="grid gap-2 md:grid-cols-12 md:items-end">
-                    <div className="md:col-span-3">
-                      <Label className="text-xs">SKU</Label>
-                      <Input
-                        value={p.sku ?? ""}
-                        onChange={(e) => updPres(setPres, idx, "sku", e.target.value)}
-                        placeholder="MAT-001-12"
-                      />
+              .map((p, idx) => {
+                const stockKey = presentationStockKey(p);
+                return (
+                  <div
+                    key={p.id ?? p._clientKey ?? `n${idx}`}
+                    className="rounded-2xl border border-sand/70 p-3"
+                  >
+                    <div className="grid gap-2 md:grid-cols-12 md:items-end">
+                      <div className="md:col-span-3">
+                        <Label className="text-xs">SKU</Label>
+                        <Input
+                          value={p.sku ?? ""}
+                          onChange={(e) => updPres(setPres, idx, "sku", e.target.value)}
+                          placeholder="MAT-001-12"
+                        />
+                      </div>
+                      <div className="md:col-span-3">
+                        <Label className="text-xs">Unidad</Label>
+                        <Select
+                          value={p.unit}
+                          onValueChange={(v) => {
+                            updPresFields(setPres, idx, {
+                              unit: v,
+                              label: v === "otro" ? "" : v,
+                              units_in_presentation: getUnitsInPresentation(v),
+                            });
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PRESENTATION_UNIT_OPTIONS.filter((unit) => unit.value !== "otro").map(
+                              (unit) => (
+                                <SelectItem key={unit.value} value={unit.value}>
+                                  {unit.label}
+                                </SelectItem>
+                              ),
+                            )}
+                            <SelectItem value="otro">Agregar nueva unidad</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {p.unit === "otro" && (
+                        <div className="md:col-span-3">
+                          <Label className="text-xs">Nueva unidad</Label>
+                          <Input
+                            value={p.label ?? ""}
+                            onChange={(e) => updPres(setPres, idx, "label", e.target.value)}
+                            placeholder="Ej. tira, sachet, aro..."
+                          />
+                        </div>
+                      )}
+                      <div className="md:col-span-2">
+                        <Label className="text-xs">Costo (S/)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={p.cost ?? ""}
+                          onChange={(e) => updPres(setPres, idx, "cost", e.target.value)}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label className="text-xs">Precio (S/)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={p.price ?? 0}
+                          onChange={(e) => updPres(setPres, idx, "price", e.target.value)}
+                        />
+                      </div>
+                      <div className="md:col-span-12 flex justify-end">
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => updPres(setPres, idx, "_deleted", true)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="md:col-span-3">
-                      <Label className="text-xs">Unidad</Label>
-                      <Select
-                        value={p.unit}
-                        onValueChange={(v) => {
-                          updPres(setPres, idx, "unit", v);
-                          updPres(setPres, idx, "label", v);
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[
-                            "unidad",
-                            "metro",
-                            "rollo",
-                            "madeja",
-                            "paquete",
-                            "docena",
-                            "ciento",
-                            "combo",
-                            "otro",
-                          ].map((u) => (
-                            <SelectItem key={u} value={u}>
-                              {u}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="md:col-span-3">
-                      <Label className="text-xs">Unidades por presentación</Label>
-                      <Input
-                        type="number"
-                        step="1"
-                        value={p.units_in_presentation ?? 1}
-                        onChange={(e) =>
-                          updPres(setPres, idx, "units_in_presentation", e.target.value)
+                    <div className="mt-3">
+                      <StockByWarehouseFields
+                        warehouses={warehouses}
+                        values={presentationStockByKey[stockKey] ?? {}}
+                        onChange={(warehouseId, value) =>
+                          setPresentationStockByKey((current) => ({
+                            ...current,
+                            [stockKey]: {
+                              ...(current[stockKey] ?? {}),
+                              [warehouseId]: value,
+                            },
+                          }))
                         }
+                        title="Almacén de la presentación"
+                        description="Selecciona la cantidad disponible por almacén para este material."
+                        compact
                       />
-                    </div>
-                    <div className="md:col-span-2">
-                      <Label className="text-xs">Costo (S/)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={p.cost ?? ""}
-                        onChange={(e) => updPres(setPres, idx, "cost", e.target.value)}
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <Label className="text-xs">Precio (S/)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={p.price ?? 0}
-                        onChange={(e) => updPres(setPres, idx, "price", e.target.value)}
-                      />
-                    </div>
-                    <div className="md:col-span-12 flex justify-end">
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => updPres(setPres, idx, "_deleted", true)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
                     </div>
                   </div>
-                  <div className="mt-3">
-                    <StockByWarehouseFields
-                      warehouses={warehouses}
-                      values={stockByWarehouse}
-                      onChange={(warehouseId, value) =>
-                        setStockByWarehouse((current) => ({
-                          ...current,
-                          [warehouseId]: value,
-                        }))
-                      }
-                      title="Almacén de la presentación"
-                      description="Selecciona la cantidad disponible por almacén para este material."
-                      compact
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             {pres.filter((p) => !p._deleted).length === 0 && (
               <p className="text-xs text-muted-foreground">
                 Sin presentaciones — los clientes verán el precio base.
@@ -676,6 +856,9 @@ function blankMovement() {
     movement_type: "entrada",
     product_id: "",
     product_name: "",
+    presentation_id: null,
+    presentation_name: "",
+    presentations: [],
     warehouse_id: "",
     warehouse_dest_id: "",
     quantity: 1,
@@ -686,6 +869,10 @@ function blankMovement() {
 
 function updPres(setPres: any, idx: number, k: string, v: any) {
   setPres((arr: any[]) => arr.map((x, i) => (i === idx ? { ...x, [k]: v } : x)));
+}
+
+function updPresFields(setPres: any, idx: number, fields: Record<string, any>) {
+  setPres((arr: any[]) => arr.map((x, i) => (i === idx ? { ...x, ...fields } : x)));
 }
 
 function ProductThumb({ product }: { product: any }) {
@@ -717,8 +904,17 @@ function PriceCost({ price, cost }: { price: number | string; cost?: number | st
   );
 }
 
-function getStockSummary(productId: string, stockRows: any[], warehouses: any[]) {
-  const matches = stockRows.filter((item) => item.product?.id === productId);
+function getStockSummary(
+  productId: string,
+  stockRows: any[],
+  warehouses: any[],
+  presentationId?: string | null,
+) {
+  const matches = stockRows.filter((item) => {
+    if (item.product?.id !== productId) return false;
+    if (presentationId === undefined) return true;
+    return getStockPresentationId(item) === presentationId;
+  });
   const qtyFor = (kind: "sa" | "pl" | "feria") => {
     const warehouse = warehouses.find((item) => isWarehouseKind(item, kind));
     if (!warehouse) return 0;
@@ -732,6 +928,19 @@ function getStockSummary(productId: string, stockRows: any[], warehouses: any[])
     pl: qtyFor("pl"),
     feria: qtyFor("feria"),
   };
+}
+
+function getStockPresentationId(item: any) {
+  return item.presentation?.id ?? item.presentation_id ?? null;
+}
+
+function presentationStockKey(presentation: any) {
+  return presentation?.id ? `id:${presentation.id}` : `new:${presentation?._clientKey}`;
+}
+
+function newPresentationKey() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function isWarehouseKind(warehouse: any, kind: "sa" | "pl" | "feria") {

@@ -74,7 +74,7 @@ function NewsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const p = { ...form, slug: form.slug || slugify(form.title) };
+      const p = { ...form, slug: buildNewsSlug(form, rows) };
       for (const k of ["cover_image_url", "summary", "content", "cta_type", "cta_url"])
         if (p[k] === "") p[k] = null;
       await upsert({ data: p });
@@ -349,4 +349,18 @@ function blank() {
     cta_type: "",
     cta_url: "",
   };
+}
+
+function buildNewsSlug(form: any, rows: any[]) {
+  const base = safeNewsSlug(form.slug || form.title || form.category || "publicacion");
+  const siblings = rows.filter((row) => row.id !== form.id).map((row) => row.slug);
+  if (!siblings.includes(base)) return base;
+  let index = 2;
+  while (siblings.includes(`${base}-${index}`)) index += 1;
+  return `${base}-${index}`;
+}
+
+function safeNewsSlug(value: string) {
+  const slug = slugify(value);
+  return slug.length >= 2 ? slug : `publicacion-${Date.now()}`;
 }

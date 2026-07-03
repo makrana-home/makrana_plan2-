@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getUnitsInPresentation, PRESENTATION_UNIT_VALUES } from "@/lib/presentation-units";
 
 // ---------- helpers ----------
 async function assertStaff(ctx: { supabase: any; userId: string }) {
@@ -105,23 +106,34 @@ export const adminDeleteProduct = createServerFn({ method: "POST" })
 const presentationSchema = z.object({
   id: z.string().uuid().optional(),
   product_id: z.string().uuid(),
-  unit: z.enum([
-    "unidad",
-    "metro",
-    "rollo",
-    "madeja",
-    "paquete",
-    "docena",
-    "ciento",
-    "combo",
-    "otro",
-  ]),
+  unit: z.enum(PRESENTATION_UNIT_VALUES),
   label: z.string().trim().max(80).optional().nullable(),
   sku: z.string().trim().max(60).optional().nullable(),
   price: z.coerce.number().nonnegative(),
-  cost: z.coerce.number().nonnegative().optional().nullable(),
-  units_in_presentation: z.coerce.number().positive(),
+  cost: z.preprocess(
+    (value) => (value === "" || value === undefined ? null : value),
+    z.coerce.number().nonnegative().nullable().optional(),
+  ),
+  units_in_presentation: z.coerce.number().positive().optional(),
 });
+
+function isMissingMaterialPresentationCostColumn(error: any) {
+  const message = String(error?.message ?? error ?? "").toLowerCase();
+  return (
+    error?.code === "PGRST204" &&
+    message.includes("cost") &&
+    message.includes("material_presentations")
+  );
+}
+
+function isUnsupportedPresentationUnit(error: any) {
+  const message = String(error?.message ?? error ?? "").toLowerCase();
+  return (
+    error?.code === "22P02" &&
+    message.includes("presentation_unit") &&
+    message.includes("invalid input value")
+  );
+}
 
 export const adminUpsertPresentation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -130,18 +142,43 @@ export const adminUpsertPresentation = createServerFn({ method: "POST" })
     await assertStaff(context);
     const payload = {
       ...data,
-      label: data.unit,
+      label: data.unit === "otro" ? data.label || "otro" : data.unit,
       sku: data.sku || null,
       cost: data.cost ?? null,
+      units_in_presentation: getUnitsInPresentation(data.unit, data.units_in_presentation),
     };
-    const { data: row, error } = await context.supabase
-      .from("material_presentations")
-      .upsert(payload, { onConflict: "id" })
-      .select("id")
-      .single();
+    let { data: row, error } = await upsertPresentationPayload(context.supabase, payload);
+    if (isUnsupportedPresentationUnit(error)) {
+      const retry = await upsertPresentationPayload(context.supabase, {
+        ...payload,
+        unit: "otro",
+        label: data.unit,
+      });
+      row = retry.data;
+      error = retry.error;
+    }
     if (error) throw error;
     return row;
   });
+
+async function upsertPresentationPayload(supabase: any, payload: Record<string, any>) {
+  let { data: row, error } = await supabase
+    .from("material_presentations")
+    .upsert(payload, { onConflict: "id" })
+    .select("id")
+    .single();
+  if (isMissingMaterialPresentationCostColumn(error)) {
+    const { cost: _cost, ...payloadWithoutCost } = payload;
+    const retry = await supabase
+      .from("material_presentations")
+      .upsert(payloadWithoutCost, { onConflict: "id" })
+      .select("id")
+      .single();
+    row = retry.data;
+    error = retry.error;
+  }
+  return { data: row, error };
+}
 
 export const adminDeletePresentation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -256,6 +293,36 @@ export const adminDeleteWarehouse = createServerFn({ method: "POST" })
   });
 
 // ============ STOCK ============
+const stockSelectWithPresentation =
+  "id, quantity, updated_at, product:products(id, name, type, sku, min_stock, cost, price, presentations:material_presentations(*)), presentation:material_presentations(id, sku, unit, label, cost, price), warehouse:warehouses(id, code, name)";
+
+const legacyStockSelect =
+  "id, quantity, updated_at, product:products(id, name, type, sku, min_stock, cost, price, presentations:material_presentations(*)), warehouse:warehouses(id, code, name)";
+
+const movementSelectWithPresentation =
+  "id, movement_type, quantity, reason, notes, created_at, product:products(name, sku), presentation:material_presentations(id, sku, unit, label), warehouse:warehouses!inventory_movements_warehouse_id_fkey(code, name), warehouse_dest:warehouses!inventory_movements_warehouse_dest_id_fkey(code, name)";
+
+const legacyMovementSelect =
+  "id, movement_type, quantity, reason, notes, created_at, product:products(name, sku), warehouse:warehouses!inventory_movements_warehouse_id_fkey(code, name), warehouse_dest:warehouses!inventory_movements_warehouse_dest_id_fkey(code, name)";
+
+function isMissingPresentationInventoryRelation(error: any) {
+  if (!error) return false;
+  const message = String(
+    error?.message ?? error?.details ?? error?.hint ?? error ?? "",
+  ).toLowerCase();
+  return (
+    ["PGRST200", "PGRST201", "PGRST204", "42703"].includes(error?.code) &&
+    (message.includes("presentation") ||
+      message.includes("material_presentations") ||
+      message.includes("relationship") ||
+      message.includes("schema cache"))
+  );
+}
+
+function normalizePresentationRows(rows: any[] | null) {
+  return (rows ?? []).map((row) => ("presentation" in row ? row : { ...row, presentation: null }));
+}
+
 export const adminListStock = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { warehouseId?: string } | undefined) => d ?? {})
@@ -263,19 +330,28 @@ export const adminListStock = createServerFn({ method: "GET" })
     await assertStaff(context);
     let q = context.supabase
       .from("inventory_stock")
-      .select(
-        "id, quantity, updated_at, product:products(id, name, type, sku, min_stock, cost, price), warehouse:warehouses(id, code, name)",
-      )
+      .select(stockSelectWithPresentation)
       .order("updated_at", { ascending: false });
     if (data.warehouseId) q = q.eq("warehouse_id", data.warehouseId);
-    const { data: rows, error } = await q;
+    let { data: rows, error } = await q;
+    if (isMissingPresentationInventoryRelation(error)) {
+      let legacyQ = context.supabase
+        .from("inventory_stock")
+        .select(legacyStockSelect)
+        .order("updated_at", { ascending: false });
+      if (data.warehouseId) legacyQ = legacyQ.eq("warehouse_id", data.warehouseId);
+      const retry = await legacyQ;
+      rows = retry.data;
+      error = retry.error;
+    }
     if (error) throw error;
-    return rows ?? [];
+    return normalizePresentationRows(rows);
   });
 
 // ============ MOVEMENTS ============
 const movementSchema = z.object({
   product_id: z.string().uuid(),
+  presentation_id: z.string().uuid().optional().nullable(),
   movement_type: z.enum(["entrada", "salida", "transferencia", "ajuste", "devolucion"]),
   quantity: z.coerce.number().positive(),
   warehouse_id: z.string().uuid(),
@@ -289,15 +365,22 @@ export const adminListMovements = createServerFn({ method: "GET" })
   .inputValidator((d: { limit?: number } | undefined) => d ?? {})
   .handler(async ({ data, context }) => {
     await assertStaff(context);
-    const { data: rows, error } = await context.supabase
+    let { data: rows, error } = await context.supabase
       .from("inventory_movements")
-      .select(
-        "id, movement_type, quantity, reason, notes, created_at, product:products(name, sku), warehouse:warehouses!inventory_movements_warehouse_id_fkey(code, name), warehouse_dest:warehouses!inventory_movements_warehouse_dest_id_fkey(code, name)",
-      )
+      .select(movementSelectWithPresentation)
       .order("created_at", { ascending: false })
       .limit(data.limit ?? 100);
+    if (isMissingPresentationInventoryRelation(error)) {
+      const retry = await context.supabase
+        .from("inventory_movements")
+        .select(legacyMovementSelect)
+        .order("created_at", { ascending: false })
+        .limit(data.limit ?? 100);
+      rows = retry.data;
+      error = retry.error;
+    }
     if (error) throw error;
-    return rows ?? [];
+    return normalizePresentationRows(rows);
   });
 
 export const adminApplyMovement = createServerFn({ method: "POST" })
@@ -305,7 +388,7 @@ export const adminApplyMovement = createServerFn({ method: "POST" })
   .inputValidator((d) => movementSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
-    const { data: id, error } = await context.supabase.rpc("apply_inventory_movement", {
+    const movementPayload: Record<string, any> = {
       _product_id: data.product_id,
       _movement_type: data.movement_type,
       _quantity: data.quantity,
@@ -313,7 +396,12 @@ export const adminApplyMovement = createServerFn({ method: "POST" })
       _warehouse_dest_id: data.warehouse_dest_id ?? undefined,
       _reason: data.reason ?? undefined,
       _notes: data.notes ?? undefined,
-    });
+    };
+    if (data.presentation_id) movementPayload._presentation_id = data.presentation_id;
+    const { data: id, error } = await context.supabase.rpc(
+      "apply_inventory_movement",
+      movementPayload,
+    );
     if (error) throw error;
     return { id };
   });

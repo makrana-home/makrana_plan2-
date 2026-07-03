@@ -176,6 +176,7 @@ export type Database = {
           id: string;
           movement_type: Database["public"]["Enums"]["movement_type"];
           notes: string | null;
+          presentation_id: string | null;
           product_id: string;
           quantity: number;
           reason: string | null;
@@ -189,6 +190,7 @@ export type Database = {
           id?: string;
           movement_type: Database["public"]["Enums"]["movement_type"];
           notes?: string | null;
+          presentation_id?: string | null;
           product_id: string;
           quantity: number;
           reason?: string | null;
@@ -202,6 +204,7 @@ export type Database = {
           id?: string;
           movement_type?: Database["public"]["Enums"]["movement_type"];
           notes?: string | null;
+          presentation_id?: string | null;
           product_id?: string;
           quantity?: number;
           reason?: string | null;
@@ -210,6 +213,13 @@ export type Database = {
           warehouse_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "inventory_movements_presentation_id_fkey";
+            columns: ["presentation_id"];
+            isOneToOne: false;
+            referencedRelation: "material_presentations";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "inventory_movements_product_id_fkey";
             columns: ["product_id"];
@@ -236,6 +246,7 @@ export type Database = {
       inventory_stock: {
         Row: {
           id: string;
+          presentation_id: string | null;
           product_id: string;
           quantity: number;
           updated_at: string;
@@ -243,6 +254,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
+          presentation_id?: string | null;
           product_id: string;
           quantity?: number;
           updated_at?: string;
@@ -250,12 +262,20 @@ export type Database = {
         };
         Update: {
           id?: string;
+          presentation_id?: string | null;
           product_id?: string;
           quantity?: number;
           updated_at?: string;
           warehouse_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "inventory_stock_presentation_id_fkey";
+            columns: ["presentation_id"];
+            isOneToOne: false;
+            referencedRelation: "material_presentations";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "inventory_stock_product_id_fkey";
             columns: ["product_id"];
@@ -1085,6 +1105,7 @@ export type Database = {
         Args: {
           _movement_type: Database["public"]["Enums"]["movement_type"];
           _notes?: string;
+          _presentation_id?: string;
           _product_id: string;
           _quantity: number;
           _reason?: string;
@@ -1129,11 +1150,25 @@ export type Database = {
       presentation_unit:
         | "unidad"
         | "metro"
+        | "centimetro"
         | "rollo"
         | "madeja"
         | "paquete"
+        | "bolsa"
+        | "caja"
+        | "cono"
+        | "bobina"
+        | "ovillo"
+        | "par"
+        | "media_docena"
         | "docena"
         | "ciento"
+        | "gramo"
+        | "kilogramo"
+        | "litro"
+        | "mililitro"
+        | "set"
+        | "kit"
         | "combo"
         | "otro";
       product_status: "disponible" | "por_encargo" | "agotado" | "reservado";
@@ -1286,11 +1321,25 @@ export const Constants = {
       presentation_unit: [
         "unidad",
         "metro",
+        "centimetro",
         "rollo",
         "madeja",
         "paquete",
+        "bolsa",
+        "caja",
+        "cono",
+        "bobina",
+        "ovillo",
+        "par",
+        "media_docena",
         "docena",
         "ciento",
+        "gramo",
+        "kilogramo",
+        "litro",
+        "mililitro",
+        "set",
+        "kit",
         "combo",
         "otro",
       ],

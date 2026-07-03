@@ -30,6 +30,7 @@ import {
 } from "@/lib/admin-manual.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { BookOpenText, ImageIcon, Pencil, Plus, Search, Trash2, Upload } from "lucide-react";
+import { getPresentationUnitLabel } from "@/lib/presentation-units";
 
 export const Route = createFileRoute("/_authenticated/admin/manual")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -849,5 +850,5 @@ function formatMaterialLabel(material: any) {
 
 function formatPresentationLabel(presentation: any) {
   const sku = presentation.sku ? ` - ${presentation.sku}` : "";
-  return `${presentation.label || presentation.unit || "Presentacion"}${sku}`;
+  return `${getPresentationUnitLabel(presentation.unit, presentation.label)}${sku}`;
 }

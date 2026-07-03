@@ -154,7 +154,7 @@ export const adminGetSale = createServerFn({ method: "GET" })
     const { data: sale, error } = await context.supabase
       .from("sales")
       .select(
-        "*, customer:customers(*), warehouse:warehouses(*), items:sale_items(*, product:products(name, sku)), payments:sale_payments(*), receipt:receipts(*)",
+        "*, customer:customers(*), warehouse:warehouses(*), items:sale_items(*, product:products(name, sku), presentation:material_presentations(id, unit, label, sku)), payments:sale_payments(*), receipt:receipts(*)",
       )
       .eq("id", data.id)
       .maybeSingle();
@@ -310,7 +310,7 @@ export const adminGetReceipt = createServerFn({ method: "GET" })
     const { data: r, error } = await context.supabase
       .from("receipts")
       .select(
-        "*, sale:sales(*, customer:customers(*), warehouse:warehouses(*), items:sale_items(*, product:products(name, sku)), payments:sale_payments(*))",
+        "*, sale:sales(*, customer:customers(*), warehouse:warehouses(*), items:sale_items(*, product:products(name, sku), presentation:material_presentations(id, unit, label, sku)), payments:sale_payments(*))",
       )
       .eq("id", data.id)
       .maybeSingle();

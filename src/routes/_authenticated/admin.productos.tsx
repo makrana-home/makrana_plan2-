@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useId, useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -25,17 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import {
-  ArrowRightLeft,
-  BookOpenText,
-  Eye,
-  FilePlus2,
-  ImageIcon,
-  PackagePlus,
-  Pencil,
-  Trash2,
-  Upload,
-} from "lucide-react";
+import { ArrowRightLeft, Eye, ImageIcon, PackagePlus, Pencil, Trash2, Upload } from "lucide-react";
 import {
   PageHeader,
   FormDialog,
@@ -55,9 +44,10 @@ import {
   adminListStock,
   adminApplyMovement,
 } from "@/lib/admin.functions";
-import { adminListManualSummaries } from "@/lib/admin-manual.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { formatUnits } from "@/lib/format-units";
+import { getPresentationUnitLabel } from "@/lib/presentation-units";
+import { generateNextProductSku, getProductSkuPrefix } from "@/lib/sku";
 
 export const Route = createFileRoute("/_authenticated/admin/productos")({
   component: ProductsPage,
@@ -86,12 +76,10 @@ export function ProductTypeManager({
   const listWarehouses = useServerFn(adminListWarehouses);
   const listStock = useServerFn(adminListStock);
   const applyMovement = useServerFn(adminApplyMovement);
-  const listManualSummaries = useServerFn(adminListManualSummaries);
   const [rows, setRows] = useState<any[]>([]);
   const [cats, setCats] = useState<any[]>([]);
   const [warehouses, setWarehouses] = useState<any[]>([]);
   const [tableStock, setTableStock] = useState<any[]>([]);
-  const [manualsByPiece, setManualsByPiece] = useState<Record<string, any>>({});
   const dlg = useDialog<any>();
   const detailDlg = useDialog<any>();
   const movementDlg = useDialog<any>();
@@ -128,14 +116,8 @@ export function ProductTypeManager({
       out.push(...r);
     }
     setRows(out);
-    const [stockRows, manualRows] = await Promise.all([
-      listStock({ data: {} }),
-      type === "producto_terminado" ? listManualSummaries() : Promise.resolve([]),
-    ]);
+    const stockRows = await listStock({ data: {} });
     setTableStock(stockRows);
-    setManualsByPiece(
-      Object.fromEntries((manualRows as any[]).map((manual) => [manual.piece_id, manual])),
-    );
   }
   useEffect(() => {
     refresh();
@@ -144,7 +126,7 @@ export function ProductTypeManager({
   }, []);
 
   function openNew() {
-    setForm(blank(type));
+    setForm({ ...blank(type), sku: generateNextProductSku(rows, type) });
     setStockByWarehouse({});
     setInitialStockByWarehouse({});
     dlg.openWith(null);
@@ -155,6 +137,7 @@ export function ProductTypeManager({
       movement_type: movementType,
       product_id: row.id,
       product_name: row.name,
+      presentations: (row.presentations ?? []).filter(Boolean),
       reason:
         movementType === "entrada"
           ? `Entrada de ${type === "material" ? "material" : "pieza"}`
@@ -169,11 +152,15 @@ export function ProductTypeManager({
     ]);
     const nextStock: Record<string, string> = {};
     stockRows
-      .filter((item: any) => item.product?.id === row.id)
+      .filter((item: any) => item.product?.id === row.id && !getStockPresentationId(item))
       .forEach((item: any) => {
         nextStock[item.warehouse?.id] = formatStockInput(item.quantity);
       });
-    setForm({ ...blank(type), ...full });
+    setForm({
+      ...blank(type),
+      ...full,
+      sku: full?.sku || generateNextProductSku(rows, full?.type ?? type),
+    });
     setStockByWarehouse(nextStock);
     setInitialStockByWarehouse(nextStock);
     dlg.openWith(full);
@@ -183,8 +170,12 @@ export function ProductTypeManager({
     detailDlg.openWith(full);
   }
   async function editFromDetail(row: any) {
-    detailDlg.close();
-    await openEdit(row);
+    try {
+      await openEdit(row);
+      detailDlg.close();
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudo abrir la edición");
+    }
   }
   async function saveWarehouseStock(productId: string) {
     const changes = warehouses
@@ -284,6 +275,7 @@ export function ProductTypeManager({
       await applyMovement({
         data: {
           product_id: movementForm.product_id,
+          presentation_id: movementForm.presentation_id || null,
           movement_type: movementForm.movement_type,
           quantity: Number(movementForm.quantity),
           warehouse_id: movementForm.warehouse_id,
@@ -371,7 +363,6 @@ export function ProductTypeManager({
             )}
             {filteredRows.map((r) => {
               const stock = getStockSummary(r.id, tableStock, warehouses);
-              const manual = manualsByPiece[r.id];
               return (
                 <TableRow key={r.id}>
                   <TableCell className="text-muted-foreground">{r.sku ?? "—"}</TableCell>
@@ -426,27 +417,6 @@ export function ProductTypeManager({
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 px-2 text-xs"
-                        asChild
-                      >
-                        <Link to="/admin/manual" search={{ pieceId: r.id }}>
-                          {manual ? (
-                            <>
-                              <BookOpenText className="h-3.5 w-3.5" />
-                              Ver manual
-                            </>
-                          ) : (
-                            <>
-                              <FilePlus2 className="h-3.5 w-3.5" />
-                              Crear manual
-                            </>
-                          )}
-                        </Link>
-                      </Button>
                       <Button
                         type="button"
                         size="sm"
@@ -520,6 +490,9 @@ function blankMovement() {
     movement_type: "entrada",
     product_id: "",
     product_name: "",
+    presentation_id: null,
+    presentation_name: "",
+    presentations: [],
     warehouse_id: "",
     warehouse_dest_id: "",
     quantity: 1,
@@ -612,6 +585,9 @@ export function StockMovementDialog({
   const isTransfer = form.movement_type === "transferencia";
   const title = isTransfer ? "Mover entre almacenes" : "Registrar entrada";
   const submitLabel = isTransfer ? "Mover stock" : "Registrar entrada";
+  const presentationOptions = Array.isArray(form.presentations)
+    ? form.presentations.filter(Boolean)
+    : [];
   const registeredWarehouses = useMemo(
     () =>
       [...warehouses].sort((a: any, b: any) => {
@@ -633,6 +609,40 @@ export function StockMovementDialog({
       submitLabel={submitLabel}
     >
       <div className="grid gap-4 sm:grid-cols-2">
+        {presentationOptions.length > 0 && (
+          <div className="sm:col-span-2">
+            <Label>Presentación *</Label>
+            <Select
+              value={form.presentation_id || "_base"}
+              onValueChange={(value) => {
+                const presentation =
+                  value === "_base"
+                    ? null
+                    : presentationOptions.find((item: any) => item.id === value);
+                setForm((current: any) => ({
+                  ...current,
+                  presentation_id: value === "_base" ? null : value,
+                  presentation_name: presentation
+                    ? getPresentationUnitLabel(presentation.unit, presentation.label)
+                    : "",
+                }));
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona presentación" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_base">Stock general sin presentación</SelectItem>
+                {presentationOptions.map((presentation: any) => (
+                  <SelectItem key={presentation.id} value={presentation.id}>
+                    {getPresentationUnitLabel(presentation.unit, presentation.label)}
+                    {presentation.sku ? ` · ${presentation.sku}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div>
           <Label>{isTransfer ? "Almacén origen *" : "Almacén *"}</Label>
           <Select
@@ -756,14 +766,31 @@ export function ProductDetailDialog({
 }) {
   if (!product) return null;
   const itemStock = stockRows.filter((item) => item.product?.id === product.id);
+  const presentationRows =
+    product.type === "material" ? (product.presentations ?? []).filter(Boolean) : [];
+  const hasPresentationRows = presentationRows.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] max-w-4xl overflow-y-auto">
+      <DialogContent
+        className="max-h-[92vh] max-w-4xl overflow-y-auto"
+        onEscapeKeyDown={(event) => event.preventDefault()}
+        onInteractOutside={(event) => event.preventDefault()}
+        onPointerDownOutside={(event) => event.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between gap-3 pr-8 font-display">
             <span>{product.type === "material" ? "Detalle de material" : "Detalle de pieza"}</span>
-            <Button type="button" size="sm" className="rounded-full" onClick={onEdit}>
+            <Button
+              type="button"
+              size="sm"
+              className="rounded-full"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onEdit();
+              }}
+            >
               <Pencil className="h-4 w-4" />
               Editar
             </Button>
@@ -801,9 +828,15 @@ export function ProductDetailDialog({
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-4">
-                <DetailBox label="Costo" value={moneyPEN(product.cost ?? 0)} muted />
-                <DetailBox label="Precio" value={moneyPEN(product.price ?? 0)} />
+              <div
+                className={`grid gap-3 ${hasPresentationRows ? "sm:grid-cols-2" : "sm:grid-cols-4"}`}
+              >
+                {!hasPresentationRows && (
+                  <>
+                    <DetailBox label="Costo" value={moneyPEN(product.cost ?? 0)} muted />
+                    <DetailBox label="Precio" value={moneyPEN(product.price ?? 0)} />
+                  </>
+                )}
                 <DetailBox label="Stock mínimo" value={formatUnits(product.min_stock ?? 0)} />
                 <DetailBox label="Tipo" value={product.type ?? "—"} />
               </div>
@@ -830,48 +863,79 @@ export function ProductDetailDialog({
             />
           </div>
 
-          {product.type === "material" && product.presentations?.length > 0 && (
+          {hasPresentationRows && (
             <div className="mt-6 rounded-2xl border border-sand/70 bg-warm-white p-4">
               <h3 className="font-display text-lg">Presentaciones</h3>
-              <div className="mt-3 grid gap-2">
-                {product.presentations.map((presentation: any) => (
+              <div className="mt-3 grid gap-3">
+                {presentationRows.map((presentation: any) => (
                   <div
                     key={presentation.id}
-                    className="grid gap-2 rounded-xl border border-sand/60 p-3 text-sm sm:grid-cols-6"
+                    className="rounded-xl border border-sand/60 p-3 text-sm"
                   >
-                    <span className="text-muted-foreground">{presentation.sku || "Sin SKU"}</span>
-                    <span className="font-medium capitalize">{presentation.unit}</span>
-                    <span>{presentation.label || "Sin etiqueta"}</span>
-                    <span>
-                      Unidades por presentación {formatUnits(presentation.units_in_presentation)}
-                    </span>
-                    <span className="text-muted-foreground">Presentación</span>
-                    <span className="font-medium tabular-nums">{moneyPEN(presentation.price)}</span>
+                    <div className="grid gap-3 sm:grid-cols-5">
+                      <DetailBox label="SKU" value={presentation.sku || "Sin SKU"} muted />
+                      <DetailBox
+                        label="Presentación"
+                        value={getPresentationUnitLabel(presentation.unit, presentation.label)}
+                      />
+                      <DetailBox
+                        label="Costo"
+                        value={presentation.cost == null ? "—" : moneyPEN(presentation.cost)}
+                        muted
+                      />
+                      <DetailBox label="Precio" value={moneyPEN(presentation.price ?? 0)} />
+                      <DetailBox label="Stock mínimo" value={formatUnits(product.min_stock ?? 0)} />
+                    </div>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                      {warehouses.map((warehouse) => {
+                        const qty = itemStock
+                          .filter(
+                            (item) =>
+                              item.warehouse?.id === warehouse.id &&
+                              getStockPresentationId(item) === presentation.id,
+                          )
+                          .reduce((total, item) => total + Number(item.quantity ?? 0), 0);
+                        return (
+                          <div key={warehouse.id} className="rounded-lg border border-sand/60 p-2">
+                            <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                              {warehouse.code}
+                            </div>
+                            <div className="truncate text-xs font-medium">{warehouse.name}</div>
+                            <div className="mt-1 text-lg tabular-nums">{formatUnits(qty)}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          <div className="mt-6 rounded-2xl border border-sand/70 bg-warm-white p-4">
-            <h3 className="font-display text-lg">Stock por almacén</h3>
-            <div className="mt-3 grid gap-2 sm:grid-cols-3">
-              {warehouses.map((warehouse) => {
-                const qty = itemStock
-                  .filter((item) => item.warehouse?.id === warehouse.id)
-                  .reduce((total, item) => total + Number(item.quantity ?? 0), 0);
-                return (
-                  <div key={warehouse.id} className="rounded-xl border border-sand/60 p-3">
-                    <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                      {warehouse.code}
+          {!hasPresentationRows && (
+            <div className="mt-6 rounded-2xl border border-sand/70 bg-warm-white p-4">
+              <h3 className="font-display text-lg">Stock por almacén</h3>
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                {warehouses.map((warehouse) => {
+                  const qty = itemStock
+                    .filter(
+                      (item) =>
+                        item.warehouse?.id === warehouse.id && !getStockPresentationId(item),
+                    )
+                    .reduce((total, item) => total + Number(item.quantity ?? 0), 0);
+                  return (
+                    <div key={warehouse.id} className="rounded-xl border border-sand/60 p-3">
+                      <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                        {warehouse.code}
+                      </div>
+                      <div className="truncate text-sm font-medium">{warehouse.name}</div>
+                      <div className="mt-2 text-xl tabular-nums">{formatUnits(qty)}</div>
                     </div>
-                    <div className="truncate text-sm font-medium">{warehouse.name}</div>
-                    <div className="mt-2 text-xl tabular-nums">{formatUnits(qty)}</div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -956,6 +1020,10 @@ function formatStockInput(value: any) {
   return formatUnits(value);
 }
 
+function getStockPresentationId(item: any) {
+  return item.presentation?.id ?? item.presentation_id ?? null;
+}
+
 const defaultPieceCategories = ["Habitación", "Sala", "Terraza", "Carteras", "Accesorios"];
 const materialHiddenCategoryNames = [...defaultPieceCategories, "Comedor"];
 
@@ -1002,6 +1070,8 @@ export function ProductFormFields({
   stockByWarehouse = {},
   setStockByWarehouse,
   allowKit,
+  hideCommercialFields = false,
+  hideStockFields = false,
 }: any) {
   const createCategory = useServerFn(adminCreateCategory);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -1064,7 +1134,11 @@ export function ProductFormFields({
         </div>
         <div>
           <Label>SKU</Label>
-          <Input value={form.sku ?? ""} onChange={(e) => upd("sku", e.target.value)} />
+          <Input
+            value={form.sku ?? ""}
+            onChange={(e) => upd("sku", e.target.value.toUpperCase())}
+            placeholder={`${getProductSkuPrefix(form.type)}-00001`}
+          />
         </div>
         <div>
           <Label>Categoría</Label>
@@ -1159,31 +1233,35 @@ export function ProductFormFields({
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <Label>
-            Precio (S/)
-            {form.type === "material" && (
-              <span className="ml-1 text-xs font-normal text-muted-foreground">
-                opcional si usas presentaciones
-              </span>
-            )}
-          </Label>
-          <Input
-            type="number"
-            step="0.01"
-            value={form.price}
-            onChange={(e) => upd("price", e.target.value)}
-          />
-        </div>
-        <div>
-          <Label>Costo (S/)</Label>
-          <Input
-            type="number"
-            step="0.01"
-            value={form.cost ?? 0}
-            onChange={(e) => upd("cost", e.target.value)}
-          />
-        </div>
+        {!hideCommercialFields && (
+          <>
+            <div>
+              <Label>
+                Precio (S/)
+                {form.type === "material" && (
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">
+                    opcional si usas presentaciones
+                  </span>
+                )}
+              </Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={form.price}
+                onChange={(e) => upd("price", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Costo (S/)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={form.cost ?? 0}
+                onChange={(e) => upd("cost", e.target.value)}
+              />
+            </div>
+          </>
+        )}
         <div>
           <Label>Stock mínimo</Label>
           <Input
@@ -1209,24 +1287,26 @@ export function ProductFormFields({
           <Label>Material principal</Label>
           <Input value={form.material ?? ""} onChange={(e) => upd("material", e.target.value)} />
         </div>
-        <div className="sm:col-span-2">
-          <StockByWarehouseFields
-            warehouses={warehouses}
-            values={stockByWarehouse}
-            onChange={(warehouseId, value) =>
-              setStockByWarehouse?.((current: Record<string, string>) => ({
-                ...current,
-                [warehouseId]: value,
-              }))
-            }
-            title={form.type === "material" ? "Cantidad por almacén" : "Stock por almacén"}
-            description={
-              form.type === "material"
-                ? "Registra la cantidad disponible del material en cada almacén."
-                : undefined
-            }
-          />
-        </div>
+        {!hideStockFields && (
+          <div className="sm:col-span-2">
+            <StockByWarehouseFields
+              warehouses={warehouses}
+              values={stockByWarehouse}
+              onChange={(warehouseId, value) =>
+                setStockByWarehouse?.((current: Record<string, string>) => ({
+                  ...current,
+                  [warehouseId]: value,
+                }))
+              }
+              title={form.type === "material" ? "Cantidad por almacén" : "Stock por almacén"}
+              description={
+                form.type === "material"
+                  ? "Registra la cantidad disponible del material en cada almacén."
+                  : undefined
+              }
+            />
+          </div>
+        )}
         {form.type === "material" && (
           <div>
             <Label>Proveedor</Label>

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getUnitsInPresentation, normalizePresentationUnit } from "@/lib/presentation-units";
 
 const importTypeSchema = z.enum(["pieces", "materials", "customers"]);
 const bulkRowsSchema = z.object({
@@ -25,6 +26,24 @@ async function assertAdmin(ctx: { supabase: any; userId: string }) {
   });
   if (error) throw error;
   if (!data) throw new Error("forbidden: solo administrador puede usar carga masiva");
+}
+
+function isMissingMaterialPresentationCostColumn(error: any) {
+  const message = String(error?.message ?? error ?? "").toLowerCase();
+  return (
+    error?.code === "PGRST204" &&
+    message.includes("cost") &&
+    message.includes("material_presentations")
+  );
+}
+
+function isUnsupportedPresentationUnit(error: any) {
+  const message = String(error?.message ?? error ?? "").toLowerCase();
+  return (
+    error?.code === "22P02" &&
+    message.includes("presentation_unit") &&
+    message.includes("invalid input value")
+  );
 }
 
 export const adminValidateBulkImport = createServerFn({ method: "POST" })
@@ -198,8 +217,13 @@ function validateProductRow(
   if (type === "pieces" && row.visible_catalogo && parseBoolean(row.visible_catalogo) == null) {
     errors.push("visible_catalogo debe ser si/no, true/false o 1/0.");
   }
-  if (type === "materials" && !text(row.unidad) && text(row.presentacion)) {
-    warnings.push("Sin unidad: se usara otro para la presentacion.");
+  if (
+    type === "materials" &&
+    !text(row.unidad) &&
+    text(row.presentacion) &&
+    normalizePresentationUnit(row.presentacion) === "otro"
+  ) {
+    warnings.push("Sin unidad reconocida: se usara otro para la presentacion.");
   }
 
   return {
@@ -284,18 +308,33 @@ async function importProducts(sb: any, type: "pieces" | "materials", rows: RawRo
       .single();
     if (error) throw error;
 
+    let presentationId: string | null = null;
     if (type === "materials" && (text(row.presentacion) || text(row.unidad))) {
       const presentationUnit = normalizePresentationUnit(row.unidad || row.presentacion);
-      const { error: presentationError } = await sb.from("material_presentations").insert({
+      const presentationPayload = {
         product_id: product.id,
         unit: presentationUnit,
-        label: text(row.presentacion) || presentationUnit,
+        label: presentationUnit,
         sku: null,
         cost: numberOrZero(row.costo),
         price: numberOrZero(row.precio),
-        units_in_presentation: 1,
-      });
+        units_in_presentation: getUnitsInPresentation(presentationUnit),
+      };
+      let { data: presentation, error: presentationError } = await insertPresentationPayload(
+        sb,
+        presentationPayload,
+      );
+      if (isUnsupportedPresentationUnit(presentationError)) {
+        const retry = await insertPresentationPayload(sb, {
+          ...presentationPayload,
+          unit: "otro",
+          label: presentationUnit,
+        });
+        presentation = retry.data;
+        presentationError = retry.error;
+      }
       if (presentationError) throw presentationError;
+      presentationId = presentation?.id ?? null;
     }
 
     if (quantity > 0 && warehouse) {
@@ -307,6 +346,7 @@ async function importProducts(sb: any, type: "pieces" | "materials", rows: RawRo
         _warehouse_dest_id: undefined,
         _reason: "Carga masiva desde Configuracion",
         _notes: null,
+        _presentation_id: presentationId ?? undefined,
       });
       if (movementError) throw movementError;
     }
@@ -315,6 +355,25 @@ async function importProducts(sb: any, type: "pieces" | "materials", rows: RawRo
   }
 
   return inserted;
+}
+
+async function insertPresentationPayload(sb: any, payload: Record<string, any>) {
+  let { data, error } = await sb
+    .from("material_presentations")
+    .insert(payload)
+    .select("id")
+    .single();
+  if (isMissingMaterialPresentationCostColumn(error)) {
+    const { cost: _cost, ...payloadWithoutCost } = payload;
+    const retry = await sb
+      .from("material_presentations")
+      .insert(payloadWithoutCost)
+      .select("id")
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
+  return { data, error };
 }
 
 async function importCustomers(sb: any, rows: RawRow[]) {
@@ -481,12 +540,6 @@ function normalizeProductStatus(value: string | undefined) {
     reservado: "reservado",
   };
   return map[key] ?? null;
-}
-
-function normalizePresentationUnit(value: string | undefined) {
-  const key = normalizeCompare(value);
-  const allowed = ["unidad", "metro", "rollo", "madeja", "paquete", "docena", "ciento", "combo"];
-  return allowed.includes(key) ? key : "otro";
 }
 
 function parseBoolean(value: string | undefined) {

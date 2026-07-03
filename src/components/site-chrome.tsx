@@ -38,17 +38,17 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-sand/70 bg-warm-white/95 shadow-[0_4px_18px_rgba(128,52,44,0.08)] backdrop-blur">
-      <div className="container-makrana flex min-h-20 items-center gap-6 py-3 lg:min-h-24 lg:gap-8">
+      <div className="container-makrana flex min-h-20 max-w-full items-center gap-3 py-3 lg:min-h-24 lg:gap-4">
         <Link to="/" className="flex shrink-0 items-center">
-          <BrandLogo variant="horizontal" imageClassName="w-44 sm:w-52 lg:w-56 xl:w-60" />
+          <BrandLogo variant="horizontal" imageClassName="w-40 sm:w-44 lg:w-48 xl:w-52" />
         </Link>
-        <nav className="hidden flex-1 items-center justify-center gap-8 lg:flex xl:gap-10">
+        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-2 lg:flex xl:gap-3">
           {links.map((l) => (
             <Link
               key={l.to}
               to={l.to}
               className={cn(
-                "rounded-full px-4 py-2 text-[15px] font-semibold transition-colors",
+                "rounded-full px-3 py-2 text-[14px] font-semibold transition-colors xl:px-4 xl:text-[15px]",
                 isActive(l.to)
                   ? "bg-accent text-warm-white shadow-sm shadow-accent/15"
                   : "text-foreground/85 hover:bg-cream hover:text-accent",
@@ -58,12 +58,12 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
-        <div className="ml-auto hidden items-center gap-4 lg:flex">
+        <div className="ml-auto hidden shrink-0 items-center gap-2 lg:flex xl:gap-3">
           <Button
             asChild
             variant="ghost"
             size="lg"
-            className="rounded-full px-4 text-[15px] font-semibold hover:bg-transparent hover:text-accent"
+            className="rounded-full px-3 text-[14px] font-semibold hover:bg-transparent hover:text-accent xl:px-4 xl:text-[15px]"
           >
             <Link to="/auth">Ingresar</Link>
           </Button>
@@ -71,7 +71,7 @@ export function SiteHeader() {
             asChild
             variant="hero"
             size="lg"
-            className="rounded-2xl px-7 text-[15px] shadow-md shadow-clay/20"
+            className="rounded-2xl px-4 text-[14px] shadow-md shadow-clay/20 xl:px-6 xl:text-[15px]"
           >
             <Link to="/registro">Registrarme</Link>
           </Button>

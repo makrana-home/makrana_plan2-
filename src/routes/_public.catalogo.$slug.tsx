@@ -4,6 +4,7 @@ import { getProductBySlug, listProducts } from "@/lib/public.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/product-card";
+import { getPresentationUnitLabel } from "@/lib/presentation-units";
 
 const statusLabel: Record<string, string> = {
   disponible: "Disponible",
@@ -64,6 +65,7 @@ function ProductDetail() {
   const { data: related } = useSuspenseQuery(relatedQ);
   if (!product) return null;
   const p: any = product;
+  const hasPresentations = p.type === "material" && (p.presentations ?? []).length > 0;
   const totalStock = (p.stock ?? []).reduce(
     (acc: number, s: any) => acc + Number(s.quantity ?? 0),
     0,
@@ -99,8 +101,12 @@ function ProductDetail() {
             {p.category?.name}
           </p>
           <h1 className="font-display text-4xl mt-2">{p.name}</h1>
-          <div className="mt-3 flex items-center gap-3">
-            <span className="font-display text-3xl">S/ {Number(p.price).toFixed(2)}</span>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <span className="font-display text-3xl leading-tight">
+              {hasPresentations
+                ? "En distintas presentaciones"
+                : `S/ ${Number(p.price).toFixed(2)}`}
+            </span>
             <Badge>{statusLabel[p.status] ?? p.status}</Badge>
           </div>
           <p className="mt-5 text-muted-foreground whitespace-pre-line">
@@ -136,7 +142,7 @@ function ProductDetail() {
               <ul className="divide-y divide-sand/60 rounded-lg border border-sand/60 overflow-hidden">
                 {p.presentations.map((pr: any) => (
                   <li key={pr.id} className="flex justify-between px-4 py-3 text-sm bg-cream/40">
-                    <span>{pr.label ?? pr.unit}</span>
+                    <span>{getPresentationUnitLabel(pr.unit, pr.label)}</span>
                     <span className="font-medium">S/ {Number(pr.price).toFixed(2)}</span>
                   </li>
                 ))}

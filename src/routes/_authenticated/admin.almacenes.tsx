@@ -32,6 +32,7 @@ import {
   adminUpsertWarehouse,
 } from "@/lib/admin.functions";
 import { formatUnits } from "@/lib/format-units";
+import { getPresentationUnitLabel } from "@/lib/presentation-units";
 
 export const Route = createFileRoute("/_authenticated/admin/almacenes")({
   component: WarehousesPage,
@@ -168,6 +169,7 @@ function WarehousesPage() {
         await applyMovement({
           data: {
             product_id: item.product.id,
+            presentation_id: getStockPresentationId(item),
             movement_type: "transferencia",
             quantity,
             warehouse_id: selectedWarehouseId,
@@ -335,13 +337,14 @@ function WarehousesPage() {
                   <TableHead>Costo</TableHead>
                   <TableHead>Precio</TableHead>
                   <TableHead>Almacén</TableHead>
+                  <TableHead className="text-right">Stock mínimo</TableHead>
                   <TableHead className="text-right">Cantidad</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {visibleStock.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="py-6 text-center text-muted-foreground">
                       Sin stock registrado en este almacén.
                     </TableCell>
                   </TableRow>
@@ -350,6 +353,7 @@ function WarehousesPage() {
                   const low =
                     item.product?.min_stock != null &&
                     Number(item.quantity) <= Number(item.product.min_stock);
+                  const presentation = item.presentation ?? null;
                   return (
                     <TableRow key={item.id}>
                       <TableCell>
@@ -365,20 +369,34 @@ function WarehousesPage() {
                         />
                       </TableCell>
                       <TableCell className="font-mono text-xs text-muted-foreground">
-                        {item.product?.sku ?? "—"}
+                        {presentation?.sku || item.product?.sku || "—"}
                       </TableCell>
-                      <TableCell>{item.product?.name}</TableCell>
+                      <TableCell>
+                        <div>{item.product?.name}</div>
+                        {presentation && (
+                          <div className="text-xs text-muted-foreground">
+                            {formatStockPresentationName(presentation)}
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="text-sm text-muted-foreground tabular-nums">
-                        {moneyPEN(item.product?.cost ?? 0)}
+                        {presentation?.cost == null
+                          ? moneyPEN(item.product?.cost ?? 0)
+                          : moneyPEN(presentation.cost)}
                       </TableCell>
                       <TableCell className="font-medium tabular-nums">
-                        {moneyPEN(item.product?.price ?? 0)}
+                        {moneyPEN(presentation?.price ?? item.product?.price ?? 0)}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {item.warehouse?.name}
                       </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatUnits(item.product?.min_stock ?? 0)}
+                      </TableCell>
                       <TableCell
-                        className={`text-right tabular-nums ${low ? "font-medium text-rose-700" : ""}`}
+                        className={`text-right tabular-nums ${
+                          low ? "font-medium text-rose-700" : ""
+                        }`}
                       >
                         {formatUnits(item.quantity)}
                       </TableCell>
@@ -443,21 +461,36 @@ function WarehousesPage() {
   );
 }
 
+function formatStockPresentationName(presentation: any) {
+  return getPresentationUnitLabel(presentation.unit, presentation.label);
+}
+
+function getStockPresentationId(item: any) {
+  return item.presentation?.id ?? item.presentation_id ?? null;
+}
+
 function buildWarehouseStockExcel(warehouse: any, rows: any[]) {
   const generatedAt = new Date().toLocaleString("es-PE");
   const bodyRows = rows
     .map((item) => {
       const low =
         item.product?.min_stock != null && Number(item.quantity) <= Number(item.product.min_stock);
+      const presentation = item.presentation ?? null;
+      const name = presentation
+        ? `${item.product?.name ?? ""} - ${formatStockPresentationName(presentation)}`
+        : (item.product?.name ?? "");
+      const sku = presentation?.sku || item.product?.sku || "";
+      const cost = presentation?.cost ?? item.product?.cost ?? 0;
+      const price = presentation?.price ?? item.product?.price ?? 0;
       return `
         <tr>
-          <td>${escapeHtml(item.product?.sku ?? "")}</td>
-          <td>${escapeHtml(item.product?.name ?? "")}</td>
+          <td>${escapeHtml(sku)}</td>
+          <td>${escapeHtml(name)}</td>
           <td>${escapeHtml(item.product?.type ?? "")}</td>
           <td>${escapeHtml(warehouse.code ?? "")}</td>
           <td>${escapeHtml(warehouse.name ?? "")}</td>
-          <td style="mso-number-format:'0.00';">${Number(item.product?.cost ?? 0).toFixed(2)}</td>
-          <td style="mso-number-format:'0.00';">${Number(item.product?.price ?? 0).toFixed(2)}</td>
+          <td style="mso-number-format:'0.00';">${Number(cost).toFixed(2)}</td>
+          <td style="mso-number-format:'0.00';">${Number(price).toFixed(2)}</td>
           <td style="mso-number-format:'0';">${formatUnits(item.quantity)}</td>
           <td style="mso-number-format:'0';">${formatUnits(item.product?.min_stock ?? 0)}</td>
           <td>${low ? "Stock bajo" : "OK"}</td>

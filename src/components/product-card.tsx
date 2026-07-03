@@ -11,6 +11,7 @@ type Product = {
   status: string;
   type?: string;
   category?: { slug: string; name: string } | null;
+  presentations?: unknown[] | null;
 };
 
 const statusLabel: Record<string, string> = {
@@ -30,6 +31,7 @@ const statusClass: Record<string, string> = {
 export function ProductCard({ product }: { product: Product }) {
   const typeLabel =
     product.type === "material" ? "Material" : product.type === "kit" ? "Kit" : "Pieza";
+  const hasPresentations = product.type === "material" && (product.presentations?.length ?? 0) > 0;
 
   return (
     <article className="group overflow-hidden rounded-2xl border border-sand/80 bg-warm-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-clay/15">
@@ -67,8 +69,15 @@ export function ProductCard({ product }: { product: Product }) {
           {product.short_description || "Pieza tejida artesanalmente para tu hogar."}
         </p>
         <div className="mt-auto flex items-end justify-between gap-3 pt-4">
-          <span className="text-sm font-extrabold text-accent">
-            S/ {Number(product.price).toFixed(0)}
+          <span
+            className={cn(
+              "font-extrabold leading-tight text-accent",
+              hasPresentations ? "max-w-40 text-xs" : "text-sm",
+            )}
+          >
+            {hasPresentations
+              ? "En distintas presentaciones"
+              : `S/ ${Number(product.price).toFixed(0)}`}
           </span>
           <span className="text-[10px] font-semibold text-muted-foreground">
             {product.category?.name ?? typeLabel}

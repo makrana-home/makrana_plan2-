@@ -36,7 +36,7 @@ export const listProducts = createServerFn({ method: "GET" })
     let q = sb
       .from("products")
       .select(
-        "id, slug, name, short_description, main_image_url, price, status, type, is_featured, category:categories(slug, name)",
+        "id, slug, name, short_description, main_image_url, price, status, type, is_featured, category:categories(slug, name), presentations:material_presentations(id, unit, label, price)",
       )
       .eq("is_visible", true)
       .order("created_at", { ascending: false });

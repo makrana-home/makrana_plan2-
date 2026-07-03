@@ -16,9 +16,13 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarTrigger,
   SidebarHeader,
 } from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   LayoutDashboard,
   Package,
@@ -37,6 +41,7 @@ import {
   Search,
   Bell,
   Globe2,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { clearDevAdminSession, hasDevAdminSession } from "@/lib/dev-admin";
@@ -45,6 +50,10 @@ import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
+    if (typeof window === "undefined") {
+      throw redirect({ to: "/auth" });
+    }
+
     if (hasDevAdminSession()) return;
 
     const { data: u } = await supabase.auth.getUser();
@@ -60,22 +69,53 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminShell,
 });
 
-const mainItems = [
+const topItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true as boolean | undefined },
-  { to: "/admin/productos", label: "Piezas", icon: Package },
-  { to: "/admin/materiales", label: "Materiales", icon: Boxes },
+] as const;
+
+const standaloneItems = [
   { to: "/admin/manual", label: "Manual", icon: ClipboardList },
-  { to: "/admin/almacenes", label: "Almacenes", icon: Warehouse },
-  { to: "/admin/movimientos", label: "Movimientos", icon: ArrowLeftRight },
-  { to: "/admin/ventas", label: "Ventas", icon: ShoppingCart },
-  { to: "/admin/comprobantes", label: "Comprobantes", icon: FileText },
   { to: "/admin/clientes", label: "Clientes", icon: Users },
   { to: "/admin/reportes", label: "Reportes", icon: BarChart3 },
 ] as const;
 
-const webItems = [
-  { to: "/admin/novedades", label: "Novedades", icon: Newspaper },
-  { to: "/admin/talleres", label: "Talleres", icon: GraduationCap },
+const menuGroups = [
+  {
+    key: "inventory",
+    label: "Inventario",
+    icon: Boxes,
+    items: [
+      { to: "/admin/productos", label: "Piezas", icon: Package },
+      { to: "/admin/materiales", label: "Materiales", icon: Boxes },
+    ],
+  },
+  {
+    key: "stock",
+    label: "Stock y logística",
+    icon: Warehouse,
+    items: [
+      { to: "/admin/almacenes", label: "Almacenes", icon: Warehouse },
+      { to: "/admin/movimientos", label: "Movimientos", icon: ArrowLeftRight },
+    ],
+  },
+  {
+    key: "sales",
+    label: "Ventas",
+    icon: ShoppingCart,
+    items: [
+      { to: "/admin/ventas", label: "Ventas", icon: ShoppingCart },
+      { to: "/admin/comprobantes", label: "Comprobantes", icon: FileText },
+    ],
+  },
+  {
+    key: "web",
+    label: "Página web",
+    icon: Globe2,
+    items: [
+      { to: "/admin/novedades", label: "Novedades", icon: Newspaper },
+      { to: "/admin/talleres", label: "Talleres", icon: GraduationCap },
+    ],
+  },
 ] as const;
 
 const configItems = [
@@ -86,6 +126,9 @@ function AdminShell() {
   const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [userName, setUserName] = useState("Usuario");
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(menuGroups.map((group) => [group.key, isGroupActive(group, pathname)])),
+  );
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -95,11 +138,81 @@ function AdminShell() {
     });
   }, []);
 
+  useEffect(() => {
+    setOpenGroups((current) => {
+      const next = { ...current };
+      for (const group of menuGroups) {
+        if (isGroupActive(group, pathname)) next[group.key] = true;
+      }
+      return next;
+    });
+  }, [pathname]);
+
   async function signOut() {
     clearDevAdminSession();
     await supabase.auth.signOut();
     router.navigate({ to: "/" });
   }
+
+  function renderNavItem(i: any) {
+    return (
+      <SidebarMenuItem key={i.to}>
+        <SidebarMenuButton
+          asChild
+          isActive={i.exact ? pathname === i.to : pathname.startsWith(i.to)}
+          className="h-11 rounded-full px-4 text-[15px] font-semibold text-foreground/80 data-[active=true]:bg-accent data-[active=true]:text-warm-white data-[active=true]:shadow-lg data-[active=true]:shadow-accent/15 hover:bg-sand/50 hover:text-foreground"
+        >
+          <Link to={i.to}>
+            <i.icon className="h-4 w-4" />
+            {i.label}
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  }
+
+  function renderNavGroup(group: (typeof menuGroups)[number]) {
+    const GroupIcon = group.icon;
+    return (
+      <SidebarMenuItem key={group.key}>
+        <Collapsible
+          open={openGroups[group.key] ?? false}
+          onOpenChange={(open) => setOpenGroups((current) => ({ ...current, [group.key]: open }))}
+          className="group/collapsible"
+        >
+          <CollapsibleTrigger asChild>
+            <SidebarMenuButton
+              isActive={isGroupActive(group, pathname)}
+              className="h-11 rounded-full px-4 text-[15px] font-semibold text-foreground/80 data-[active=true]:bg-accent/10 data-[active=true]:text-accent hover:bg-sand/50 hover:text-foreground"
+            >
+              <GroupIcon className="h-4 w-4" />
+              <span>{group.label}</span>
+              <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
+            </SidebarMenuButton>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+            <SidebarMenuSub className="my-1 ml-5 gap-1 border-l-sand/80">
+              {group.items.map((i) => (
+                <SidebarMenuSubItem key={i.to}>
+                  <SidebarMenuSubButton
+                    asChild
+                    isActive={pathname.startsWith(i.to)}
+                    className="h-9 rounded-full px-3 text-[14px] font-semibold text-foreground/75 data-[active=true]:bg-accent data-[active=true]:text-warm-white data-[active=true]:shadow-lg data-[active=true]:shadow-accent/15 hover:bg-sand/50 hover:text-foreground"
+                  >
+                    <Link to={i.to}>
+                      <i.icon className="h-4 w-4" />
+                      <span>{i.label}</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              ))}
+            </SidebarMenuSub>
+          </CollapsibleContent>
+        </Collapsible>
+      </SidebarMenuItem>
+    );
+  }
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-cream text-foreground">
@@ -118,47 +231,12 @@ function AdminShell() {
             <SidebarGroup>
               <SidebarGroupContent>
                 <SidebarMenu className="gap-2">
-                  {mainItems.map((i) => (
-                    <SidebarMenuItem key={i.to}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={(i as any).exact ? pathname === i.to : pathname.startsWith(i.to)}
-                        className="h-11 rounded-full px-4 text-[15px] font-semibold text-foreground/80 data-[active=true]:bg-accent data-[active=true]:text-warm-white data-[active=true]:shadow-lg data-[active=true]:shadow-accent/15 hover:bg-sand/50 hover:text-foreground"
-                      >
-                        <Link to={i.to}>
-                          <i.icon className="h-4 w-4" />
-                          {i.label}
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                  <SidebarMenuItem>
-                    <div
-                      className={[
-                        "mt-3 flex h-10 items-center gap-2 rounded-full px-4 text-[13px] font-bold uppercase tracking-[0.16em]",
-                        webItems.some((i) => pathname.startsWith(i.to))
-                          ? "bg-accent/10 text-accent"
-                          : "text-foreground/55",
-                      ].join(" ")}
-                    >
-                      <Globe2 className="h-4 w-4" />
-                      Página web
-                    </div>
-                  </SidebarMenuItem>
-                  {webItems.map((i) => (
-                    <SidebarMenuItem key={i.to}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={pathname.startsWith(i.to)}
-                        className="ml-5 h-10 rounded-full px-4 text-[14px] font-semibold text-foreground/75 data-[active=true]:bg-accent data-[active=true]:text-warm-white data-[active=true]:shadow-lg data-[active=true]:shadow-accent/15 hover:bg-sand/50 hover:text-foreground"
-                      >
-                        <Link to={i.to}>
-                          <i.icon className="h-4 w-4" />
-                          {i.label}
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
+                  {topItems.map(renderNavItem)}
+                  {menuGroups.slice(0, 1).map(renderNavGroup)}
+                  {standaloneItems.slice(0, 1).map(renderNavItem)}
+                  {menuGroups.slice(1, 3).map(renderNavGroup)}
+                  {standaloneItems.slice(1).map(renderNavItem)}
+                  {menuGroups.slice(3).map(renderNavGroup)}
                   {configItems.map((i) => (
                     <SidebarMenuItem key={i.to}>
                       <SidebarMenuButton
@@ -234,4 +312,8 @@ function formatUserName(email?: string, metadata?: Record<string, any> | null) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
     .join(" ");
+}
+
+function isGroupActive(group: (typeof menuGroups)[number], pathname: string) {
+  return group.items.some((item) => pathname.startsWith(item.to));
 }

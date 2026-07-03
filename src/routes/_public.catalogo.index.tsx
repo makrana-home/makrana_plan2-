@@ -4,6 +4,7 @@ import { listCategories, listProducts } from "@/lib/public.functions";
 import { ProductCard } from "@/components/product-card";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
+import { getPresentationUnitLabel } from "@/lib/presentation-units";
 
 const allQ = queryOptions({
   queryKey: ["public", "all-products"],
@@ -49,7 +50,12 @@ function Catalogo() {
         `${p.name ?? ""} ${p.sku ?? ""} ${p.category?.name ?? ""} ${p.category?.slug ?? ""} ${(
           p.presentations ?? []
         )
-          .map((presentation: any) => `${presentation.sku ?? ""} ${presentation.label ?? ""}`)
+          .map(
+            (presentation: any) =>
+              `${presentation.sku ?? ""} ${presentation.label ?? ""} ${
+                presentation.unit ?? ""
+              } ${getPresentationUnitLabel(presentation.unit, presentation.label)}`,
+          )
           .join(" ")}`,
       );
       const matchesSearch = !q || searchable.includes(q);
@@ -60,7 +66,7 @@ function Catalogo() {
   const typeFilters = [
     { value: "all", label: "Todo" },
     { value: "pieces", label: "Piezas" },
-    { value: "materials", label: "Materiales de macramé" },
+    { value: "materials", label: "Materiales" },
   ] as const;
 
   return (
@@ -74,7 +80,7 @@ function Catalogo() {
         <input
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Buscar por nombre, SKU o categoría..."
+          placeholder="Buscar por su nombre"
           className="mt-6 h-12 w-full max-w-xl rounded-2xl border border-sand bg-warm-white/90 px-4 text-sm shadow-sm outline-none transition focus:border-accent"
         />
 
