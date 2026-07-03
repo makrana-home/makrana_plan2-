@@ -1,8 +1,10 @@
-import { Link } from "@tanstack/react-router";
-import { Menu, X } from "lucide-react";
+import { Link, useRouterState } from "@tanstack/react-router";
+import type { SVGProps } from "react";
+import { Facebook, Instagram, Menu, MessageCircle, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { BrandLogo } from "@/components/brand-logo";
 
 const links = [
   { to: "/", label: "Inicio" },
@@ -13,53 +15,87 @@ const links = [
   { to: "/contacto", label: "Contacto" },
 ] as const;
 
+function TikTokIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <path d="M14 3v11.2a4.2 4.2 0 1 1-3.4-4.1" />
+      <path d="M14 6.2c1.2 1.7 2.8 2.7 5 2.8" />
+    </svg>
+  );
+}
+
+const socialLinks = [
+  { label: "Instagram", href: null, icon: Instagram },
+  { label: "Facebook", href: null, icon: Facebook },
+  { label: "TikTok", href: null, icon: TikTokIcon },
+  { label: "WhatsApp", href: "https://wa.me/51986608552", icon: MessageCircle },
+] as const;
+
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isActive = (to: string) => (to === "/" ? pathname === "/" : pathname.startsWith(to));
+
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-sand/60 bg-warm-white/85 backdrop-blur">
-      <div className="container-makrana flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="inline-block h-7 w-7 rounded-full bg-terracotta" aria-hidden />
-          <span className="font-display text-xl text-foreground tracking-wide">
-            Makrana <span className="text-accent">Home Art</span>
-          </span>
+    <header className="sticky top-0 z-40 w-full border-b border-sand/70 bg-warm-white/95 shadow-[0_4px_18px_rgba(128,52,44,0.08)] backdrop-blur">
+      <div className="container-makrana flex min-h-20 items-center gap-6 py-3 lg:min-h-24 lg:gap-8">
+        <Link to="/" className="flex shrink-0 items-center">
+          <BrandLogo variant="horizontal" imageClassName="w-44 sm:w-52 lg:w-56 xl:w-60" />
         </Link>
-        <nav className="hidden md:flex items-center gap-7">
+        <nav className="hidden flex-1 items-center justify-center gap-8 lg:flex xl:gap-10">
           {links.map((l) => (
             <Link
               key={l.to}
               to={l.to}
-              className="text-sm text-foreground/80 hover:text-accent transition-colors"
-              activeProps={{ className: "text-accent font-medium" }}
-              activeOptions={{ exact: l.to === "/" }}
+              className={cn(
+                "rounded-full px-4 py-2 text-[15px] font-semibold transition-colors",
+                isActive(l.to)
+                  ? "bg-accent text-warm-white shadow-sm shadow-accent/15"
+                  : "text-foreground/85 hover:bg-cream hover:text-accent",
+              )}
             >
               {l.label}
             </Link>
           ))}
         </nav>
-        <div className="hidden md:flex items-center gap-2">
-          <Button asChild variant="ghost" size="sm">
+        <div className="ml-auto hidden items-center gap-4 lg:flex">
+          <Button
+            asChild
+            variant="ghost"
+            size="lg"
+            className="rounded-full px-4 text-[15px] font-semibold hover:bg-transparent hover:text-accent"
+          >
             <Link to="/auth">Ingresar</Link>
           </Button>
-          <Button asChild variant="hero" size="sm">
+          <Button
+            asChild
+            variant="hero"
+            size="lg"
+            className="rounded-2xl px-7 text-[15px] shadow-md shadow-clay/20"
+          >
             <Link to="/registro">Registrarme</Link>
           </Button>
         </div>
         <button
-          className="md:hidden p-2 text-foreground"
+          className="ml-auto p-2 text-foreground lg:hidden"
           onClick={() => setOpen((v) => !v)}
           aria-label="Abrir menú"
         >
           {open ? <X /> : <Menu />}
         </button>
       </div>
-      <div className={cn("md:hidden border-t border-sand/60", open ? "block" : "hidden")}>
+      <div className={cn("border-t border-sand/60 lg:hidden", open ? "block" : "hidden")}>
         <div className="container-makrana py-4 flex flex-col gap-3">
           {links.map((l) => (
             <Link
               key={l.to}
               to={l.to}
-              className="text-foreground/80"
+              className={cn(
+                "rounded-2xl px-4 py-3 text-sm font-semibold transition-colors",
+                isActive(l.to)
+                  ? "bg-accent text-warm-white"
+                  : "text-foreground/80 hover:bg-cream hover:text-accent",
+              )}
               onClick={() => setOpen(false)}
             >
               {l.label}
@@ -84,18 +120,15 @@ export function SiteFooter() {
     <footer className="mt-24 border-t border-sand/60 bg-cream">
       <div className="container-makrana py-14 grid gap-10 md:grid-cols-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="inline-block h-6 w-6 rounded-full bg-terracotta" aria-hidden />
-            <span className="font-display text-lg">Makrana Home Art</span>
-          </div>
+          <BrandLogo imageClassName="w-32 sm:w-36" />
           <p className="mt-3 text-sm text-muted-foreground">
-            Piezas de macramé hechas a mano en Perú. Diseño cálido, natural y artesanal para tu
-            hogar.
+            En Makrana, cada pieza es tejida a mano en Perú con dedicación y cuidado, para llevar la
+            calidez, la textura y la esencia de la artesanía a tu hogar.
           </p>
         </div>
         <div>
-          <h4 className="text-sm font-medium mb-3 uppercase tracking-wider text-foreground/70">
-            Tienda
+          <h4 className="mb-3 text-sm font-medium uppercase tracking-wider text-foreground/70">
+            Explorar
           </h4>
           <ul className="space-y-2 text-sm">
             <li>
@@ -105,7 +138,7 @@ export function SiteFooter() {
             </li>
             <li>
               <Link to="/talleres" className="hover:text-accent">
-                Talleres y cursos
+                Talleres
               </Link>
             </li>
             <li>
@@ -142,16 +175,47 @@ export function SiteFooter() {
             Contacto
           </h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>WhatsApp: +51 999 999 999</li>
-            <li>hola@makranahomeart.pe</li>
+            <li>WhatsApp: +51 986608552</li>
+            <li>makrnahome@gmail.com</li>
             <li>Lima, Perú</li>
           </ul>
+          <div className="mt-6">
+            <h4 className="font-display text-2xl text-accent">Síguenos</h4>
+            <div className="mt-4 flex flex-wrap gap-3">
+              {socialLinks.map((social) => {
+                const Icon = social.icon;
+                const className =
+                  "inline-flex h-12 w-12 items-center justify-center rounded-full border border-sand bg-warm-white text-accent shadow-sm transition";
+                return social.href ? (
+                  <a
+                    key={social.label}
+                    href={social.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={social.label}
+                    className={`${className} hover:-translate-y-0.5 hover:border-accent hover:bg-accent hover:text-warm-white`}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </a>
+                ) : (
+                  <span
+                    key={social.label}
+                    aria-label={`${social.label} no disponible`}
+                    aria-disabled="true"
+                    title={`${social.label} no disponible`}
+                    className={`${className} cursor-not-allowed opacity-45`}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </span>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
       <div className="border-t border-sand/60">
         <div className="container-makrana py-4 text-xs text-muted-foreground flex justify-between flex-wrap gap-2">
-          <span>© {new Date().getFullYear()} Makrana Home Art. Hecho a mano con paciencia.</span>
-          <span>Diseño artesanal · Algodón natural · Piezas únicas</span>
+          <span>© {new Date().getFullYear()} Makrana Home Art.</span>
         </div>
       </div>
     </footer>

@@ -32,6 +32,7 @@ import {
   adminDeleteFairItem,
 } from "@/lib/admin-content.functions";
 import { adminListWarehouses, adminListProducts } from "@/lib/admin.functions";
+import { formatUnits } from "@/lib/format-units";
 
 export const Route = createFileRoute("/_authenticated/admin/ferias")({ component: FairsPage });
 
@@ -114,7 +115,7 @@ function FairsPage() {
               <TableHead>Feria</TableHead>
               <TableHead>Ubicación</TableHead>
               <TableHead>Fechas</TableHead>
-              <TableHead>Items</TableHead>
+              <TableHead>Ítems</TableHead>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>
@@ -286,7 +287,7 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
     }
   }
   async function add() {
-    if (!draft.product_id) return toast.error("Selecciona producto");
+    if (!draft.product_id) return toast.error("Selecciona pieza");
     try {
       await upsertItem({
         data: {
@@ -317,10 +318,10 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
     <Sheet open={!!fair} onOpenChange={(v) => !v && onClose()}>
       <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader>
-          <SheetTitle className="font-display text-2xl">Items: {fair?.name}</SheetTitle>
+          <SheetTitle className="font-display text-2xl">Ítems: {fair?.name}</SheetTitle>
         </SheetHeader>
         <div className="mt-4 space-y-2">
-          {items.length === 0 && <p className="text-sm text-muted-foreground">Sin items.</p>}
+          {items.length === 0 && <p className="text-sm text-muted-foreground">Sin ítems.</p>}
           {items.map((it: any, idx) => (
             <div
               key={it.id}
@@ -331,8 +332,8 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
                 <Label className="text-xs">Enviado</Label>
                 <Input
                   type="number"
-                  step="0.01"
-                  defaultValue={it.qty_sent}
+                  step="1"
+                  defaultValue={formatUnits(it.qty_sent)}
                   onBlur={(e) => save({ ...it, qty_sent: e.target.value })}
                 />
               </div>
@@ -340,8 +341,8 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
                 <Label className="text-xs">Vendido</Label>
                 <Input
                   type="number"
-                  step="0.01"
-                  defaultValue={it.qty_sold}
+                  step="1"
+                  defaultValue={formatUnits(it.qty_sold)}
                   onBlur={(e) => save({ ...it, qty_sold: e.target.value })}
                 />
               </div>
@@ -349,8 +350,8 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
                 <Label className="text-xs">Devuelto</Label>
                 <Input
                   type="number"
-                  step="0.01"
-                  defaultValue={it.qty_returned}
+                  step="1"
+                  defaultValue={formatUnits(it.qty_returned)}
                   onBlur={(e) => save({ ...it, qty_returned: e.target.value })}
                 />
               </div>
@@ -370,7 +371,7 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
                   onValueChange={(v) => setDraft((s: any) => ({ ...s, product_id: v }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Producto" />
+                    <SelectValue placeholder="Pieza" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
                     {products.map((p) => (
@@ -384,6 +385,8 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
               <div className="col-span-2">
                 <Input
                   type="number"
+                  min="0"
+                  step="1"
                   placeholder="Enviado"
                   value={draft.qty_sent}
                   onChange={(e) => setDraft((s: any) => ({ ...s, qty_sent: e.target.value }))}
@@ -392,6 +395,8 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
               <div className="col-span-2">
                 <Input
                   type="number"
+                  min="0"
+                  step="1"
                   placeholder="Vendido"
                   value={draft.qty_sold}
                   onChange={(e) => setDraft((s: any) => ({ ...s, qty_sold: e.target.value }))}
@@ -400,6 +405,8 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
               <div className="col-span-2">
                 <Input
                   type="number"
+                  min="0"
+                  step="1"
                   placeholder="Devuelto"
                   value={draft.qty_returned}
                   onChange={(e) => setDraft((s: any) => ({ ...s, qty_returned: e.target.value }))}

@@ -24,7 +24,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Pencil, Trash2, Users } from "lucide-react";
+import { ImageIcon, Pencil, Trash2, Upload, Users } from "lucide-react";
 import {
   PageHeader,
   FormDialog,
@@ -42,6 +42,7 @@ import {
   adminUpdateEnrollmentPayment,
   adminDeleteEnrollment,
 } from "@/lib/admin-content.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/admin/talleres")({
   component: WorkshopsPage,
@@ -91,6 +92,7 @@ function WorkshopsPage() {
     setSaving(true);
     try {
       const p: any = { ...form, slug: form.slug || slugify(form.title) };
+      p.capacity = Number(p.capacity) > 0 ? Number(p.capacity) : 10;
       for (const k of ["description", "cover_image_url", "location", "materials_included"])
         if (p[k] === "") p[k] = null;
       p.starts_at = p.starts_at ? new Date(p.starts_at).toISOString() : null;
@@ -109,7 +111,7 @@ function WorkshopsPage() {
   return (
     <div>
       <PageHeader
-        title="Talleres y cursos"
+        title="Talleres"
         description="Programa talleres presenciales y virtuales. Las inscripciones desde la web aparecen aquí automáticamente."
         actions={<NewButton onClick={openNew} label="Nuevo taller" />}
       />
@@ -199,14 +201,6 @@ function WorkshopsPage() {
             />
           </div>
           <div>
-            <Label>Slug *</Label>
-            <Input
-              required
-              value={form.slug}
-              onChange={(e) => setForm((f: any) => ({ ...f, slug: slugify(e.target.value) }))}
-            />
-          </div>
-          <div>
             <Label>Modalidad</Label>
             <Select
               value={form.modality}
@@ -284,10 +278,9 @@ function WorkshopsPage() {
             />
           </div>
           <div>
-            <Label>Cupos *</Label>
+            <Label>Cupos</Label>
             <Input
               type="number"
-              required
               value={form.capacity}
               onChange={(e) => setForm((f: any) => ({ ...f, capacity: e.target.value }))}
             />
@@ -301,12 +294,8 @@ function WorkshopsPage() {
               onChange={(e) => setForm((f: any) => ({ ...f, price: e.target.value }))}
             />
           </div>
-          <div>
-            <Label>URL portada</Label>
-            <Input
-              value={form.cover_image_url ?? ""}
-              onChange={(e) => setForm((f: any) => ({ ...f, cover_image_url: e.target.value }))}
-            />
+          <div className="sm:col-span-2">
+            <WorkshopImageDropzone form={form} setForm={setForm} />
           </div>
         </div>
         <div>
@@ -357,6 +346,95 @@ function blank() {
     is_visible: true,
   };
 }
+
+function WorkshopImageDropzone({ form, setForm }: { form: any; setForm: (fn: any) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const inputId = "workshop-cover-upload";
+
+  async function uploadFile(file?: File) {
+    if (!file) return;
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      toast.error("Solo se permiten imÃ¡genes JPG o PNG.");
+      return;
+    }
+    if (file.size > 6 * 1024 * 1024) {
+      toast.error("La imagen no debe superar 6 MB.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const extension = file.type === "image/png" ? "png" : "jpg";
+      const base = slugify(form.title || "taller");
+      const path = `${base}-${Date.now()}.${extension}`;
+      const { error } = await supabase.storage.from("workshop-images").upload(path, file, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: file.type,
+      });
+      if (error) throw error;
+      const { data } = supabase.storage.from("workshop-images").getPublicUrl(path);
+      setForm((current: any) => ({ ...current, cover_image_url: data.publicUrl }));
+      toast.success("Imagen agregada");
+    } catch (error: any) {
+      toast.error(error.message ?? "No se pudo subir la imagen.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div>
+      <Label>Imagen de portada (JPG o PNG)</Label>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => document.getElementById(inputId)?.click()}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") document.getElementById(inputId)?.click();
+        }}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          uploadFile(event.dataTransfer.files?.[0]);
+        }}
+        className="mt-2 flex min-h-[116px] cursor-pointer items-center gap-4 rounded-2xl border border-dashed border-sand bg-cream/25 p-4 transition hover:border-accent/60"
+      >
+        {form.cover_image_url ? (
+          <img
+            src={form.cover_image_url}
+            alt="Vista previa de portada"
+            className="h-20 w-28 rounded-xl object-cover"
+          />
+        ) : (
+          <div className="flex h-20 w-28 items-center justify-center rounded-xl bg-warm-white text-accent/70">
+            <ImageIcon className="h-7 w-7" />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="font-medium">
+            {uploading ? "Subiendo imagen..." : "Arrastra una imagen o haz clic para seleccionar"}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Formatos permitidos: JPG o PNG. TamaÃ±o mÃ¡ximo: 6 MB.
+          </p>
+          <Button type="button" variant="outline" size="sm" className="mt-3 rounded-full">
+            <Upload className="h-4 w-4" />
+            Agregar imagen
+          </Button>
+        </div>
+      </div>
+      <input
+        id={inputId}
+        type="file"
+        accept="image/jpeg,image/png"
+        className="hidden"
+        onChange={(event) => uploadFile(event.target.files?.[0])}
+      />
+    </div>
+  );
+}
+
 function toLocalInput(iso?: string | null) {
   if (!iso) return "";
   const d = new Date(iso);

@@ -1,38 +1,56 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
-import { listProducts, listNews, listWorkshops } from "@/lib/public.functions";
-import { Button } from "@/components/ui/button";
+import { BookOpen, Calendar, Hand, Heart, Sparkles } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import { ProductCard } from "@/components/product-card";
-import { Sparkles, Leaf, Heart, Home } from "lucide-react";
-import hero from "@/assets/hero-makrana.jpg";
+import { Button } from "@/components/ui/button";
+import { listNews, listProducts, listWorkshops } from "@/lib/public.functions";
+import anaMaria from "@/assets/ana-maria-makrana.jpg";
+import hero from "@/assets/portada-makrana.jpg";
 
 const featuredQ = queryOptions({
   queryKey: ["public", "featured-products"],
-  queryFn: () => listProducts({ data: { featuredOnly: true, limit: 4 } }),
+  queryFn: () => listProducts({ data: { featuredOnly: true, limit: 3 } }),
 });
 const newsQ = queryOptions({
   queryKey: ["public", "home-news"],
-  queryFn: () => listNews({ data: { limit: 3 } }),
+  queryFn: () => listNews({ data: { limit: 5 } }),
 });
 const workshopsQ = queryOptions({
   queryKey: ["public", "home-workshops"],
-  queryFn: () => listWorkshops({ data: { limit: 2 } }),
+  queryFn: () => listWorkshops({ data: {} }),
 });
+
+const emptyNews = [
+  {
+    tag: "Colección",
+    title: "Nuevas piezas en preparación",
+    text: "Muy pronto publicaremos novedades del taller, ferias y piezas listas para tu hogar.",
+  },
+  {
+    tag: "Taller",
+    title: "Cursos de macramé",
+    text: "Estamos preparando fechas y experiencias para aprender con calma y materiales nobles.",
+  },
+  {
+    tag: "Feria",
+    title: "Próximas fechas",
+    text: "Aquí aparecerán los eventos y puntos de encuentro donde podrás ver las piezas en persona.",
+  },
+];
+
+const emptyFeatured = ["Tapices murales", "Maceteros colgantes", "Cortinas decorativas"];
 
 export const Route = createFileRoute("/_public/")({
   head: () => ({
     meta: [
-      { title: "Makrana Home Art — Macramé artesanal premium" },
+      { title: "Makrana Home Art - Macramé artesanal para tu hogar" },
       {
         name: "description",
-        content:
-          "Piezas de macramé hechas a mano, decoración para el hogar, materiales, talleres y cursos.",
+        content: "Piezas de macramé hechas a mano: decoración, accesorios, talleres y cursos.",
       },
       { property: "og:title", content: "Makrana Home Art" },
-      {
-        property: "og:description",
-        content: "Decoración artesanal en macramé, materiales y talleres.",
-      },
+      { property: "og:description", content: "Macramé artesanal premium para tu hogar." },
     ],
   }),
   loader: ({ context }) => {
@@ -47,211 +65,222 @@ function Home_() {
   const { data: featured } = useSuspenseQuery(featuredQ);
   const { data: news } = useSuspenseQuery(newsQ);
   const { data: workshops } = useSuspenseQuery(workshopsQ);
+  const availableWorkshops = workshops.filter((workshop) => workshop.status === "abierto");
+  const inPersonWorkshops = availableWorkshops.filter(
+    (workshop) => workshop.modality === "presencial" || workshop.modality === "hibrido",
+  ).length;
+  const virtualWorkshops = availableWorkshops.filter(
+    (workshop) => workshop.modality === "virtual" || workshop.modality === "hibrido",
+  ).length;
 
   return (
     <>
-      {/* HERO */}
-      <section className="relative overflow-hidden bg-cream">
-        <div className="container-makrana grid md:grid-cols-2 gap-10 items-center py-16 md:py-24">
-          <div>
-            <p className="text-sm uppercase tracking-[0.25em] text-accent">Hecho a mano · Perú</p>
-            <h1 className="mt-4 font-display text-5xl md:text-6xl text-balance leading-[1.05] text-foreground">
-              Makrana <span className="text-accent italic">Home Art</span>
+      <section className="relative min-h-[520px] overflow-hidden bg-cream md:min-h-[560px] lg:min-h-[600px]">
+        <div className="absolute inset-0">
+          <img
+            src={hero}
+            alt="Hojas decorativas de macramé artesanal en colores cálidos"
+            width={1456}
+            height={1088}
+            className="h-full w-full object-cover object-[68%_center]"
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(90deg, var(--cream) 0%, oklch(0.965 0.018 78 / 0.96) 30%, oklch(0.965 0.018 78 / 0.58) 46%, transparent 68%)",
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-cream/10" />
+        </div>
+
+        <div className="container-makrana relative flex min-h-[520px] items-center py-16 md:min-h-[560px] lg:min-h-[600px] lg:py-20">
+          <div className="max-w-[23rem]">
+            <h1>
+              <span className="sr-only">Makrana Home Art</span>
+              <BrandLogo imageClassName="w-full max-w-[20rem] sm:max-w-[21rem] md:max-w-[22rem]" />
             </h1>
-            <p className="mt-5 text-lg text-muted-foreground max-w-prose text-balance">
-              Decoración en macramé tejida nudo por nudo, con algodón natural. Piezas únicas para
-              hacer de tu hogar un espacio cálido, vivo y personal.
+            <p className="mt-5 max-w-[22rem] text-[15px] leading-7 text-foreground md:text-base md:leading-8">
+              Piezas creadas nudo a nudo, donde la paciencia y el detalle se transforman en diseños
+              únicos. Artesanía que aporta calidez, autenticidad y estilo a cada rincón de tu hogar.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg" variant="hero">
+            <div className="mt-8 flex flex-wrap gap-4">
+              <Button asChild size="lg" variant="hero" className="h-12 rounded-xl px-8">
                 <Link to="/catalogo">Ver catálogo</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link to="/talleres">Ver talleres</Link>
-              </Button>
-              <Button asChild size="lg" variant="ghost">
-                <Link to="/registro">Registrarme</Link>
-              </Button>
-            </div>
-          </div>
-          <div className="relative">
-            <img
-              src={hero}
-              alt="Tapiz de macramé artesanal en algodón natural"
-              width={1600}
-              height={1100}
-              className="rounded-2xl shadow-2xl shadow-clay/20 object-cover aspect-[4/3]"
-            />
-            <div className="hidden md:block absolute -bottom-6 -left-6 bg-warm-white border border-sand px-6 py-4 rounded-xl shadow-lg">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                Algodón 100%
-              </p>
-              <p className="font-display text-lg text-foreground">Tejido a mano</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Bienvenida */}
-      <section className="section-padded">
-        <div className="container-makrana grid md:grid-cols-3 gap-8 text-center">
-          <div>
-            <Heart className="mx-auto text-accent" />
-            <h3 className="font-display text-xl mt-3">Hecho con paciencia</h3>
-            <p className="text-sm text-muted-foreground mt-2">
-              Cada nudo se trabaja a mano, con tiempo y detalle.
-            </p>
-          </div>
-          <div>
-            <Leaf className="mx-auto text-accent" />
-            <h3 className="font-display text-xl mt-3">Algodón natural</h3>
-            <p className="text-sm text-muted-foreground mt-2">
-              Trabajamos con fibras nobles, suaves y sostenibles.
-            </p>
-          </div>
-          <div>
-            <Home className="mx-auto text-accent" />
-            <h3 className="font-display text-xl mt-3">Diseño para el hogar</h3>
-            <p className="text-sm text-muted-foreground mt-2">
-              Piezas pensadas para vivir contigo todos los días.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Destacados */}
-      <section className="section-padded bg-cream/60">
-        <div className="container-makrana">
-          <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
-            <div>
-              <p className="text-xs uppercase tracking-widest text-accent">Selección</p>
-              <h2 className="font-display text-4xl mt-2">Piezas destacadas</h2>
-            </div>
-            <Button asChild variant="link">
-              <Link to="/catalogo">Ver todo el catálogo →</Link>
-            </Button>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featured.map((p) => (
-              <ProductCard key={p.id} product={p as any} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Novedades */}
-      <section className="section-padded">
-        <div className="container-makrana">
-          <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
-            <div>
-              <p className="text-xs uppercase tracking-widest text-accent">Del taller</p>
-              <h2 className="font-display text-4xl mt-2">Novedades recientes</h2>
-            </div>
-            <Button asChild variant="link">
-              <Link to="/novedades">Ver todas →</Link>
-            </Button>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {news.map((n) => (
-              <Link
-                key={n.id}
-                to="/novedades/$slug"
-                params={{ slug: n.slug }}
-                className="makrana-card group block"
-              >
-                <div className="aspect-[16/10] overflow-hidden bg-cream">
-                  {n.cover_image_url && (
-                    <img
-                      src={n.cover_image_url}
-                      alt={n.title}
-                      loading="lazy"
-                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  )}
-                </div>
-                <div className="p-5">
-                  <span className="text-xs uppercase tracking-wider text-accent">
-                    {n.category.replaceAll("_", " ")}
-                  </span>
-                  <h3 className="font-display text-xl mt-2">{n.title}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{n.summary}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Talleres */}
-      <section className="section-padded bg-cream/60">
-        <div className="container-makrana">
-          <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
-            <div>
-              <p className="text-xs uppercase tracking-widest text-accent">Aprende con nosotros</p>
-              <h2 className="font-display text-4xl mt-2">Próximos talleres</h2>
-            </div>
-            <Button asChild variant="link">
-              <Link to="/talleres">Ver todos →</Link>
-            </Button>
-          </div>
-          <div className="grid md:grid-cols-2 gap-6">
-            {workshops.map((w) => (
-              <article
-                key={w.id}
-                className="makrana-card flex flex-col md:flex-row overflow-hidden"
-              >
-                {w.cover_image_url && (
-                  <img
-                    src={w.cover_image_url}
-                    alt={w.title}
-                    loading="lazy"
-                    className="md:w-1/2 object-cover aspect-[4/3]"
-                  />
-                )}
-                <div className="p-6 flex flex-col gap-2">
-                  <span className="text-xs uppercase tracking-wider text-accent">
-                    {w.modality} · {w.level}
-                  </span>
-                  <h3 className="font-display text-2xl">{w.title}</h3>
-                  <p className="text-sm text-muted-foreground line-clamp-3">{w.description}</p>
-                  <div className="mt-3 flex justify-between items-center">
-                    <span className="font-display text-xl">S/ {Number(w.price).toFixed(2)}</span>
-                    <Button asChild variant="hero" size="sm">
-                      <Link to="/talleres">Inscribirme</Link>
-                    </Button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="section-padded">
-        <div className="container-makrana">
-          <div className="rounded-3xl bg-terracotta text-warm-white p-10 md:p-16 text-center">
-            <Sparkles className="mx-auto mb-4" />
-            <h2 className="font-display text-4xl">Pieza única para tu hogar</h2>
-            <p className="mt-3 max-w-xl mx-auto opacity-90">
-              ¿Buscas algo a medida? Podemos tejer para ti. Cuéntanos tu idea y la creamos juntos.
-            </p>
-            <div className="mt-6 flex justify-center gap-3 flex-wrap">
-              <Button asChild size="lg" variant="copper">
-                <Link to="/contacto">Hablar por WhatsApp</Link>
               </Button>
               <Button
                 asChild
                 size="lg"
                 variant="outline"
-                className="border-warm-white text-warm-white hover:bg-warm-white/10"
+                className="h-12 rounded-xl border-accent bg-warm-white/70 px-8 text-accent hover:bg-warm-white"
               >
-                <Link to="/registro">Quiero registrarme</Link>
+                <Link to="/talleres">Talleres</Link>
               </Button>
             </div>
           </div>
         </div>
       </section>
+
+      <section className="section-padded bg-warm-white">
+        <div className="container-makrana grid gap-12 lg:grid-cols-2 lg:items-center">
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.22em] text-accent">Bienvenida</div>
+            <h2 className="mt-3 font-display text-4xl leading-tight md:text-5xl">
+              Cada nudo cuenta una historia.
+            </h2>
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
+              Makrana nace del tiempo, las manos y la dedicación. Cada pieza es tejida
+              artesanalmente para llenar tu hogar de calidez, textura y autenticidad. Diseños únicos
+              que transforman cualquier espacio en un lugar más acogedor.
+            </p>
+            <div className="mt-7 grid gap-4 sm:grid-cols-3">
+              <FeaturePill icon={Hand} label="Tejido artesanal" />
+              <FeaturePill icon={Heart} label="Algodón natural" />
+              <FeaturePill icon={Sparkles} label="Piezas únicas" />
+            </div>
+          </div>
+          <div className="relative aspect-[5/4] overflow-hidden rounded-3xl border border-sand/70 bg-cream shadow-2xl shadow-clay/20 lg:ml-auto lg:max-w-[34rem]">
+            <img
+              src={anaMaria}
+              alt="Ana María presentando piezas de macramé artesanal"
+              width={1085}
+              height={1450}
+              loading="lazy"
+              className="h-full w-full object-cover object-center"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-sand/45">
+        <div className="container-makrana py-16 md:py-20">
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.22em] text-accent">Novedades</div>
+            <h2 className="mt-2 font-display text-4xl">Lo que está pasando en el taller</h2>
+          </div>
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {news.length > 0
+              ? news.map((n) => (
+                  <Link
+                    key={n.id}
+                    to="/novedades/$slug"
+                    params={{ slug: n.slug }}
+                    className="rounded-3xl border border-sand/70 bg-warm-white/90 p-6 shadow-lg shadow-clay/10 transition hover:-translate-y-1 hover:shadow-xl"
+                  >
+                    <span className="inline-flex rounded-full bg-accent/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-accent">
+                      {n.category.replaceAll("_", " ")}
+                    </span>
+                    <h3 className="mt-4 font-display text-2xl leading-snug">{n.title}</h3>
+                    <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                      {n.summary}
+                    </p>
+                  </Link>
+                ))
+              : emptyNews.map((n) => (
+                  <article
+                    key={n.title}
+                    className="rounded-3xl border border-sand/70 bg-warm-white/90 p-6 shadow-lg shadow-clay/10"
+                  >
+                    <span className="inline-flex rounded-full bg-accent/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-accent">
+                      {n.tag}
+                    </span>
+                    <h3 className="mt-4 font-display text-2xl leading-snug">{n.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{n.text}</p>
+                  </article>
+                ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section-padded bg-warm-white">
+        <div className="container-makrana">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4">
+            <div className="min-w-0">
+              <div className="text-[11px] uppercase tracking-[0.22em] text-accent">Catálogo</div>
+              <h2 className="mt-2 font-display text-4xl">Piezas destacadas</h2>
+            </div>
+            <Link
+              to="/catalogo"
+              className="shrink-0 text-sm font-medium text-accent hover:underline"
+            >
+              Ver todo
+            </Link>
+          </div>
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {featured.length > 0
+              ? featured.map((p) => <ProductCard key={p.id} product={p as any} />)
+              : emptyFeatured.map((name) => (
+                  <article
+                    key={name}
+                    className="overflow-hidden rounded-3xl border border-sand/70 bg-card shadow-lg shadow-clay/10"
+                  >
+                    <div className="aspect-square bg-gradient-to-br from-cream via-sand/45 to-warm-white" />
+                    <div className="p-5">
+                      <div className="font-display text-xl">{name}</div>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Muy pronto agregaremos piezas publicadas desde el catálogo.
+                      </p>
+                      <div className="mt-4 text-sm font-medium text-accent">Próximamente</div>
+                    </div>
+                  </article>
+                ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="container-makrana pb-20">
+        <div className="grid gap-8 overflow-hidden rounded-3xl border border-sand/70 bg-cream/80 p-8 shadow-xl shadow-clay/10 md:grid-cols-2 md:p-12">
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.22em] text-accent">
+              APRENDE CON NOSOTRAS
+            </div>
+            <h2 className="mt-2 font-display text-3xl">
+              Talleres de macramé para crear con tus propias manos
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              Descubre el arte del macramé en nuestros talleres presenciales y virtuales. Aprende
+              paso a paso, sin importar tu nivel, y crea piezas únicas con el acompañamiento de una
+              instructora.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Button asChild className="rounded-full" variant="hero">
+                <Link to="/talleres">
+                  <Calendar className="h-4 w-4" />
+                  Ver talleres
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-full">
+                <Link to="/registro">
+                  <BookOpen className="h-4 w-4" />
+                  Solicitar información
+                </Link>
+              </Button>
+            </div>
+          </div>
+          <div className="grid gap-3 self-center sm:grid-cols-2">
+            <StatCard value={inPersonWorkshops} label="talleres presenciales disponibles" />
+            <StatCard value={virtualWorkshops} label="talleres virtuales disponibles" />
+          </div>
+        </div>
+      </section>
     </>
+  );
+}
+
+function FeaturePill({ icon: Icon, label }: { icon: typeof Hand; label: string }) {
+  return (
+    <div className="rounded-2xl border border-sand/70 bg-card p-4 text-center shadow-sm">
+      <Icon className="mx-auto h-5 w-5 text-accent" />
+      <div className="mt-2 text-sm font-medium">{label}</div>
+    </div>
+  );
+}
+
+function StatCard({ value, label }: { value: string | number; label: string }) {
+  return (
+    <div className="rounded-2xl bg-warm-white p-5 shadow-sm">
+      <div className="font-display text-3xl text-accent">{value}</div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+    </div>
   );
 }

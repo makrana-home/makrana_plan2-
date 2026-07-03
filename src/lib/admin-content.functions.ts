@@ -208,7 +208,12 @@ export const enrollWorkshop = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { createClient } = await import("@supabase/supabase-js");
-    const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabasePublicKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabasePublicKey) {
+      throw new Error("Missing Supabase public environment variables.");
+    }
+    const sb = createClient(supabaseUrl, supabasePublicKey, {
       auth: { persistSession: false },
     });
     const { error } = await sb.from("workshop_enrollments").insert({
@@ -317,29 +322,53 @@ export const adminReports = createServerFn({ method: "GET" })
     const startMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
     const startDay = today.toISOString();
 
-    const [salesMonth, salesDay, lowStock, topItems, paymentsByMethod, leadsCount, customersCount] =
-      await Promise.all([
-        sb
-          .from("sales")
-          .select("total, status")
-          .gte("created_at", startMonth)
-          .eq("status", "confirmada"),
-        sb
-          .from("sales")
-          .select("total, status")
-          .gte("created_at", startDay)
-          .eq("status", "confirmada"),
-        sb
-          .from("inventory_stock")
-          .select(
-            "quantity, product:products(id, name, sku, min_stock), warehouse:warehouses(code, name)",
-          )
-          .limit(500),
-        sb.from("sale_items").select("quantity, subtotal, product:products(id, name)"),
-        sb.from("sale_payments").select("method, amount").gte("paid_at", startMonth),
-        sb.from("leads").select("id", { count: "exact", head: true }),
-        sb.from("customers").select("id", { count: "exact", head: true }),
-      ]);
+    const [
+      salesMonth,
+      salesDay,
+      lowStock,
+      topItems,
+      paymentsByMethod,
+      leadsCount,
+      customersCount,
+      salesRows,
+      returnRows,
+    ] = await Promise.all([
+      sb
+        .from("sales")
+        .select("total, status")
+        .gte("created_at", startMonth)
+        .eq("status", "confirmada"),
+      sb
+        .from("sales")
+        .select("total, status")
+        .gte("created_at", startDay)
+        .eq("status", "confirmada"),
+      sb
+        .from("inventory_stock")
+        .select(
+          "quantity, product:products(id, name, sku, min_stock), warehouse:warehouses(code, name)",
+        )
+        .limit(500),
+      sb.from("sale_items").select("quantity, subtotal, product:products(id, name)"),
+      sb.from("sale_payments").select("method, amount").gte("paid_at", startMonth),
+      sb.from("leads").select("id", { count: "exact", head: true }),
+      sb.from("customers").select("id", { count: "exact", head: true }),
+      sb
+        .from("sales")
+        .select(
+          "id, created_at, confirmed_at, status, payment_status, delivery_status, subtotal, discount, total, notes, customer:customers(full_name, email, phone), warehouse:warehouses(code, name), receipt:receipts(number), payments:sale_payments(method, amount, paid_at)",
+        )
+        .order("created_at", { ascending: false })
+        .limit(1000),
+      sb
+        .from("inventory_movements")
+        .select(
+          "id, created_at, quantity, reason, notes, product:products(name, sku), warehouse:warehouses!inventory_movements_warehouse_id_fkey(code, name)",
+        )
+        .eq("movement_type", "devolucion")
+        .order("created_at", { ascending: false })
+        .limit(1000),
+    ]);
 
     const sumMonth = (salesMonth.data ?? []).reduce((a: number, r: any) => a + Number(r.total), 0);
     const sumDay = (salesDay.data ?? []).reduce((a: number, r: any) => a + Number(r.total), 0);
@@ -376,6 +405,8 @@ export const adminReports = createServerFn({ method: "GET" })
       lowStock: lowStockList,
       topProducts: top,
       paymentsByMethod: byMethod,
+      saleRows: salesRows.data ?? [],
+      returnRows: returnRows.data ?? [],
       counts: { leads: leadsCount.count ?? 0, customers: customersCount.count ?? 0 },
     };
   });

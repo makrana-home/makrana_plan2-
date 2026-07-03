@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PublicRouteImport } from './routes/_public'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as PublicIndexRouteImport } from './routes/_public.index'
+import { Route as PublicTiendaRouteImport } from './routes/_public.tienda'
 import { Route as PublicTalleresRouteImport } from './routes/_public.talleres'
 import { Route as PublicSobreMakranaRouteImport } from './routes/_public.sobre-makrana'
 import { Route as PublicRegistroRouteImport } from './routes/_public.registro'
@@ -38,6 +39,7 @@ import { Route as AuthenticatedAdminProductosRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminNovedadesRouteImport } from './routes/_authenticated/admin.novedades'
 import { Route as AuthenticatedAdminMovimientosRouteImport } from './routes/_authenticated/admin.movimientos'
 import { Route as AuthenticatedAdminMaterialesRouteImport } from './routes/_authenticated/admin.materiales'
+import { Route as AuthenticatedAdminManualRouteImport } from './routes/_authenticated/admin.manual'
 import { Route as AuthenticatedAdminFeriasRouteImport } from './routes/_authenticated/admin.ferias'
 import { Route as AuthenticatedAdminConfiguracionRouteImport } from './routes/_authenticated/admin.configuracion'
 import { Route as AuthenticatedAdminComprobantesRouteImport } from './routes/_authenticated/admin.comprobantes'
@@ -65,6 +67,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const PublicIndexRoute = PublicIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicTiendaRoute = PublicTiendaRouteImport.update({
+  id: '/tienda',
+  path: '/tienda',
   getParentRoute: () => PublicRoute,
 } as any)
 const PublicTalleresRoute = PublicTalleresRouteImport.update({
@@ -200,6 +207,12 @@ const AuthenticatedAdminMaterialesRoute =
     path: '/materiales',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminManualRoute =
+  AuthenticatedAdminManualRouteImport.update({
+    id: '/manual',
+    path: '/manual',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminFeriasRoute =
   AuthenticatedAdminFeriasRouteImport.update({
     id: '/ferias',
@@ -241,11 +254,13 @@ export interface FileRoutesByFullPath {
   '/registro': typeof PublicRegistroRoute
   '/sobre-makrana': typeof PublicSobreMakranaRoute
   '/talleres': typeof PublicTalleresRoute
+  '/tienda': typeof PublicTiendaRoute
   '/admin/almacenes': typeof AuthenticatedAdminAlmacenesRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/admin/comprobantes': typeof AuthenticatedAdminComprobantesRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
   '/admin/ferias': typeof AuthenticatedAdminFeriasRoute
+  '/admin/manual': typeof AuthenticatedAdminManualRoute
   '/admin/materiales': typeof AuthenticatedAdminMaterialesRoute
   '/admin/movimientos': typeof AuthenticatedAdminMovimientosRoute
   '/admin/novedades': typeof AuthenticatedAdminNovedadesRoute
@@ -273,11 +288,13 @@ export interface FileRoutesByTo {
   '/registro': typeof PublicRegistroRoute
   '/sobre-makrana': typeof PublicSobreMakranaRoute
   '/talleres': typeof PublicTalleresRoute
+  '/tienda': typeof PublicTiendaRoute
   '/admin/almacenes': typeof AuthenticatedAdminAlmacenesRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/admin/comprobantes': typeof AuthenticatedAdminComprobantesRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
   '/admin/ferias': typeof AuthenticatedAdminFeriasRoute
+  '/admin/manual': typeof AuthenticatedAdminManualRoute
   '/admin/materiales': typeof AuthenticatedAdminMaterialesRoute
   '/admin/movimientos': typeof AuthenticatedAdminMovimientosRoute
   '/admin/novedades': typeof AuthenticatedAdminNovedadesRoute
@@ -309,12 +326,14 @@ export interface FileRoutesById {
   '/_public/registro': typeof PublicRegistroRoute
   '/_public/sobre-makrana': typeof PublicSobreMakranaRoute
   '/_public/talleres': typeof PublicTalleresRoute
+  '/_public/tienda': typeof PublicTiendaRoute
   '/_public/': typeof PublicIndexRoute
   '/_authenticated/admin/almacenes': typeof AuthenticatedAdminAlmacenesRoute
   '/_authenticated/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/_authenticated/admin/comprobantes': typeof AuthenticatedAdminComprobantesRoute
   '/_authenticated/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
   '/_authenticated/admin/ferias': typeof AuthenticatedAdminFeriasRoute
+  '/_authenticated/admin/manual': typeof AuthenticatedAdminManualRoute
   '/_authenticated/admin/materiales': typeof AuthenticatedAdminMaterialesRoute
   '/_authenticated/admin/movimientos': typeof AuthenticatedAdminMovimientosRoute
   '/_authenticated/admin/novedades': typeof AuthenticatedAdminNovedadesRoute
@@ -346,11 +365,13 @@ export interface FileRouteTypes {
     | '/registro'
     | '/sobre-makrana'
     | '/talleres'
+    | '/tienda'
     | '/admin/almacenes'
     | '/admin/clientes'
     | '/admin/comprobantes'
     | '/admin/configuracion'
     | '/admin/ferias'
+    | '/admin/manual'
     | '/admin/materiales'
     | '/admin/movimientos'
     | '/admin/novedades'
@@ -378,11 +399,13 @@ export interface FileRouteTypes {
     | '/registro'
     | '/sobre-makrana'
     | '/talleres'
+    | '/tienda'
     | '/admin/almacenes'
     | '/admin/clientes'
     | '/admin/comprobantes'
     | '/admin/configuracion'
     | '/admin/ferias'
+    | '/admin/manual'
     | '/admin/materiales'
     | '/admin/movimientos'
     | '/admin/novedades'
@@ -413,12 +436,14 @@ export interface FileRouteTypes {
     | '/_public/registro'
     | '/_public/sobre-makrana'
     | '/_public/talleres'
+    | '/_public/tienda'
     | '/_public/'
     | '/_authenticated/admin/almacenes'
     | '/_authenticated/admin/clientes'
     | '/_authenticated/admin/comprobantes'
     | '/_authenticated/admin/configuracion'
     | '/_authenticated/admin/ferias'
+    | '/_authenticated/admin/manual'
     | '/_authenticated/admin/materiales'
     | '/_authenticated/admin/movimientos'
     | '/_authenticated/admin/novedades'
@@ -481,6 +506,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof PublicIndexRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/tienda': {
+      id: '/_public/tienda'
+      path: '/tienda'
+      fullPath: '/tienda'
+      preLoaderRoute: typeof PublicTiendaRouteImport
       parentRoute: typeof PublicRoute
     }
     '/_public/talleres': {
@@ -651,6 +683,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminMaterialesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/manual': {
+      id: '/_authenticated/admin/manual'
+      path: '/manual'
+      fullPath: '/admin/manual'
+      preLoaderRoute: typeof AuthenticatedAdminManualRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/ferias': {
       id: '/_authenticated/admin/ferias'
       path: '/ferias'
@@ -695,6 +734,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminComprobantesRoute: typeof AuthenticatedAdminComprobantesRoute
   AuthenticatedAdminConfiguracionRoute: typeof AuthenticatedAdminConfiguracionRoute
   AuthenticatedAdminFeriasRoute: typeof AuthenticatedAdminFeriasRoute
+  AuthenticatedAdminManualRoute: typeof AuthenticatedAdminManualRoute
   AuthenticatedAdminMaterialesRoute: typeof AuthenticatedAdminMaterialesRoute
   AuthenticatedAdminMovimientosRoute: typeof AuthenticatedAdminMovimientosRoute
   AuthenticatedAdminNovedadesRoute: typeof AuthenticatedAdminNovedadesRoute
@@ -711,6 +751,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminComprobantesRoute: AuthenticatedAdminComprobantesRoute,
   AuthenticatedAdminConfiguracionRoute: AuthenticatedAdminConfiguracionRoute,
   AuthenticatedAdminFeriasRoute: AuthenticatedAdminFeriasRoute,
+  AuthenticatedAdminManualRoute: AuthenticatedAdminManualRoute,
   AuthenticatedAdminMaterialesRoute: AuthenticatedAdminMaterialesRoute,
   AuthenticatedAdminMovimientosRoute: AuthenticatedAdminMovimientosRoute,
   AuthenticatedAdminNovedadesRoute: AuthenticatedAdminNovedadesRoute,
@@ -763,6 +804,7 @@ interface PublicRouteChildren {
   PublicRegistroRoute: typeof PublicRegistroRoute
   PublicSobreMakranaRoute: typeof PublicSobreMakranaRoute
   PublicTalleresRoute: typeof PublicTalleresRoute
+  PublicTiendaRoute: typeof PublicTiendaRoute
   PublicIndexRoute: typeof PublicIndexRoute
   PublicCatalogoSlugRoute: typeof PublicCatalogoSlugRoute
   PublicNovedadesSlugRoute: typeof PublicNovedadesSlugRoute
@@ -775,6 +817,7 @@ const PublicRouteChildren: PublicRouteChildren = {
   PublicRegistroRoute: PublicRegistroRoute,
   PublicSobreMakranaRoute: PublicSobreMakranaRoute,
   PublicTalleresRoute: PublicTalleresRoute,
+  PublicTiendaRoute: PublicTiendaRoute,
   PublicIndexRoute: PublicIndexRoute,
   PublicCatalogoSlugRoute: PublicCatalogoSlugRoute,
   PublicNovedadesSlugRoute: PublicNovedadesSlugRoute,

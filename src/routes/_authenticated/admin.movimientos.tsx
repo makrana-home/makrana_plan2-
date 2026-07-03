@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+﻿import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -29,6 +29,7 @@ import {
   adminListMovements,
   adminApplyMovement,
 } from "@/lib/admin.functions";
+import { formatUnits } from "@/lib/format-units";
 
 export const Route = createFileRoute("/_authenticated/admin/movimientos")({
   component: MovementsPage,
@@ -47,6 +48,8 @@ function MovementsPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<any>({
     movement_type: "entrada",
+    item_type: "producto_terminado",
+    product_search: "",
     product_id: "",
     warehouse_id: "",
     warehouse_dest_id: "",
@@ -66,6 +69,16 @@ function MovementsPage() {
     setWarehouses(w);
     setMovs(m);
   }
+  const filteredProducts = useMemo(() => {
+    const q = normalizeSearch(form.product_search ?? "");
+    return products.filter((product) => {
+      const matchesType =
+        form.item_type === "material" ? product.type === "material" : product.type !== "material";
+      const searchable = normalizeSearch(`${product.name ?? ""} ${product.sku ?? ""}`);
+      return matchesType && (!q || searchable.includes(q));
+    });
+  }, [form.item_type, form.product_search, products]);
+
   useEffect(() => {
     refresh(); /* eslint-disable-line */
   }, []);
@@ -73,6 +86,8 @@ function MovementsPage() {
   function openNew() {
     setForm({
       movement_type: "entrada",
+      item_type: "producto_terminado",
+      product_search: "",
       product_id: "",
       warehouse_id: "",
       warehouse_dest_id: "",
@@ -87,6 +102,10 @@ function MovementsPage() {
     e.preventDefault();
     setSaving(true);
     try {
+      if (form.movement_type === "transferencia" && form.warehouse_id === form.warehouse_dest_id) {
+        toast.error("El almacén origen y destino deben ser diferentes.");
+        return;
+      }
       await apply({
         data: {
           product_id: form.product_id,
@@ -113,7 +132,7 @@ function MovementsPage() {
       <PageHeader
         title="Movimientos de stock"
         description="Entradas, salidas, transferencias entre almacenes y ajustes manuales."
-        actions={<NewButton onClick={openNew} label="Nuevo movimiento" />}
+        actions={<NewButton onClick={openNew} label="Nueva entrada" />}
       />
 
       <div className="border border-sand/60 rounded-xl overflow-hidden bg-warm-white">
@@ -122,7 +141,7 @@ function MovementsPage() {
             <TableRow>
               <TableHead>Fecha</TableHead>
               <TableHead>Tipo</TableHead>
-              <TableHead>Producto</TableHead>
+              <TableHead>Ítem</TableHead>
               <TableHead>Origen</TableHead>
               <TableHead>Destino</TableHead>
               <TableHead className="text-right">Cantidad</TableHead>
@@ -143,14 +162,21 @@ function MovementsPage() {
                   {formatDate(m.created_at)}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={badgeVariant(m.movement_type)}>{m.movement_type}</Badge>
+                  <Badge
+                    variant={badgeVariant(m.movement_type)}
+                    className={
+                      m.movement_type === "venta"
+                        ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
+                        : undefined
+                    }
+                  >
+                    {m.movement_type}
+                  </Badge>
                 </TableCell>
                 <TableCell>{m.product?.name}</TableCell>
                 <TableCell className="text-xs">{m.warehouse?.code}</TableCell>
                 <TableCell className="text-xs">{m.warehouse_dest?.code ?? "—"}</TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {Number(m.quantity).toFixed(2)}
-                </TableCell>
+                <TableCell className="text-right tabular-nums">{formatUnits(m.quantity)}</TableCell>
                 <TableCell
                   className="text-xs text-muted-foreground max-w-[240px] truncate"
                   title={m.reason}
@@ -166,7 +192,12 @@ function MovementsPage() {
       <FormDialog
         open={dlg.open}
         onOpenChange={dlg.setOpen}
-        title="Nuevo movimiento"
+        title={form.movement_type === "transferencia" ? "Transferir stock" : "Nuevo movimiento"}
+        description={
+          form.movement_type === "transferencia"
+            ? "Elige el ítem, cuántas unidades quieres transferir, el almacén origen y el almacén destino."
+            : "Registra una entrada, salida, devolución o ajuste de inventario."
+        }
         onSubmit={onSubmit}
         submitting={saving}
       >
@@ -190,20 +221,55 @@ function MovementsPage() {
             </Select>
           </div>
           <div>
-            <Label>Producto *</Label>
+            <Label>Seleccionar pieza o material *</Label>
+            <Select
+              value={form.item_type}
+              onValueChange={(v) =>
+                setForm((f: any) => ({
+                  ...f,
+                  item_type: v,
+                  product_id: "",
+                  product_search: "",
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="producto_terminado">Piezas</SelectItem>
+                <SelectItem value="material">Materiales</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Buscar por nombre o SKU</Label>
+            <Input
+              value={form.product_search}
+              onChange={(e) => setForm((f: any) => ({ ...f, product_search: e.target.value }))}
+              placeholder="Escribe nombre o SKU..."
+            />
+          </div>
+          <div>
+            <Label>Ítem *</Label>
             <Select
               value={form.product_id}
               onValueChange={(v) => setForm((f: any) => ({ ...f, product_id: v }))}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Seleccionar" />
+                <SelectValue placeholder="Seleccionar ítem" />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
-                {products.map((p: any) => (
+                {filteredProducts.map((p: any) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.name} {p.sku && `(${p.sku})`}
                   </SelectItem>
                 ))}
+                {filteredProducts.length === 0 && (
+                  <div className="px-3 py-2 text-sm text-muted-foreground">
+                    Sin resultados para esa búsqueda.
+                  </div>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -250,10 +316,15 @@ function MovementsPage() {
             </div>
           )}
           <div>
-            <Label>Cantidad *</Label>
+            <Label>
+              {form.movement_type === "transferencia"
+                ? "Cantidad de unidades a transferir *"
+                : "Cantidad *"}
+            </Label>
             <Input
               type="number"
-              step="0.01"
+              min="1"
+              step="1"
               required
               value={form.quantity}
               onChange={(e) => setForm((f: any) => ({ ...f, quantity: e.target.value }))}
@@ -283,7 +354,16 @@ function MovementsPage() {
 
 function badgeVariant(t: string): any {
   if (t === "entrada" || t === "devolucion") return "default";
-  if (t === "salida" || t === "venta") return "destructive";
+  if (t === "salida") return "destructive";
+  if (t === "venta") return "outline";
   if (t === "transferencia") return "secondary";
   return "outline";
+}
+
+function normalizeSearch(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }

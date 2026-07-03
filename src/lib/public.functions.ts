@@ -4,7 +4,14 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 
 function publicClient() {
-  return createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabasePublicKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabasePublicKey) {
+    throw new Error("Missing Supabase public environment variables.");
+  }
+
+  return createClient<Database>(supabaseUrl, supabasePublicKey, {
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
   });
 }
@@ -119,16 +126,42 @@ const leadSchema = z.object({
 export const createLead = createServerFn({ method: "POST" })
   .inputValidator((d) => leadSchema.parse(d))
   .handler(async ({ data }) => {
-    const sb = publicClient();
-    const { error } = await sb.from("leads").insert({
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const payload = {
       full_name: data.full_name,
       email: data.email || null,
       phone: data.phone || null,
       location: data.location || null,
-      source: data.source || null,
-      interest: data.interest || null,
-      message: data.message || null,
-    });
+      source: data.source || "registro web",
+      interests: data.interest || null,
+      notes: data.message || null,
+    };
+
+    let existingId: string | null = null;
+    if (payload.email) {
+      const { data: existingByEmail, error: findEmailError } = await supabaseAdmin
+        .from("customers")
+        .select("id")
+        .eq("email", payload.email)
+        .maybeSingle();
+      if (findEmailError) throw findEmailError;
+      existingId = existingByEmail?.id ?? null;
+    }
+    if (!existingId && payload.phone) {
+      const { data: existingByPhone, error: findPhoneError } = await supabaseAdmin
+        .from("customers")
+        .select("id")
+        .eq("phone", payload.phone)
+        .maybeSingle();
+      if (findPhoneError) throw findPhoneError;
+      existingId = existingByPhone?.id ?? null;
+    }
+
+    const query = existingId
+      ? supabaseAdmin.from("customers").update(payload).eq("id", existingId)
+      : supabaseAdmin.from("customers").insert(payload);
+
+    const { error } = await query;
     if (error) throw error;
     return { ok: true };
   });

@@ -26,7 +26,10 @@ const productSchema = z.object({
   category_id: z.string().uuid().optional().nullable(),
   main_image_url: z.string().url().max(500).optional().nullable().or(z.literal("")),
   price: z.coerce.number().nonnegative(),
-  cost: z.coerce.number().nonnegative().optional().nullable(),
+  cost: z.preprocess(
+    (value) => (value === "" || value === undefined ? null : value),
+    z.coerce.number().nonnegative().nullable().optional(),
+  ),
   status: z.enum(["disponible", "por_encargo", "agotado", "reservado"]),
   measurements: z.string().trim().max(120).optional().nullable(),
   color: z.string().trim().max(60).optional().nullable(),
@@ -49,7 +52,7 @@ export const adminListProducts = createServerFn({ method: "GET" })
     let q = context.supabase
       .from("products")
       .select(
-        "id, type, sku, slug, name, price, status, is_visible, is_featured, category:categories(id, name)",
+        "id, type, sku, slug, name, main_image_url, price, cost, status, is_visible, is_featured, category:categories(id, name), presentations:material_presentations(*)",
       )
       .order("created_at", { ascending: false });
     if (data.type) q = q.eq("type", data.type);
@@ -114,7 +117,9 @@ const presentationSchema = z.object({
     "otro",
   ]),
   label: z.string().trim().max(80).optional().nullable(),
+  sku: z.string().trim().max(60).optional().nullable(),
   price: z.coerce.number().nonnegative(),
+  cost: z.coerce.number().nonnegative().optional().nullable(),
   units_in_presentation: z.coerce.number().positive(),
 });
 
@@ -123,9 +128,15 @@ export const adminUpsertPresentation = createServerFn({ method: "POST" })
   .inputValidator((d) => presentationSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
+    const payload = {
+      ...data,
+      label: data.unit,
+      sku: data.sku || null,
+      cost: data.cost ?? null,
+    };
     const { data: row, error } = await context.supabase
       .from("material_presentations")
-      .upsert(data, { onConflict: "id" })
+      .upsert(payload, { onConflict: "id" })
       .select("id")
       .single();
     if (error) throw error;
@@ -152,10 +163,45 @@ export const adminListCategories = createServerFn({ method: "GET" })
     await assertStaff(context);
     const { data, error } = await context.supabase
       .from("categories")
-      .select("id, slug, name, is_active, sort_order")
+      .select("id, slug, name, description, is_active, sort_order")
       .order("sort_order");
     if (error) throw error;
     return data ?? [];
+  });
+
+const categorySchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  scope: z.enum(["piece", "material"]).optional(),
+});
+
+export const adminCreateCategory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => categorySchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertStaff(context);
+    const slug = data.name
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    const { data: row, error } = await context.supabase
+      .from("categories")
+      .upsert(
+        {
+          name: data.name,
+          slug,
+          description: data.scope ? `scope:${data.scope}` : null,
+          is_active: true,
+        },
+        { onConflict: "slug" },
+      )
+      .select("id, slug, name, description, is_active, sort_order")
+      .single();
+    if (error) throw error;
+    return row;
   });
 
 // ============ WAREHOUSES ============
@@ -218,7 +264,7 @@ export const adminListStock = createServerFn({ method: "GET" })
     let q = context.supabase
       .from("inventory_stock")
       .select(
-        "id, quantity, updated_at, product:products(id, name, type, sku, min_stock), warehouse:warehouses(id, code, name)",
+        "id, quantity, updated_at, product:products(id, name, type, sku, min_stock, cost, price), warehouse:warehouses(id, code, name)",
       )
       .order("updated_at", { ascending: false });
     if (data.warehouseId) q = q.eq("warehouse_id", data.warehouseId);

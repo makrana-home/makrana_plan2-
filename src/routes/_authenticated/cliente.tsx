@@ -22,6 +22,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BrandLogo } from "@/components/brand-logo";
 
 export const Route = createFileRoute("/_authenticated/cliente")({
   component: ClientShell,
@@ -53,8 +54,8 @@ function ClientShell() {
       <div className="flex min-h-screen w-full bg-background">
         <Sidebar>
           <SidebarHeader>
-            <Link to="/" className="font-display text-xl px-2 py-3">
-              Makrana
+            <Link to="/" className="px-2 py-3 inline-flex">
+              <BrandLogo imageClassName="w-32" />
             </Link>
           </SidebarHeader>
           <SidebarContent>

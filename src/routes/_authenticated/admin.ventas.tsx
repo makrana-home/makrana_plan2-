@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Trash2, CheckCircle2, XCircle, FileText, Pencil } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, XCircle, FileText, Pencil, Eye } from "lucide-react";
 import {
   PageHeader,
   NewButton,
@@ -35,6 +35,7 @@ import {
 import {
   adminListSales,
   adminGetSale,
+  adminGetReceipt,
   adminCreateSale,
   adminUpdateSale,
   adminAddSaleItem,
@@ -46,13 +47,24 @@ import {
   adminListCustomers,
 } from "@/lib/admin-sales.functions";
 import { adminListWarehouses, adminListProducts } from "@/lib/admin.functions";
+import { ReceiptPreviewDialog, type ReceiptVariant } from "@/components/admin/receipt-documents";
+import { formatUnits } from "@/lib/format-units";
 
 export const Route = createFileRoute("/_authenticated/admin/ventas")({ component: SalesPage });
+
+const deliveryStatusOptions = [
+  { value: "pendiente", label: "Pendiente" },
+  { value: "en_preparacion", label: "En preparación" },
+  { value: "entregado", label: "Entregado" },
+  { value: "enviado", label: "Enviado" },
+  { value: "cancelado", label: "Cancelado" },
+] as const;
 
 function SalesPage() {
   const listFn = useServerFn(adminListSales);
   const create = useServerFn(adminCreateSale);
   const cancel = useServerFn(adminCancelSale);
+  const getReceipt = useServerFn(adminGetReceipt);
   const listWh = useServerFn(adminListWarehouses);
   const listCustomers = useServerFn(adminListCustomers);
 
@@ -64,9 +76,12 @@ function SalesPage() {
   const [newForm, setNewForm] = useState<any>({
     warehouse_id: "",
     customer_id: "",
-    channel: "Web",
+    channel: "Showroom",
+    delivery_status: "pendiente",
     notes: "",
   });
+  const [receiptPreview, setReceiptPreview] = useState<any>(null);
+  const [receiptVariant, setReceiptVariant] = useState<ReceiptVariant>("internal");
   const [saving, setSaving] = useState(false);
 
   async function refresh() {
@@ -88,6 +103,10 @@ function SalesPage() {
           customer_id: newForm.customer_id || null,
           channel: newForm.channel,
           notes: newForm.notes || null,
+          delivery_status: getDefaultDeliveryStatusForWarehouse(
+            wh.find((item) => item.id === newForm.warehouse_id),
+            newForm.delivery_status,
+          ),
           discount: 0,
         },
       });
@@ -96,7 +115,12 @@ function SalesPage() {
       refresh();
       setOpenId(r.id);
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(
+        getActionErrorMessage(
+          e,
+          "No se pudo crear la venta. Recarga la pagina e intenta nuevamente.",
+        ),
+      );
     } finally {
       setSaving(false);
     }
@@ -104,8 +128,8 @@ function SalesPage() {
   async function onCancel(r: any) {
     const message =
       r.status === "confirmada"
-        ? "Anular venta confirmada? Se devolvera el stock al almacen."
-        : "Anular venta en borrador?";
+        ? "¿Anular venta confirmada? Se devolverá el stock al almacén."
+        : "¿Anular venta en borrador?";
     if (!confirm(message)) return;
     try {
       await cancel({ data: { id: r.id } });
@@ -114,6 +138,28 @@ function SalesPage() {
     } catch (e: any) {
       toast.error(e.message);
     }
+  }
+  async function viewReceipt(id: string, variant: ReceiptVariant) {
+    try {
+      const receipt = await getReceipt({ data: { id } });
+      setReceiptVariant(variant);
+      setReceiptPreview(receipt);
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  }
+  function selectWarehouseForSale(warehouseId: string) {
+    const warehouse = wh.find((item) => item.id === warehouseId);
+    setNewForm((form: any) => ({
+      ...form,
+      warehouse_id: warehouseId,
+      channel: isFairWarehouse(warehouse)
+        ? "Feria"
+        : form.channel === "Feria"
+          ? "Showroom"
+          : form.channel,
+      delivery_status: getDefaultDeliveryStatusForWarehouse(warehouse, form.delivery_status),
+    }));
   }
 
   return (
@@ -127,7 +173,8 @@ function SalesPage() {
               setNewForm({
                 warehouse_id: wh[0]?.id ?? "",
                 customer_id: "",
-                channel: "Web",
+                channel: isFairWarehouse(wh[0]) ? "Feria" : "Showroom",
+                delivery_status: getDefaultDeliveryStatusForWarehouse(wh[0], "pendiente"),
                 notes: "",
               });
               newDlg.openWith(null);
@@ -148,7 +195,7 @@ function SalesPage() {
               <TableHead>Pago</TableHead>
               <TableHead>Entrega</TableHead>
               <TableHead className="text-right">Total</TableHead>
-              <TableHead>Comprobante</TableHead>
+              <TableHead>Nota de venta</TableHead>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>
@@ -192,10 +239,16 @@ function SalesPage() {
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{moneyPEN(r.total)}</TableCell>
                 <TableCell>
-                  {r.receipt?.[0]?.number ? (
-                    <Link to="/admin/comprobantes" className="text-accent underline text-xs">
-                      {r.receipt[0].number}
-                    </Link>
+                  {getSaleReceipt(r)?.id ? (
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => viewReceipt(getSaleReceipt(r).id, "note")}
+                      >
+                        <Eye className="h-3.5 w-3.5" /> Nota de venta
+                      </Button>
+                    </div>
                   ) : (
                     <span className="text-xs text-muted-foreground">—</span>
                   )}
@@ -223,71 +276,101 @@ function SalesPage() {
         onSubmit={onCreate}
         submitting={saving}
       >
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="space-y-5">
           <div>
             <Label>Almacén *</Label>
-            <Select
-              value={newForm.warehouse_id}
-              onValueChange={(v) => setNewForm((f: any) => ({ ...f, warehouse_id: v }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar" />
-              </SelectTrigger>
-              <SelectContent>
-                {wh.map((w: any) => (
-                  <SelectItem key={w.id} value={w.id}>
-                    {w.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="mt-2 grid gap-3 sm:grid-cols-3">
+              {wh.map((warehouse: any) => {
+                const selected = newForm.warehouse_id === warehouse.id;
+                return (
+                  <button
+                    key={warehouse.id}
+                    type="button"
+                    onClick={() => selectWarehouseForSale(warehouse.id)}
+                    className={[
+                      "rounded-2xl border p-4 text-left transition shadow-sm",
+                      selected
+                        ? "border-accent bg-accent text-warm-white shadow-accent/20"
+                        : "border-sand bg-warm-white hover:border-accent/60 hover:bg-cream",
+                    ].join(" ")}
+                  >
+                    <div className="text-xs font-bold uppercase tracking-[0.18em] opacity-75">
+                      {warehouse.code || "Almacén"}
+                    </div>
+                    <div className="mt-1 text-sm font-semibold leading-snug">{warehouse.name}</div>
+                    {isFairWarehouse(warehouse) && (
+                      <div
+                        className={[
+                          "mt-3 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                          selected
+                            ? "bg-warm-white/20 text-warm-white"
+                            : "bg-accent/10 text-accent",
+                        ].join(" ")}
+                      >
+                        Canal Feria
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <div>
-            <Label>Canal</Label>
-            <Select
-              value={newForm.channel}
-              onValueChange={(v) => setNewForm((f: any) => ({ ...f, channel: v }))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {["Web", "WhatsApp", "Instagram", "Feria", "Showroom", "Otro"].map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="sm:col-span-2">
-            <Label>Cliente</Label>
-            <Select
-              value={newForm.customer_id || "_none"}
-              onValueChange={(v) =>
-                setNewForm((f: any) => ({ ...f, customer_id: v === "_none" ? "" : v }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="max-h-[300px]">
-                <SelectItem value="_none">— sin cliente —</SelectItem>
-                {customers.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="sm:col-span-2">
-            <Label>Notas</Label>
-            <Textarea
-              rows={2}
-              value={newForm.notes}
-              onChange={(e) => setNewForm((f: any) => ({ ...f, notes: e.target.value }))}
-            />
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label>Canal de venta</Label>
+              {isFairWarehouse(wh.find((item) => item.id === newForm.warehouse_id)) ? (
+                <Input value="Feria" disabled className="bg-cream/60 font-semibold" />
+              ) : (
+                <Select
+                  value={newForm.channel}
+                  onValueChange={(v) => setNewForm((f: any) => ({ ...f, channel: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["Showroom", "Instagram", "WhatsApp", "Página web", "Facebook", "TikTok"].map(
+                      (channel) => (
+                        <SelectItem key={channel} value={channel}>
+                          {channel}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            <div>
+              <Label>Cliente</Label>
+              <Select
+                value={newForm.customer_id || "_none"}
+                onValueChange={(v) =>
+                  setNewForm((f: any) => ({ ...f, customer_id: v === "_none" ? "" : v }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  <SelectItem value="_none">— sin cliente —</SelectItem>
+                  {customers.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Notas</Label>
+              <Textarea
+                rows={2}
+                value={newForm.notes}
+                onChange={(e) => setNewForm((f: any) => ({ ...f, notes: e.target.value }))}
+                placeholder="Detalle de la venta, pedido o coordinación con el cliente."
+              />
+            </div>
           </div>
         </div>
       </FormDialog>
@@ -300,9 +383,52 @@ function SalesPage() {
         }}
         customers={customers}
         warehouses={wh}
+        onViewReceipt={viewReceipt}
+      />
+
+      <ReceiptPreviewDialog
+        receipt={receiptPreview}
+        open={!!receiptPreview}
+        onOpenChange={(open) => !open && setReceiptPreview(null)}
+        initialVariant={receiptVariant}
+        noteOnly
       />
     </div>
   );
+}
+
+function isFairWarehouse(warehouse?: any) {
+  const text = `${warehouse?.code ?? ""} ${warehouse?.name ?? ""}`
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return text.includes("feria") || text.split(/\s+/).includes("fe");
+}
+
+function getDefaultDeliveryStatusForWarehouse(warehouse?: any, current = "pendiente") {
+  return isFairWarehouse(warehouse) ? "cancelado" : current || "pendiente";
+}
+
+function normalizeSaleSearch(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function getSaleReceipt(sale: any) {
+  const receipt = sale?.receipt;
+  return Array.isArray(receipt) ? receipt[0] : receipt;
+}
+
+function getActionErrorMessage(error: any, fallback: string) {
+  const message = String(error?.message ?? error ?? "");
+  if (message.includes("<!doctype html") || message.includes("This page didn't load")) {
+    return fallback;
+  }
+  return message || fallback;
 }
 
 function SaleDrawer({
@@ -310,11 +436,13 @@ function SaleDrawer({
   onClose,
   customers,
   warehouses,
+  onViewReceipt,
 }: {
   saleId: string | null;
   onClose: () => void;
   customers: any[];
   warehouses: any[];
+  onViewReceipt: (id: string, variant: ReceiptVariant) => void;
 }) {
   const getSale = useServerFn(adminGetSale);
   const update = useServerFn(adminUpdateSale);
@@ -329,6 +457,7 @@ function SaleDrawer({
   const [products, setProducts] = useState<any[]>([]);
   const [item, setItem] = useState<any>({
     product_id: "",
+    product_search: "",
     quantity: 1,
     unit_price: 0,
     discount: 0,
@@ -351,6 +480,13 @@ function SaleDrawer({
       ]).then((arr) => setProducts(arr.flat()));
     } /* eslint-disable-line */
   }, [saleId]);
+  const filteredProducts = useMemo(() => {
+    const q = normalizeSaleSearch(item.product_search ?? "");
+    return products.filter((product) => {
+      const searchable = normalizeSaleSearch(`${product.name ?? ""} ${product.sku ?? ""}`);
+      return !q || searchable.includes(q);
+    });
+  }, [item.product_search, products]);
 
   async function onSaveHeader() {
     try {
@@ -372,7 +508,7 @@ function SaleDrawer({
   }
   async function onAddItem() {
     if (!item.product_id || !item.quantity || !item.unit_price)
-      return toast.error("Completa producto, cantidad y precio");
+      return toast.error("Completa pieza o material, cantidad y precio");
     try {
       await addItem({
         data: {
@@ -384,7 +520,14 @@ function SaleDrawer({
           description: item.description || null,
         },
       });
-      setItem({ product_id: "", quantity: 1, unit_price: 0, discount: 0, description: "" });
+      setItem({
+        product_id: "",
+        product_search: "",
+        quantity: 1,
+        unit_price: 0,
+        discount: 0,
+        description: "",
+      });
       refresh();
     } catch (e: any) {
       toast.error(e.message);
@@ -424,11 +567,19 @@ function SaleDrawer({
     }
   }
   async function onConfirm() {
-    if (!confirm("Confirmar venta? Se descontará stock y se emitirá comprobante.")) return;
+    if (!confirm("¿Confirmar venta? Se descontará stock y se emitirá comprobante.")) return;
     try {
       const r = await confirm_({ data: { id: sale.id } });
       toast.success(`Comprobante emitido: ${r?.[0]?.receipt_number ?? ""}`);
-      refresh();
+      const updatedSale = await getSale({ data: { id: sale.id } });
+      setSale(updatedSale);
+      const receiptId = getSaleReceipt(updatedSale)?.id;
+      if (receiptId) {
+        onClose();
+        onViewReceipt(receiptId, "note");
+      } else {
+        refresh();
+      }
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -445,14 +596,16 @@ function SaleDrawer({
         {sale && (
           <>
             <SheetHeader>
-              <SheetTitle className="font-display text-2xl">Venta {sale.id.slice(0, 8)}</SheetTitle>
+              <SheetTitle className="font-display text-2xl">
+                Venta {getSaleReceipt(sale)?.number ?? sale.id.slice(0, 8)}
+              </SheetTitle>
               <div className="flex flex-wrap gap-2 text-xs">
                 <Badge variant={sale.status === "confirmada" ? "default" : "outline"}>
                   {sale.status}
                 </Badge>
                 <Badge variant="secondary">pago: {sale.payment_status}</Badge>
                 <Badge variant="outline">entrega: {sale.delivery_status}</Badge>
-                {sale.receipt?.[0] && <Badge>Comprobante {sale.receipt[0].number}</Badge>}
+                {getSaleReceipt(sale) && <Badge>Comprobante {getSaleReceipt(sale).number}</Badge>}
               </div>
             </SheetHeader>
 
@@ -484,7 +637,17 @@ function SaleDrawer({
                 <Select
                   disabled={sale.status !== "borrador"}
                   value={sale.warehouse_id}
-                  onValueChange={(v) => setSale((s: any) => ({ ...s, warehouse_id: v }))}
+                  onValueChange={(v) => {
+                    const warehouse = warehouses.find((item) => item.id === v);
+                    setSale((s: any) => ({
+                      ...s,
+                      warehouse_id: v,
+                      delivery_status: getDefaultDeliveryStatusForWarehouse(
+                        warehouse,
+                        s.delivery_status,
+                      ),
+                    }));
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -518,13 +681,11 @@ function SaleDrawer({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {["pendiente", "en_preparacion", "entregado", "enviado", "cancelado"].map(
-                      (s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
-                      ),
-                    )}
+                    {deliveryStatusOptions.map((status) => (
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -542,12 +703,12 @@ function SaleDrawer({
             </Button>
 
             <div className="mt-8">
-              <h3 className="font-display text-lg mb-2">Items</h3>
+              <h3 className="font-display text-lg mb-2">Ítems</h3>
               <div className="border border-sand/60 rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Producto</TableHead>
+                      <TableHead>Pieza</TableHead>
                       <TableHead className="text-right">Cant.</TableHead>
                       <TableHead className="text-right">P. unit</TableHead>
                       <TableHead className="text-right">Subtotal</TableHead>
@@ -564,7 +725,7 @@ function SaleDrawer({
                           </div>
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
-                          {Number(it.quantity).toFixed(2)}
+                          {formatUnits(it.quantity)}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {moneyPEN(it.unit_price)}
@@ -587,7 +748,7 @@ function SaleDrawer({
                           colSpan={5}
                           className="text-center text-muted-foreground py-6 text-sm"
                         >
-                          Sin items aún.
+                          Sin ítems aún.
                         </TableCell>
                       </TableRow>
                     )}
@@ -596,8 +757,18 @@ function SaleDrawer({
               </div>
               {sale.status === "borrador" && (
                 <div className="grid grid-cols-12 gap-2 mt-3 items-end">
-                  <div className="col-span-5">
-                    <Label className="text-xs">Producto</Label>
+                  <div className="col-span-12 sm:col-span-4">
+                    <Label className="text-xs">Buscar pieza o material por SKU o nombre</Label>
+                    <Input
+                      value={item.product_search}
+                      onChange={(e) =>
+                        setItem((s: any) => ({ ...s, product_search: e.target.value }))
+                      }
+                      placeholder="Ej. 0001 o camino de mesa"
+                    />
+                  </div>
+                  <div className="col-span-12 sm:col-span-4">
+                    <Label className="text-xs">Pieza o material</Label>
                     <Select
                       value={item.product_id}
                       onValueChange={(v) => {
@@ -609,24 +780,30 @@ function SaleDrawer({
                         <SelectValue placeholder="Seleccionar" />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
-                        {products.map((p) => (
+                        {filteredProducts.map((p) => (
                           <SelectItem key={p.id} value={p.id}>
-                            {p.name}
+                            {p.name} {p.sku && `(${p.sku})`}
                           </SelectItem>
                         ))}
+                        {filteredProducts.length === 0 && (
+                          <div className="px-3 py-2 text-sm text-muted-foreground">
+                            Sin piezas o materiales para esa búsqueda.
+                          </div>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-4 sm:col-span-1">
                     <Label className="text-xs">Cant.</Label>
                     <Input
                       type="number"
-                      step="0.01"
+                      min="1"
+                      step="1"
                       value={item.quantity}
                       onChange={(e) => setItem((s: any) => ({ ...s, quantity: e.target.value }))}
                     />
                   </div>
-                  <div className="col-span-3">
+                  <div className="col-span-5 sm:col-span-2">
                     <Label className="text-xs">P. unit (S/)</Label>
                     <Input
                       type="number"
@@ -635,7 +812,7 @@ function SaleDrawer({
                       onChange={(e) => setItem((s: any) => ({ ...s, unit_price: e.target.value }))}
                     />
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-3 sm:col-span-1">
                     <Button onClick={onAddItem} className="w-full">
                       <Plus className="h-4 w-4" /> Agregar
                     </Button>
@@ -681,19 +858,13 @@ function SaleDrawer({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {[
-                          "efectivo",
-                          "yape",
-                          "plin",
-                          "transferencia",
-                          "tarjeta",
-                          "mixto",
-                          "otro",
-                        ].map((m) => (
-                          <SelectItem key={m} value={m}>
-                            {m}
-                          </SelectItem>
-                        ))}
+                        {["efectivo", "yape", "plin", "transferencia", "tarjeta", "otro"].map(
+                          (m) => (
+                            <SelectItem key={m} value={m}>
+                              {m}
+                            </SelectItem>
+                          ),
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -721,7 +892,7 @@ function SaleDrawer({
                 </div>
                 <div className="flex justify-between text-sm py-1">
                   <span>Descuento</span>
-                  <span>− {moneyPEN(sale.discount)}</span>
+                  <span>- {moneyPEN(sale.discount)}</span>
                 </div>
                 <div className="flex justify-between text-lg py-2 border-t border-sand/60 mt-1 font-display">
                   <span>Total</span>
@@ -732,12 +903,16 @@ function SaleDrawer({
                     <CheckCircle2 className="h-4 w-4" /> Confirmar y emitir
                   </Button>
                 )}
-                {sale.receipt?.[0] && (
-                  <Button asChild variant="outline" className="w-full mt-2">
-                    <Link to="/admin/comprobantes">
-                      <FileText className="h-4 w-4" /> Ver comprobante
-                    </Link>
-                  </Button>
+                {getSaleReceipt(sale)?.id && (
+                  <div className="mt-2">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => onViewReceipt(getSaleReceipt(sale).id, "note")}
+                    >
+                      <FileText className="h-4 w-4" /> Nota de venta
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>

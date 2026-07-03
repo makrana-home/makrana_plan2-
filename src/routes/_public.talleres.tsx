@@ -26,12 +26,12 @@ const q = queryOptions({
 export const Route = createFileRoute("/_public/talleres")({
   head: () => ({
     meta: [
-      { title: "Talleres y cursos · Makrana Home Art" },
+      { title: "Talleres · Makrana Home Art" },
       {
         name: "description",
         content: "Talleres presenciales, cursos online y experiencias para aprender macramé.",
       },
-      { property: "og:title", content: "Talleres y cursos · Makrana Home Art" },
+      { property: "og:title", content: "Talleres · Makrana Home Art" },
       { property: "og:description", content: "Aprende macramé con nosotros." },
     ],
   }),
@@ -68,7 +68,7 @@ function Workshops() {
     <section className="section-padded">
       <div className="container-makrana">
         <p className="text-xs uppercase tracking-widest text-accent">Aprende</p>
-        <h1 className="font-display text-5xl mt-2">Talleres y cursos</h1>
+        <h1 className="font-display text-5xl mt-2">Talleres</h1>
         <p className="mt-3 max-w-prose text-muted-foreground">
           Vive el macramé en persona o desde casa: experiencias para todos los niveles.
         </p>

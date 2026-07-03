@@ -11,8 +11,8 @@
  * ============================================================ */
 
 @theme inline {
-  --font-display: "Cormorant Garamond", "Playfair Display", Georgia, serif;
-  --font-sans: "Inter", "Helvetica Neue", system-ui, sans-serif;
+  --font-display: "Nunito Sans", "Helvetica Neue", system-ui, sans-serif;
+  --font-sans: "Nunito Sans", "Helvetica Neue", system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -74,7 +74,7 @@
   --cream: oklch(0.965 0.018 78); /* superficies suaves */
   --sand: oklch(0.905 0.035 75); /* bordes, divisores cálidos */
   --clay: oklch(0.78 0.06 60); /* arena oscura */
-  --terracotta: oklch(0.66 0.13 38); /* acento principal */
+  --terracotta: #80342c; /* acento principal */
   --copper: oklch(0.7 0.12 55); /* acento metálico cobre/dorado */
 
   --background: var(--warm-white);
@@ -158,7 +158,7 @@
   h3,
   .font-display {
     font-family: var(--font-display);
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
   }
 }
 

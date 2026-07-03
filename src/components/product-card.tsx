@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type Product = {
   id: string;
@@ -10,6 +9,7 @@ type Product = {
   main_image_url: string | null;
   price: number;
   status: string;
+  type?: string;
   category?: { slug: string; name: string } | null;
 };
 
@@ -20,21 +20,32 @@ const statusLabel: Record<string, string> = {
   reservado: "Reservado",
 };
 
-const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  disponible: "default",
-  por_encargo: "secondary",
-  agotado: "destructive",
-  reservado: "outline",
+const statusClass: Record<string, string> = {
+  disponible: "bg-emerald-100 text-emerald-700",
+  por_encargo: "bg-amber-100 text-amber-700",
+  agotado: "bg-rose-100 text-rose-700",
+  reservado: "bg-sky-100 text-sky-700",
 };
 
 export function ProductCard({ product }: { product: Product }) {
+  const typeLabel =
+    product.type === "material" ? "Material" : product.type === "kit" ? "Kit" : "Pieza";
+
   return (
-    <article className="makrana-card group flex flex-col">
+    <article className="group overflow-hidden rounded-2xl border border-sand/80 bg-warm-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-clay/15">
       <Link
         to="/catalogo/$slug"
         params={{ slug: product.slug }}
-        className="block aspect-[4/5] overflow-hidden bg-cream"
+        className="relative block aspect-[4/3] overflow-hidden bg-cream"
       >
+        <span
+          className={cn(
+            "absolute left-3 top-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-extrabold",
+            statusClass[product.status] ?? "bg-cream text-muted-foreground",
+          )}
+        >
+          {statusLabel[product.status] ?? product.status}
+        </span>
         {product.main_image_url ? (
           <img
             src={product.main_image_url}
@@ -46,26 +57,22 @@ export function ProductCard({ product }: { product: Product }) {
           <div className="h-full w-full bg-sand/40" />
         )}
       </Link>
-      <div className="p-5 flex flex-col gap-2 flex-1">
-        <div className="flex items-center justify-between">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">
-            {product.category?.name}
+      <div className="flex min-h-36 flex-col p-4">
+        <h3 className="font-display text-lg font-semibold leading-tight text-foreground">
+          <Link to="/catalogo/$slug" params={{ slug: product.slug }}>
+            {product.name}
+          </Link>
+        </h3>
+        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+          {product.short_description || "Pieza tejida artesanalmente para tu hogar."}
+        </p>
+        <div className="mt-auto flex items-end justify-between gap-3 pt-4">
+          <span className="text-sm font-extrabold text-accent">
+            S/ {Number(product.price).toFixed(0)}
           </span>
-          <Badge variant={statusVariant[product.status] ?? "outline"}>
-            {statusLabel[product.status] ?? product.status}
-          </Badge>
-        </div>
-        <h3 className="font-display text-lg leading-tight text-foreground">{product.name}</h3>
-        <p className="text-sm text-muted-foreground line-clamp-2">{product.short_description}</p>
-        <div className="mt-3 flex items-center justify-between">
-          <span className="font-display text-xl text-foreground">
-            S/ {Number(product.price).toFixed(2)}
+          <span className="text-[10px] font-semibold text-muted-foreground">
+            {product.category?.name ?? typeLabel}
           </span>
-          <Button asChild size="sm" variant="soft">
-            <Link to="/catalogo/$slug" params={{ slug: product.slug }}>
-              Ver detalle
-            </Link>
-          </Button>
         </div>
       </div>
     </article>

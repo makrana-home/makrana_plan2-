@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_public/catalogo/$slug")({
     const p = (loaderData as any)?.product;
     return {
       meta: [
-        { title: p ? `${p.name} · Makrana Home Art` : "Producto · Makrana" },
+        { title: p ? `${p.name} · Makrana Home Art` : "Pieza · Makrana" },
         { name: "description", content: p?.short_description ?? "Pieza artesanal en macramé." },
         { property: "og:title", content: p?.name ?? "Makrana" },
         { property: "og:description", content: p?.short_description ?? "" },
@@ -44,18 +44,18 @@ export const Route = createFileRoute("/_public/catalogo/$slug")({
   component: ProductDetail,
   notFoundComponent: () => (
     <div className="container-makrana py-24 text-center">
-      <h1 className="font-display text-3xl">Producto no encontrado</h1>
+      <h1 className="font-display text-3xl">Pieza no encontrada</h1>
       <Button asChild className="mt-6">
         <Link to="/catalogo">Volver al catálogo</Link>
       </Button>
     </div>
   ),
-  errorComponent: () => <div className="container-makrana py-24">Error cargando el producto.</div>,
+  errorComponent: () => <div className="container-makrana py-24">Error cargando la pieza.</div>,
 });
 
 function waLink(name: string) {
-  const text = encodeURIComponent(`Hola Makrana, me interesa el producto "${name}".`);
-  return `https://wa.me/51999999999?text=${text}`;
+  const text = encodeURIComponent(`Hola Makrana, me interesa la pieza "${name}".`);
+  return `https://wa.me/51986608552?text=${text}`;
 }
 
 function ProductDetail() {
@@ -124,12 +124,6 @@ function ProductDetail() {
               <>
                 <dt className="text-muted-foreground">Color</dt>
                 <dd>{p.color}</dd>
-              </>
-            )}
-            {p.artisan && (
-              <>
-                <dt className="text-muted-foreground">Artesana</dt>
-                <dd>{p.artisan}</dd>
               </>
             )}
             <dt className="text-muted-foreground">Stock disponible</dt>

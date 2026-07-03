@@ -4,8 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BrandLogo } from "@/components/brand-logo";
 import { toast } from "sonner";
 import { enableDevAdminSession, hasDevAdminSession, isDevAdminLogin } from "@/lib/dev-admin";
+
+const staffRoles = new Set(["admin", "ventas", "almacen"]);
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -25,13 +28,24 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    let active = true;
+
+    async function redirectActiveSession() {
+      const { data } = await supabase.auth.getSession();
+      if (!active || !data.session) return;
+      const destination = await getDestinationForCurrentUser();
+      if (active) router.navigate({ to: destination });
+    }
+
     if (hasDevAdminSession()) {
       router.navigate({ to: "/admin" });
       return;
     }
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) router.navigate({ to: "/cliente" });
-    });
+    redirectActiveSession();
+
+    return () => {
+      active = false;
+    };
   }, [router]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -62,7 +76,8 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Bienvenida de vuelta a Makrana.");
-        router.navigate({ to: "/cliente" });
+        const destination = await getDestinationForCurrentUser();
+        router.navigate({ to: destination });
       }
     } catch (err: any) {
       toast.error(err?.message ?? "No pudimos procesar la solicitud.");
@@ -74,15 +89,15 @@ function AuthPage() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
       <div className="hidden lg:flex flex-col justify-between bg-terracotta text-warm-white p-12">
-        <Link to="/" className="font-display text-2xl">
-          Makrana Home Art
+        <Link to="/" className="w-fit">
+          <BrandLogo imageClassName="w-48 brightness-0 invert" />
         </Link>
         <div>
           <h1 className="font-display text-5xl leading-tight">
-            Hecho a mano, pensado para tu hogar.
+            Creando nudo a nudo para tu hogar.
           </h1>
           <p className="mt-4 opacity-90">
-            Accede a tu cuenta para ver tus pedidos, comprobantes y talleres.
+            Accede a tu cuenta para ver tus talleres, pedidos y mucho más.
           </p>
         </div>
         <p className="text-sm opacity-70">© {new Date().getFullYear()} Makrana Home Art</p>
@@ -127,4 +142,17 @@ function AuthPage() {
       </div>
     </div>
   );
+}
+
+async function getDestinationForCurrentUser() {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData.user;
+
+  if (!user) return "/auth";
+
+  const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+
+  const isStaff = (roles ?? []).some((role: any) => staffRoles.has(role.role));
+
+  return isStaff ? "/admin" : "/cliente";
 }

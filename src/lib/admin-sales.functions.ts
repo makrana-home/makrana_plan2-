@@ -34,7 +34,7 @@ export const adminListCustomers = createServerFn({ method: "GET" })
     await assertStaff(context);
     const { data, error } = await context.supabase
       .from("customers")
-      .select("id, full_name, email, phone, location, source, created_at")
+      .select("*")
       .order("created_at", { ascending: false });
     if (error) throw error;
     return data ?? [];

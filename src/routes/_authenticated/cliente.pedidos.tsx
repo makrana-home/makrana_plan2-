@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { moneyPEN, formatDate } from "@/components/admin-ui";
 import { clientGetProfile } from "@/lib/admin-content.functions";
+import { formatUnits } from "@/lib/format-units";
 
 export const Route = createFileRoute("/_authenticated/cliente/pedidos")({ component: Pedidos });
 
@@ -51,7 +52,7 @@ function Pedidos() {
                 </TableCell>
                 <TableCell className="text-sm">
                   {(s.items ?? [])
-                    .map((it: any) => `${it.product?.name} ×${Number(it.quantity).toFixed(0)}`)
+                    .map((it: any) => `${it.product?.name} ×${formatUnits(it.quantity)}`)
                     .join(", ")}
                 </TableCell>
                 <TableCell>

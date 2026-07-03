@@ -26,19 +26,19 @@ function Contact() {
 
         <div className="grid sm:grid-cols-3 gap-6 mt-10">
           <a
-            href="https://wa.me/51999999999"
+            href="https://wa.me/51986608552"
             target="_blank"
             rel="noreferrer"
             className="makrana-card p-6 text-center"
           >
             <Phone className="mx-auto text-accent" />
             <p className="mt-3 font-display text-lg">WhatsApp</p>
-            <p className="text-sm text-muted-foreground">+51 999 999 999</p>
+            <p className="text-sm text-muted-foreground">+51 986608552</p>
           </a>
-          <a href="mailto:hola@makranahomeart.pe" className="makrana-card p-6 text-center">
+          <a href="mailto:makrnahome@gmail.com" className="makrana-card p-6 text-center">
             <Mail className="mx-auto text-accent" />
             <p className="mt-3 font-display text-lg">Correo</p>
-            <p className="text-sm text-muted-foreground">hola@makranahomeart.pe</p>
+            <p className="text-sm text-muted-foreground">makrnahome@gmail.com</p>
           </a>
           <div className="makrana-card p-6 text-center">
             <MapPin className="mx-auto text-accent" />
@@ -49,7 +49,7 @@ function Contact() {
 
         <div className="mt-10">
           <Button asChild size="lg" variant="hero">
-            <a href="https://wa.me/51999999999" target="_blank" rel="noreferrer">
+            <a href="https://wa.me/51986608552" target="_blank" rel="noreferrer">
               Escribir por WhatsApp
             </a>
           </Button>

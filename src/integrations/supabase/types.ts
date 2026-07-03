@@ -308,31 +308,174 @@ export type Database = {
         };
         Relationships: [];
       };
+      manual_images: {
+        Row: {
+          alt_text: string | null;
+          created_at: string;
+          id: string;
+          image_url: string;
+          manual_id: string;
+          order_index: number;
+          storage_path: string | null;
+        };
+        Insert: {
+          alt_text?: string | null;
+          created_at?: string;
+          id?: string;
+          image_url: string;
+          manual_id: string;
+          order_index?: number;
+          storage_path?: string | null;
+        };
+        Update: {
+          alt_text?: string | null;
+          created_at?: string;
+          id?: string;
+          image_url?: string;
+          manual_id?: string;
+          order_index?: number;
+          storage_path?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "manual_images_manual_id_fkey";
+            columns: ["manual_id"];
+            isOneToOne: false;
+            referencedRelation: "manuals";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      manual_materials: {
+        Row: {
+          created_at: string;
+          id: string;
+          manual_id: string;
+          material_id: string;
+          material_presentation_id: string | null;
+          notes: string | null;
+          quantity: number;
+          unit: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          manual_id: string;
+          material_id: string;
+          material_presentation_id?: string | null;
+          notes?: string | null;
+          quantity?: number;
+          unit?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          manual_id?: string;
+          material_id?: string;
+          material_presentation_id?: string | null;
+          notes?: string | null;
+          quantity?: number;
+          unit?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "manual_materials_manual_id_fkey";
+            columns: ["manual_id"];
+            isOneToOne: false;
+            referencedRelation: "manuals";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "manual_materials_material_id_fkey";
+            columns: ["material_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "manual_materials_material_presentation_id_fkey";
+            columns: ["material_presentation_id"];
+            isOneToOne: false;
+            referencedRelation: "material_presentations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      manuals: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          id: string;
+          measurements: string | null;
+          notes: string | null;
+          piece_id: string;
+          quantity: number;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          measurements?: string | null;
+          notes?: string | null;
+          piece_id: string;
+          quantity?: number;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          measurements?: string | null;
+          notes?: string | null;
+          piece_id?: string;
+          quantity?: number;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "manuals_piece_id_fkey";
+            columns: ["piece_id"];
+            isOneToOne: true;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       material_presentations: {
         Row: {
           created_at: string;
+          cost: number;
           id: string;
           label: string | null;
           price: number;
           product_id: string;
+          sku: string | null;
           unit: Database["public"]["Enums"]["presentation_unit"];
           units_in_presentation: number;
         };
         Insert: {
           created_at?: string;
+          cost?: number;
           id?: string;
           label?: string | null;
           price: number;
           product_id: string;
+          sku?: string | null;
           unit: Database["public"]["Enums"]["presentation_unit"];
           units_in_presentation?: number;
         };
         Update: {
           created_at?: string;
+          cost?: number;
           id?: string;
           label?: string | null;
           price?: number;
           product_id?: string;
+          sku?: string | null;
           unit?: Database["public"]["Enums"]["presentation_unit"];
           units_in_presentation?: number;
         };
