@@ -386,7 +386,7 @@ export const adminReports = createServerFn({ method: "GET" })
       sb
         .from("sales")
         .select(
-          "id, created_at, confirmed_at, status, payment_status, delivery_status, subtotal, discount, total, notes, customer:customers(full_name, email, phone), warehouse:warehouses(code, name), receipt:receipts(number), items:sale_items(quantity, subtotal, product:products(id, name, sku)), payments:sale_payments(method, amount, paid_at)",
+          "id, created_at, confirmed_at, status, payment_status, delivery_status, subtotal, discount, total, notes, customer:customers(full_name, email, phone), warehouse:warehouses(code, name), receipt:receipts(number), items:sale_items(quantity, subtotal, description, product:products(id, name, sku)), payments:sale_payments(method, amount, paid_at)",
         )
         .order("created_at", { ascending: false })
         .limit(1000),
@@ -414,9 +414,9 @@ export const adminReports = createServerFn({ method: "GET" })
     for (const sale of (salesRows.data ?? []) as any[]) {
       if (sale.status !== "confirmada" || sale.payment_status !== "pagado") continue;
       for (const it of sale.items ?? []) {
-        const id = it.product?.id;
-        if (!id) continue;
-        const cur = map.get(id) ?? { name: it.product.name, qty: 0, revenue: 0 };
+        const id = it.product?.id ?? `manual:${it.description ?? "articulo-manual"}`;
+        const name = it.product?.name ?? it.description ?? "Articulo manual";
+        const cur = map.get(id) ?? { name, qty: 0, revenue: 0 };
         cur.qty += Number(it.quantity);
         cur.revenue += Number(it.subtotal);
         map.set(id, cur);

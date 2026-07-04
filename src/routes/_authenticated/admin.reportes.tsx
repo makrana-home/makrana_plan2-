@@ -632,7 +632,7 @@ function formatSaleItems(sale: any) {
     .map((item: any) => {
       const name = item.product?.name ?? "Ítem";
       const sku = item.product?.sku ? ` (${item.product.sku})` : "";
-      return `${name}${sku} x ${formatUnits(item.quantity)} = ${moneyPEN(Number(item.subtotal ?? 0))}`;
+      return `${item.product?.name ?? item.description ?? name}${sku} x ${formatUnits(item.quantity)} = ${moneyPEN(Number(item.subtotal ?? 0))}`;
     })
     .join("; ");
 }

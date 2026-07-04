@@ -23,23 +23,23 @@ export function PageHeader({
   eyebrow?: string;
 }) {
   return (
-    <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-      <div>
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-4 sm:mb-8">
+      <div className="min-w-0">
         {eyebrow && (
           <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.32em] text-accent">
             {eyebrow}
           </div>
         )}
-        <h1 className="font-display text-4xl font-light leading-tight text-foreground md:text-5xl">
+        <h1 className="font-display text-3xl font-light leading-tight text-foreground sm:text-4xl md:text-5xl">
           {title}
         </h1>
         {description && (
-          <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             {description}
           </p>
         )}
       </div>
-      {actions && <div className="flex gap-2">{actions}</div>}
+      {actions && <div className="flex w-full gap-2 sm:w-auto">{actions}</div>}
     </div>
   );
 }
@@ -71,7 +71,7 @@ export function FormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent
-        className={`${contentClassName} max-h-[90vh] overflow-y-auto`}
+        className={`${contentClassName} w-[calc(100vw-1.5rem)] max-h-[calc(100dvh-1rem)] overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:w-full`}
         onEscapeKeyDown={(event) => event.preventDefault()}
         onInteractOutside={(event) => event.preventDefault()}
         onPointerDownOutside={(event) => event.preventDefault()}
@@ -82,8 +82,8 @@ export function FormDialog({
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4">
           {children}
-          <DialogFooter>
-            <Button type="submit" disabled={submitting}>
+          <DialogFooter className="sticky bottom-0 -mx-1 bg-background/95 py-2 backdrop-blur">
+            <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
               {submitting ? "Guardando…" : submitLabel}
             </Button>
           </DialogFooter>
@@ -95,7 +95,12 @@ export function FormDialog({
 
 export function NewButton({ onClick, label = "Nuevo" }: { onClick?: () => void; label?: string }) {
   return (
-    <Button onClick={onClick} variant="hero" size="lg" className="rounded-full px-6 shadow-lg">
+    <Button
+      onClick={onClick}
+      variant="hero"
+      size="lg"
+      className="w-full rounded-full px-6 shadow-lg sm:w-auto"
+    >
       <Plus className="h-4 w-4" /> {label}
     </Button>
   );

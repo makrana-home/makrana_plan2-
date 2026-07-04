@@ -204,16 +204,40 @@ export const adminUpdateSale = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-const saleItemSchema = z.object({
-  id: z.string().uuid().optional(),
-  sale_id: z.string().uuid(),
-  product_id: z.string().uuid(),
-  presentation_id: z.string().uuid().optional().nullable(),
-  description: z.string().trim().max(200).optional().nullable(),
-  quantity: z.coerce.number().positive(),
-  unit_price: z.coerce.number().nonnegative(),
-  discount: z.coerce.number().nonnegative().default(0),
-});
+const saleItemSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    sale_id: z.string().uuid(),
+    product_id: z.string().uuid().optional().nullable(),
+    presentation_id: z.string().uuid().optional().nullable(),
+    is_manual_item: z.boolean().optional().default(false),
+    manual_item_name: z.string().trim().max(160).optional().nullable(),
+    provisional_source: z.string().trim().max(80).optional().nullable(),
+    description: z.string().trim().max(200).optional().nullable(),
+    quantity: z.coerce.number().positive(),
+    unit_price: z.coerce.number().nonnegative(),
+    discount: z.coerce.number().nonnegative().default(0),
+  })
+  .superRefine((value, ctx) => {
+    if (value.is_manual_item) {
+      if (!value.manual_item_name?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["manual_item_name"],
+          message: "Ingresa el nombre del articulo manual.",
+        });
+      }
+      return;
+    }
+
+    if (!value.product_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["product_id"],
+        message: "Selecciona una pieza, material o presentacion.",
+      });
+    }
+  });
 
 export const adminAddSaleItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -221,9 +245,31 @@ export const adminAddSaleItem = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertSales(context);
     const subtotal = Number((data.quantity * data.unit_price - (data.discount ?? 0)).toFixed(2));
+    const payload: any = {
+      sale_id: data.sale_id,
+      quantity: data.quantity,
+      unit_price: data.unit_price,
+      discount: data.discount ?? 0,
+      subtotal,
+      description: data.description || null,
+    };
+    if (data.id) payload.id = data.id;
+
+    if (data.is_manual_item) {
+      payload.product_id = null;
+      payload.presentation_id = null;
+      payload.is_manual_item = true;
+      payload.manual_item_name = data.manual_item_name?.trim();
+      payload.provisional_source = data.provisional_source || "feria_provisional";
+      payload.description = data.description || payload.manual_item_name;
+    } else {
+      payload.product_id = data.product_id;
+      payload.presentation_id = data.presentation_id || null;
+    }
+
     const { data: row, error } = await context.supabase
       .from("sale_items")
-      .upsert({ ...data, subtotal }, { onConflict: "id" })
+      .upsert(payload, { onConflict: "id" })
       .select("id")
       .single();
     if (error) throw error;

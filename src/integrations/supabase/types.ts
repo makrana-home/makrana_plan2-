@@ -766,8 +766,11 @@ export type Database = {
           description: string | null;
           discount: number;
           id: string;
+          is_manual_item: boolean;
+          manual_item_name: string | null;
           presentation_id: string | null;
-          product_id: string;
+          product_id: string | null;
+          provisional_source: string | null;
           quantity: number;
           sale_id: string;
           subtotal: number;
@@ -778,8 +781,11 @@ export type Database = {
           description?: string | null;
           discount?: number;
           id?: string;
+          is_manual_item?: boolean;
+          manual_item_name?: string | null;
           presentation_id?: string | null;
-          product_id: string;
+          product_id?: string | null;
+          provisional_source?: string | null;
           quantity: number;
           sale_id: string;
           subtotal: number;
@@ -790,8 +796,11 @@ export type Database = {
           description?: string | null;
           discount?: number;
           id?: string;
+          is_manual_item?: boolean;
+          manual_item_name?: string | null;
           presentation_id?: string | null;
-          product_id?: string;
+          product_id?: string | null;
+          provisional_source?: string | null;
           quantity?: number;
           sale_id?: string;
           subtotal?: number;

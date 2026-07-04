@@ -215,7 +215,7 @@ function AdminShell() {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-cream text-foreground">
+      <div className="flex min-h-screen w-full max-w-full overflow-x-clip bg-cream text-foreground">
         <Sidebar className="border-r border-sand/70 bg-cream">
           <SidebarHeader className="border-b border-sand/70 px-4 py-4">
             <Link to="/" className="flex items-center">
@@ -256,10 +256,10 @@ function AdminShell() {
             </SidebarGroup>
           </SidebarContent>
         </Sidebar>
-        <div className="flex-1 flex flex-col">
-          <header className="flex min-h-20 items-center justify-between gap-4 border-b border-sand/70 bg-warm-white/45 px-6">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="flex min-h-20 items-center justify-between gap-3 border-b border-sand/70 bg-warm-white/45 px-3 sm:gap-4 sm:px-6">
             <div className="flex min-w-0 flex-1 items-center gap-4">
-              <SidebarTrigger />
+              <SidebarTrigger className="h-11 w-11 shrink-0" />
               <label className="relative hidden w-full max-w-[28rem] md:block">
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
@@ -269,7 +269,7 @@ function AdminShell() {
                 />
               </label>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
               <Button
                 size="icon"
                 variant="outline"
@@ -285,12 +285,12 @@ function AdminShell() {
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
                 Rol Administrador
               </span>
-              <Button size="sm" variant="ghost" onClick={signOut} className="rounded-full">
-                <LogOut className="h-4 w-4" /> Salir
+              <Button size="sm" variant="ghost" onClick={signOut} className="h-11 rounded-full">
+                <LogOut className="h-4 w-4" /> <span className="hidden sm:inline">Salir</span>
               </Button>
             </div>
           </header>
-          <main className="flex-1 bg-cream px-5 py-10 sm:px-8 lg:px-10">
+          <main className="min-w-0 flex-1 bg-cream px-3 py-6 sm:px-8 sm:py-10 lg:px-10">
             <Outlet />
           </main>
         </div>

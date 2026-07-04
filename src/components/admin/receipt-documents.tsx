@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BrandLogo } from "@/components/brand-logo";
 import { formatDate, moneyPEN } from "@/components/admin-ui";
 import { formatUnits } from "@/lib/format-units";
-import { supabase } from "@/integrations/supabase/client";
 import qrNotaVenta from "@/assets/nota-venta-qr.png";
 
 export type ReceiptVariant = "internal" | "note";
@@ -286,17 +285,21 @@ function ItemsTable({ sale }: { sale: any }) {
         </tr>
       </thead>
       <tbody>
-        {(sale.items ?? []).map((item: any) => (
-          <tr key={item.id} className="border-b border-sand/50">
-            <td className="py-2 pr-3">
-              {item.product?.name}
-              {item.description ? ` - ${item.description}` : ""}
-            </td>
-            <td className="py-2 text-center tabular-nums">{formatUnits(item.quantity)}</td>
-            <td className="py-2 text-right tabular-nums">{moneyPEN(item.unit_price)}</td>
-            <td className="py-2 text-right tabular-nums">{moneyPEN(item.subtotal)}</td>
-          </tr>
-        ))}
+        {(sale.items ?? []).map((item: any) => {
+          const itemName = getReceiptItemName(item);
+          const itemDescription = getReceiptItemDescription(item, itemName);
+          return (
+            <tr key={item.id} className="border-b border-sand/50">
+              <td className="py-2 pr-3">
+                {itemName}
+                {itemDescription ? ` - ${itemDescription}` : ""}
+              </td>
+              <td className="py-2 text-center tabular-nums">{formatUnits(item.quantity)}</td>
+              <td className="py-2 text-right tabular-nums">{moneyPEN(item.unit_price)}</td>
+              <td className="py-2 text-right tabular-nums">{moneyPEN(item.subtotal)}</td>
+            </tr>
+          );
+        })}
       </tbody>
       <tfoot>
         <tr>
@@ -365,6 +368,25 @@ function compactText(parts: Array<string | null | undefined>, separator: string)
   return parts.filter(Boolean).join(separator);
 }
 
+function isManualReceiptItem(item: any) {
+  return Boolean(item.is_manual_item || (!item.product_id && !item.product));
+}
+
+function getReceiptItemName(item: any) {
+  const name =
+    item.product?.name ??
+    item.manual_item_name ??
+    (isManualReceiptItem(item) ? String(item.description ?? "").trim() : "");
+  return name || "Articulo manual";
+}
+
+function getReceiptItemDescription(item: any, itemName = getReceiptItemName(item)) {
+  const description = String(item.description ?? "").trim();
+  if (!description || description.toLowerCase().startsWith("presentaci")) return "";
+  if (description === itemName) return "";
+  return description;
+}
+
 function WhatsAppReceiptDialog({
   receipt,
   variant,
@@ -411,7 +433,7 @@ function WhatsAppReceiptDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md print:hidden">
+      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-md max-h-[calc(100dvh-1rem)] overflow-y-auto print:hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-display">
             <MessageCircle className="h-4 w-4" />
@@ -423,6 +445,7 @@ function WhatsAppReceiptDialog({
             <Label htmlFor="receipt-whatsapp-phone">Número de WhatsApp</Label>
             <Input
               id="receipt-whatsapp-phone"
+              type="tel"
               value={phone}
               onChange={(event) => {
                 setPhone(event.target.value);
@@ -434,11 +457,16 @@ function WhatsAppReceiptDialog({
             />
             {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
           </div>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <div className="grid gap-2 sm:flex sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11"
+              onClick={() => onOpenChange(false)}
+            >
               Cancelar
             </Button>
-            <Button type="button" onClick={sendWhatsApp} disabled={sending}>
+            <Button type="button" className="h-11" onClick={sendWhatsApp} disabled={sending}>
               <Send className="h-4 w-4" /> {sending ? "Preparando..." : "Enviar"}
             </Button>
           </div>
@@ -456,35 +484,35 @@ function normalizeWhatsAppPhone(phone: string) {
 }
 
 function buildWhatsAppMessage(receipt: any, variant: ReceiptVariant, pdfUrl?: string | null) {
-  const lines = ["Gracias por tu compra en Makrana Home Art.", "Te compartimos tu comprobante."];
+  const sale = receipt.sale ?? {};
+  const customerName = sale.customer?.full_name ?? "cliente";
+  const documentName = variant === "internal" ? "comprobante interno" : "nota de venta";
+  const lines = [
+    `Hola ${customerName}, gracias por tu compra en Makrana Home Art.`,
+    `Te compartimos tu ${documentName} ${formatReceiptNumber(receipt.number)}.`,
+    `Total: ${moneyPEN(sale.total)}`,
+  ];
 
   if (pdfUrl) {
-    lines.push(`PDF: ${pdfUrl}`);
+    lines.push(`Ver PDF: ${pdfUrl}`);
+  } else {
+    lines.push("El PDF se descargara en el dispositivo para enviarlo manualmente si lo necesitas.");
   }
 
   return lines.join("\n");
 }
 
-async function getReceiptPdfUrl(receipt: any, variant: ReceiptVariant) {
-  if (receipt.pdf_url) return receipt.pdf_url;
+function getReceiptPdfUrl(receipt: any, _variant: ReceiptVariant) {
+  return isShareableReceiptUrl(receipt.pdf_url) ? receipt.pdf_url : null;
+}
+
+function isShareableReceiptUrl(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return false;
   try {
-    const blob = createReceiptPdfBlob(receipt, variant);
-    const path = `${receipt.id ?? receipt.sale_id ?? "comprobante"}/${variant}-${formatReceiptNumber(
-      receipt.number,
-    )}.pdf`;
-    const { error: uploadError } = await supabase.storage.from("receipt-pdfs").upload(path, blob, {
-      contentType: "application/pdf",
-      upsert: true,
-    });
-    if (uploadError) throw uploadError;
-    const { data, error: signedError } = await supabase.storage
-      .from("receipt-pdfs")
-      .createSignedUrl(path, 60 * 60 * 24 * 7);
-    if (signedError) throw signedError;
-    return data.signedUrl;
-  } catch (error) {
-    console.warn("No se pudo crear enlace PDF para WhatsApp.", error);
-    return null;
+    const url = new URL(value);
+    return url.protocol === "https:" && !url.searchParams.has("token");
+  } catch {
+    return false;
   }
 }
 
@@ -581,9 +609,11 @@ function createReceiptPdfBlob(receipt: any, variant: ReceiptVariant) {
 
   let y = 568;
   for (const item of sale.items ?? []) {
+    const itemName = getReceiptItemName(item);
+    const itemDescription = getReceiptItemDescription(item, itemName);
     lines.push({
       kind: "text",
-      text: `${item.product?.name ?? "Item"}${item.description ? ` - ${item.description}` : ""}`,
+      text: `${itemName}${itemDescription ? ` - ${itemDescription}` : ""}`,
       x: 56,
       y,
       size: 9,

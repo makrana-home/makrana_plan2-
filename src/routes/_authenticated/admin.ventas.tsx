@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Trash2, CheckCircle2, XCircle, FileText, Pencil, Eye } from "lucide-react";
 import {
@@ -60,6 +61,38 @@ const deliveryStatusOptions = [
   { value: "enviado", label: "Enviado" },
   { value: "cancelado", label: "Cancelado" },
 ] as const;
+
+const PROVISIONAL_SOURCE = "feria_provisional";
+
+function blankSaleItem(keepManualMode = false) {
+  return {
+    product_option: "",
+    product_id: "",
+    presentation_id: null,
+    product_search: "",
+    is_manual_item: keepManualMode,
+    manual_item_name: "",
+    quantity: 1,
+    unit_price: "",
+    discount: "",
+    description: "",
+  };
+}
+
+function blankPayment() {
+  return { method: "efectivo", amount: "", operation_code: "" };
+}
+
+function parsePositiveNumber(value: unknown) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function parseNonNegativeNumber(value: unknown) {
+  if (value === "" || value == null) return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
 
 function SalesPage() {
   const listFn = useServerFn(adminListSales);
@@ -185,8 +218,25 @@ function SalesPage() {
         }
       />
 
-      <div className="border border-sand/60 rounded-xl overflow-hidden bg-warm-white">
-        <Table>
+      <div className="grid gap-3 md:hidden">
+        {rows.length === 0 && (
+          <div className="rounded-xl border border-sand/60 bg-warm-white px-4 py-8 text-center text-sm text-muted-foreground">
+            Sin ventas.
+          </div>
+        )}
+        {rows.map((r) => (
+          <SaleMobileCard
+            key={r.id}
+            sale={r}
+            onOpen={() => setOpenId(r.id)}
+            onCancel={() => onCancel(r)}
+            onViewReceipt={(id) => viewReceipt(id, "note")}
+          />
+        ))}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-xl border border-sand/60 bg-warm-white md:block">
+        <Table className="min-w-[980px]">
           <TableHeader>
             <TableRow>
               <TableHead>Fecha</TableHead>
@@ -398,6 +448,84 @@ function SalesPage() {
   );
 }
 
+function SaleMobileCard({
+  sale,
+  onOpen,
+  onCancel,
+  onViewReceipt,
+}: {
+  sale: any;
+  onOpen: () => void;
+  onCancel: () => void;
+  onViewReceipt: (receiptId: string) => void;
+}) {
+  const receipt = getSaleReceipt(sale);
+  return (
+    <article className="rounded-xl border border-sand/60 bg-warm-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground">{formatDate(sale.created_at)}</p>
+          <h2 className="mt-1 truncate text-base font-semibold">
+            {sale.customer?.full_name ?? "Sin cliente"}
+          </h2>
+          <p className="mt-1 truncate text-xs text-muted-foreground">
+            {sale.warehouse?.name ?? "Sin almacen"}
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="text-lg font-semibold tabular-nums">{moneyPEN(sale.total)}</p>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2 text-xs">
+        <Badge
+          variant={
+            sale.status === "confirmada"
+              ? "default"
+              : sale.status === "anulada"
+                ? "destructive"
+                : "outline"
+          }
+        >
+          {sale.status}
+        </Badge>
+        <Badge variant="secondary">{sale.payment_status}</Badge>
+        <Badge variant="outline">{sale.delivery_status}</Badge>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <Button type="button" variant="outline" className="h-11" onClick={onOpen}>
+          <Pencil className="h-4 w-4" /> Editar
+        </Button>
+        {receipt?.id ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11"
+            onClick={() => onViewReceipt(receipt.id)}
+          >
+            <Eye className="h-4 w-4" /> Nota
+          </Button>
+        ) : (
+          <Button type="button" variant="outline" className="h-11" disabled>
+            <FileText className="h-4 w-4" /> Nota
+          </Button>
+        )}
+        {["borrador", "confirmada"].includes(sale.status) && (
+          <Button
+            type="button"
+            variant="ghost"
+            className="col-span-2 h-11 text-destructive"
+            onClick={onCancel}
+          >
+            <XCircle className="h-4 w-4" /> Anular
+          </Button>
+        )}
+      </div>
+    </article>
+  );
+}
+
 function isFairWarehouse(warehouse?: any) {
   const text = `${warehouse?.code ?? ""} ${warehouse?.name ?? ""}`
     .trim()
@@ -468,6 +596,7 @@ function formatSalePresentationLabel(presentation: any) {
 }
 
 function getSaleItemPresentationLabel(item: any) {
+  if (isManualSaleItem(item)) return "";
   if (item.presentation) {
     return getPresentationUnitLabel(item.presentation.unit, item.presentation.label);
   }
@@ -476,9 +605,22 @@ function getSaleItemPresentationLabel(item: any) {
   return description.split(":").slice(1).join(":").split("·")[0]?.trim() ?? "";
 }
 
+function isManualSaleItem(item: any) {
+  return Boolean(item.is_manual_item || (!item.product_id && !item.product));
+}
+
+function getSaleItemName(item: any) {
+  const name =
+    item.product?.name ??
+    item.manual_item_name ??
+    (isManualSaleItem(item) ? String(item.description ?? "").trim() : "");
+  return name || "Articulo manual";
+}
+
 function getSaleItemDescription(item: any) {
   const description = String(item.description ?? "").trim();
   if (!description || description.toLowerCase().startsWith("presentaci")) return "";
+  if (isManualSaleItem(item) && description === getSaleItemName(item)) return "";
   return description;
 }
 
@@ -519,17 +661,8 @@ function SaleDrawer({
 
   const [sale, setSale] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
-  const [item, setItem] = useState<any>({
-    product_option: "",
-    product_id: "",
-    presentation_id: null,
-    product_search: "",
-    quantity: 1,
-    unit_price: 0,
-    discount: 0,
-    description: "",
-  });
-  const [pay, setPay] = useState<any>({ method: "efectivo", amount: 0, operation_code: "" });
+  const [item, setItem] = useState<any>(() => blankSaleItem());
+  const [pay, setPay] = useState<any>(() => blankPayment());
 
   async function refresh() {
     if (!saleId) return;
@@ -574,30 +707,46 @@ function SaleDrawer({
     }
   }
   async function onAddItem() {
-    if (!item.product_id || !item.quantity || !item.unit_price)
-      return toast.error("Completa pieza o material, cantidad y precio");
+    const quantity = parsePositiveNumber(item.quantity);
+    const unitPrice = parsePositiveNumber(item.unit_price);
+    const discount = parseNonNegativeNumber(item.discount);
+    const manualItemName = String(item.manual_item_name ?? "").trim();
+
+    if (!quantity) return toast.error("Indica una cantidad mayor a 0.");
+    if (!unitPrice) return toast.error("Indica un precio unitario mayor a 0.");
+    if (discount === null) return toast.error("El descuento no es valido.");
+    if (item.is_manual_item && !manualItemName) {
+      return toast.error("Ingresa el nombre del articulo manual.");
+    }
+    if (!item.is_manual_item && !item.product_id) {
+      return toast.error("Selecciona una pieza, material o presentacion.");
+    }
+
     try {
+      const payload: any = {
+        sale_id: sale.id,
+        quantity,
+        unit_price: unitPrice,
+        discount,
+      };
+
+      if (item.is_manual_item) {
+        payload.product_id = null;
+        payload.presentation_id = null;
+        payload.is_manual_item = true;
+        payload.manual_item_name = manualItemName;
+        payload.provisional_source = PROVISIONAL_SOURCE;
+        payload.description = manualItemName;
+      } else {
+        payload.product_id = item.product_id;
+        payload.presentation_id = item.presentation_id || null;
+        payload.description = item.description || null;
+      }
+
       await addItem({
-        data: {
-          sale_id: sale.id,
-          product_id: item.product_id,
-          presentation_id: item.presentation_id || null,
-          quantity: Number(item.quantity),
-          unit_price: Number(item.unit_price),
-          discount: Number(item.discount ?? 0),
-          description: item.description || null,
-        },
+        data: payload,
       });
-      setItem({
-        product_option: "",
-        product_id: "",
-        presentation_id: null,
-        product_search: "",
-        quantity: 1,
-        unit_price: 0,
-        discount: 0,
-        description: "",
-      });
+      setItem(blankSaleItem(Boolean(item.is_manual_item)));
       refresh();
     } catch (e: any) {
       toast.error(e.message);
@@ -612,17 +761,18 @@ function SaleDrawer({
     }
   }
   async function onAddPay() {
-    if (!pay.amount) return toast.error("Indica un monto");
+    const amount = parsePositiveNumber(pay.amount);
+    if (!amount) return toast.error("Indica un monto mayor a 0.");
     try {
       await addPay({
         data: {
           sale_id: sale.id,
           method: pay.method,
-          amount: Number(pay.amount),
+          amount,
           operation_code: pay.operation_code || null,
         },
       });
-      setPay({ method: "efectivo", amount: 0, operation_code: "" });
+      setPay(blankPayment());
       refresh();
     } catch (e: any) {
       toast.error(e.message);
@@ -663,18 +813,18 @@ function SaleDrawer({
       product_option: option.value,
       product_id: option.product_id,
       presentation_id: option.presentation_id ?? null,
-      unit_price: option.price,
+      unit_price: option.price > 0 ? String(option.price) : "",
       description: option.description,
     }));
   }
 
   return (
     <Sheet open={!!saleId} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
+      <SheetContent className="h-dvh w-full max-w-full overflow-y-auto overflow-x-hidden px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-w-3xl sm:px-6">
         {sale && (
           <>
             <SheetHeader>
-              <SheetTitle className="font-display text-2xl">
+              <SheetTitle className="pr-8 text-left font-display text-xl sm:text-2xl">
                 Venta {getSaleReceipt(sale)?.number ?? sale.id.slice(0, 8)}
               </SheetTitle>
               <div className="flex flex-wrap gap-2 text-xs">
@@ -745,7 +895,9 @@ function SaleDrawer({
                   type="number"
                   step="0.01"
                   disabled={sale.status !== "borrador"}
-                  value={sale.discount ?? 0}
+                  value={Number(sale.discount ?? 0) === 0 ? "" : sale.discount}
+                  placeholder="0.00"
+                  inputMode="decimal"
                   onChange={(e) => setSale((s: any) => ({ ...s, discount: e.target.value }))}
                 />
               </div>
@@ -782,7 +934,57 @@ function SaleDrawer({
 
             <div className="mt-8">
               <h3 className="font-display text-lg mb-2">Ítems</h3>
-              <div className="border border-sand/60 rounded-lg overflow-hidden">
+              <div className="space-y-2 md:hidden">
+                {(sale.items ?? []).map((it: any) => {
+                  const presentationLabel = getSaleItemPresentationLabel(it);
+                  const itemDescription = getSaleItemDescription(it);
+                  return (
+                    <div key={it.id} className="rounded-lg border border-sand/60 bg-warm-white p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 font-medium">
+                            <span>{getSaleItemName(it)}</span>
+                            {isManualSaleItem(it) && <Badge variant="outline">Manual</Badge>}
+                          </div>
+                          {presentationLabel && (
+                            <p className="text-xs text-muted-foreground">{presentationLabel}</p>
+                          )}
+                          {itemDescription && (
+                            <p className="text-xs text-muted-foreground">{itemDescription}</p>
+                          )}
+                        </div>
+                        {sale.status === "borrador" && (
+                          <Button size="icon" variant="ghost" onClick={() => onDelItem(it.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
+                        <div>
+                          <span className="block text-xs text-muted-foreground">Cant.</span>
+                          <span className="tabular-nums">{formatUnits(it.quantity)}</span>
+                        </div>
+                        <div>
+                          <span className="block text-xs text-muted-foreground">P. unit</span>
+                          <span className="tabular-nums">{moneyPEN(it.unit_price)}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="block text-xs text-muted-foreground">Subtotal</span>
+                          <span className="font-semibold tabular-nums">
+                            {moneyPEN(it.subtotal)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {(sale.items ?? []).length === 0 && (
+                  <div className="rounded-lg border border-dashed border-sand/70 px-4 py-6 text-center text-sm text-muted-foreground">
+                    Sin items aun.
+                  </div>
+                )}
+              </div>
+              <div className="hidden overflow-hidden rounded-lg border border-sand/60 md:block">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -800,7 +1002,10 @@ function SaleDrawer({
                       return (
                         <TableRow key={it.id}>
                           <TableCell>
-                            {it.product?.name}
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span>{getSaleItemName(it)}</span>
+                              {isManualSaleItem(it) && <Badge variant="outline">Manual</Badge>}
+                            </div>
                             {presentationLabel && (
                               <div className="text-xs font-medium text-muted-foreground">
                                 {presentationLabel}
@@ -843,72 +1048,106 @@ function SaleDrawer({
                 </Table>
               </div>
               {sale.status === "borrador" && (
-                <div className="grid grid-cols-12 gap-2 mt-3 items-end">
-                  <div className="col-span-12 sm:col-span-4">
-                    <Label className="text-xs">
-                      Buscar pieza, material o presentación por SKU o nombre
+                <>
+                  <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-sand/60 bg-cream/50 px-3 py-2">
+                    <Label htmlFor="manual-sale-item" className="text-sm font-semibold">
+                      Articulo manual
                     </Label>
-                    <Input
-                      value={item.product_search}
-                      onChange={(e) =>
-                        setItem((s: any) => ({ ...s, product_search: e.target.value }))
+                    <Switch
+                      id="manual-sale-item"
+                      checked={Boolean(item.is_manual_item)}
+                      onCheckedChange={(checked) =>
+                        setItem((current: any) => ({
+                          ...blankSaleItem(Boolean(checked)),
+                          quantity: current.quantity || 1,
+                        }))
                       }
-                      placeholder="Ej. 0001 o camino de mesa"
                     />
                   </div>
-                  <div className="col-span-12 sm:col-span-4">
-                    <Label className="text-xs">Pieza, material o presentación</Label>
-                    <Select
-                      value={item.product_option}
-                      onValueChange={(v) => selectSaleItemOption(v)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[300px]">
-                        {filteredProducts.map((p) => (
-                          <SelectItem key={p.value} value={p.value} textValue={p.label}>
-                            <span className="flex flex-col gap-0.5">
-                              <span>{p.label}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {p.sku || "Sin SKU"} · {moneyPEN(p.price)}
+                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-12 sm:items-end">
+                    {item.is_manual_item && (
+                      <div className="sm:col-span-6">
+                        <Label className="text-xs">Nombre del articulo</Label>
+                        <Input
+                          value={item.manual_item_name}
+                          onChange={(e) =>
+                            setItem((s: any) => ({ ...s, manual_item_name: e.target.value }))
+                          }
+                          placeholder="Ej. Camino de mesa feria"
+                        />
+                      </div>
+                    )}
+                    <div className={item.is_manual_item ? "hidden" : "sm:col-span-4"}>
+                      <Label className="text-xs">
+                        Buscar pieza, material o presentación por SKU o nombre
+                      </Label>
+                      <Input
+                        value={item.product_search}
+                        onChange={(e) =>
+                          setItem((s: any) => ({ ...s, product_search: e.target.value }))
+                        }
+                        placeholder="Ej. 0001 o camino de mesa"
+                      />
+                    </div>
+                    <div className={item.is_manual_item ? "hidden" : "sm:col-span-4"}>
+                      <Label className="text-xs">Pieza, material o presentación</Label>
+                      <Select
+                        value={item.product_option}
+                        onValueChange={(v) => selectSaleItemOption(v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[300px]">
+                          {filteredProducts.map((p) => (
+                            <SelectItem key={p.value} value={p.value} textValue={p.label}>
+                              <span className="flex flex-col gap-0.5">
+                                <span>{p.label}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {p.sku || "Sin SKU"} · {moneyPEN(p.price)}
+                                </span>
                               </span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                        {filteredProducts.length === 0 && (
-                          <div className="px-3 py-2 text-sm text-muted-foreground">
-                            Sin piezas, materiales o presentaciones para esa búsqueda.
-                          </div>
-                        )}
-                      </SelectContent>
-                    </Select>
+                            </SelectItem>
+                          ))}
+                          {filteredProducts.length === 0 && (
+                            <div className="px-3 py-2 text-sm text-muted-foreground">
+                              Sin piezas, materiales o presentaciones para esa búsqueda.
+                            </div>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className={item.is_manual_item ? "sm:col-span-2" : "sm:col-span-1"}>
+                      <Label className="text-xs">Cant.</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        step="1"
+                        inputMode="numeric"
+                        value={item.quantity}
+                        onChange={(e) => setItem((s: any) => ({ ...s, quantity: e.target.value }))}
+                      />
+                    </div>
+                    <div className={item.is_manual_item ? "sm:col-span-2" : "sm:col-span-2"}>
+                      <Label className="text-xs">P. unit (S/)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        inputMode="decimal"
+                        value={item.unit_price}
+                        onChange={(e) =>
+                          setItem((s: any) => ({ ...s, unit_price: e.target.value }))
+                        }
+                        placeholder="Precio"
+                      />
+                    </div>
+                    <div className={item.is_manual_item ? "sm:col-span-2" : "sm:col-span-1"}>
+                      <Button onClick={onAddItem} className="h-11 w-full">
+                        <Plus className="h-4 w-4" /> Agregar
+                      </Button>
+                    </div>
                   </div>
-                  <div className="col-span-4 sm:col-span-1">
-                    <Label className="text-xs">Cant.</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={item.quantity}
-                      onChange={(e) => setItem((s: any) => ({ ...s, quantity: e.target.value }))}
-                    />
-                  </div>
-                  <div className="col-span-5 sm:col-span-2">
-                    <Label className="text-xs">P. unit (S/)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={item.unit_price}
-                      onChange={(e) => setItem((s: any) => ({ ...s, unit_price: e.target.value }))}
-                    />
-                  </div>
-                  <div className="col-span-3 sm:col-span-1">
-                    <Button onClick={onAddItem} className="w-full">
-                      <Plus className="h-4 w-4" /> Agregar
-                    </Button>
-                  </div>
-                </div>
+                </>
               )}
             </div>
 
@@ -938,8 +1177,8 @@ function SaleDrawer({
                     <p className="text-xs text-muted-foreground">Sin pagos registrados.</p>
                   )}
                 </div>
-                <div className="grid grid-cols-12 gap-2 mt-3 items-end">
-                  <div className="col-span-5">
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-12 sm:items-end">
+                  <div className="sm:col-span-5">
                     <Label className="text-xs">Método</Label>
                     <Select
                       value={pay.method}
@@ -959,24 +1198,26 @@ function SaleDrawer({
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="col-span-4">
+                  <div className="sm:col-span-4">
                     <Label className="text-xs">Monto</Label>
                     <Input
                       type="number"
                       step="0.01"
+                      inputMode="decimal"
                       value={pay.amount}
                       onChange={(e) => setPay((s: any) => ({ ...s, amount: e.target.value }))}
+                      placeholder="Monto"
                     />
                   </div>
-                  <div className="col-span-3">
-                    <Button onClick={onAddPay} className="w-full">
+                  <div className="sm:col-span-3">
+                    <Button onClick={onAddPay} className="h-11 w-full">
                       <Plus className="h-4 w-4" /> Pago
                     </Button>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-cream/40 border border-sand/60 rounded-xl p-4 self-start">
+              <div className="self-start rounded-xl border border-sand/60 bg-cream/40 p-4 max-sm:sticky max-sm:bottom-0 max-sm:z-20 max-sm:-mx-4 max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0 max-sm:bg-warm-white/95 max-sm:pb-[calc(1rem+env(safe-area-inset-bottom))] max-sm:shadow-[0_-8px_20px_rgba(47,33,27,0.08)]">
                 <div className="flex justify-between text-sm py-1">
                   <span>Subtotal</span>
                   <span>{moneyPEN(sale.subtotal)}</span>
@@ -990,7 +1231,7 @@ function SaleDrawer({
                   <span>{moneyPEN(sale.total)}</span>
                 </div>
                 {sale.status === "borrador" && (sale.items ?? []).length > 0 && (
-                  <Button variant="hero" className="w-full mt-3" onClick={onConfirm}>
+                  <Button variant="hero" className="mt-3 h-12 w-full" onClick={onConfirm}>
                     <CheckCircle2 className="h-4 w-4" /> Confirmar y emitir
                   </Button>
                 )}
