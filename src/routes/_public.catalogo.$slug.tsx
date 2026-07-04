@@ -4,6 +4,7 @@ import { getProductBySlug, listProducts } from "@/lib/public.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/product-card";
+import { getPresentationUnitLabel } from "@/lib/presentation-units";
 
 const statusLabel: Record<string, string> = {
   disponible: "Disponible",
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/_public/catalogo/$slug")({
     const p = (loaderData as any)?.product;
     return {
       meta: [
-        { title: p ? `${p.name} · Makrana Home Art` : "Producto · Makrana" },
+        { title: p ? `${p.name} · Makrana Home Art` : "Pieza · Makrana" },
         { name: "description", content: p?.short_description ?? "Pieza artesanal en macramé." },
         { property: "og:title", content: p?.name ?? "Makrana" },
         { property: "og:description", content: p?.short_description ?? "" },
@@ -44,18 +45,18 @@ export const Route = createFileRoute("/_public/catalogo/$slug")({
   component: ProductDetail,
   notFoundComponent: () => (
     <div className="container-makrana py-24 text-center">
-      <h1 className="font-display text-3xl">Producto no encontrado</h1>
+      <h1 className="font-display text-3xl">Pieza no encontrada</h1>
       <Button asChild className="mt-6">
         <Link to="/catalogo">Volver al catálogo</Link>
       </Button>
     </div>
   ),
-  errorComponent: () => <div className="container-makrana py-24">Error cargando el producto.</div>,
+  errorComponent: () => <div className="container-makrana py-24">Error cargando la pieza.</div>,
 });
 
 function waLink(name: string) {
-  const text = encodeURIComponent(`Hola Makrana, me interesa el producto "${name}".`);
-  return `https://wa.me/51999999999?text=${text}`;
+  const text = encodeURIComponent(`Hola Makrana, me interesa la pieza "${name}".`);
+  return `https://wa.me/51986608552?text=${text}`;
 }
 
 function ProductDetail() {
@@ -64,6 +65,7 @@ function ProductDetail() {
   const { data: related } = useSuspenseQuery(relatedQ);
   if (!product) return null;
   const p: any = product;
+  const hasPresentations = p.type === "material" && (p.presentations ?? []).length > 0;
   const totalStock = (p.stock ?? []).reduce(
     (acc: number, s: any) => acc + Number(s.quantity ?? 0),
     0,
@@ -99,8 +101,12 @@ function ProductDetail() {
             {p.category?.name}
           </p>
           <h1 className="font-display text-4xl mt-2">{p.name}</h1>
-          <div className="mt-3 flex items-center gap-3">
-            <span className="font-display text-3xl">S/ {Number(p.price).toFixed(2)}</span>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <span className="font-display text-3xl leading-tight">
+              {hasPresentations
+                ? "En distintas presentaciones"
+                : `S/ ${Number(p.price).toFixed(2)}`}
+            </span>
             <Badge>{statusLabel[p.status] ?? p.status}</Badge>
           </div>
           <p className="mt-5 text-muted-foreground whitespace-pre-line">
@@ -126,12 +132,6 @@ function ProductDetail() {
                 <dd>{p.color}</dd>
               </>
             )}
-            {p.artisan && (
-              <>
-                <dt className="text-muted-foreground">Artesana</dt>
-                <dd>{p.artisan}</dd>
-              </>
-            )}
             <dt className="text-muted-foreground">Stock disponible</dt>
             <dd>{totalStock > 0 ? `${totalStock} unidades` : "Consulta por encargo"}</dd>
           </dl>
@@ -142,7 +142,7 @@ function ProductDetail() {
               <ul className="divide-y divide-sand/60 rounded-lg border border-sand/60 overflow-hidden">
                 {p.presentations.map((pr: any) => (
                   <li key={pr.id} className="flex justify-between px-4 py-3 text-sm bg-cream/40">
-                    <span>{pr.label ?? pr.unit}</span>
+                    <span>{getPresentationUnitLabel(pr.unit, pr.label)}</span>
                     <span className="font-medium">S/ {Number(pr.price).toFixed(2)}</span>
                   </li>
                 ))}

@@ -49,7 +49,7 @@ function AdminDashboard() {
   }, []);
 
   const tiles = [
-    { label: "Productos", value: stats.products ?? "—", icon: Package },
+    { label: "Piezas", value: stats.products ?? "—", icon: Package },
     { label: "Materiales", value: stats.materials ?? "—", icon: Boxes },
     { label: "Almacenes", value: stats.warehouses ?? "—", icon: Warehouse },
     { label: "Novedades publicadas", value: stats.news ?? "—", icon: Newspaper },
@@ -78,7 +78,7 @@ function AdminDashboard() {
       <div className="mt-10 rounded-xl border border-dashed border-sand p-8 bg-cream/40">
         <h2 className="font-display text-xl">Próximas fases</h2>
         <ul className="mt-3 text-sm text-muted-foreground space-y-1 list-disc pl-5">
-          <li>Fase 2 — CRUD completo de productos, materiales y movimientos de stock.</li>
+          <li>Fase 2 — CRUD completo de piezas, materiales y movimientos de stock.</li>
           <li>Fase 3 — Ventas, pagos y comprobantes PDF.</li>
           <li>Fase 4 — Admin de novedades, talleres y ferias.</li>
           <li>Fase 5 — Intranet del cliente extendida y reportes con exportación.</li>

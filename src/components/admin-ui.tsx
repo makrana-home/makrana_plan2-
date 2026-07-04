@@ -15,16 +15,29 @@ export function PageHeader({
   title,
   description,
   actions,
+  eyebrow,
 }: {
   title: string;
   description?: string;
   actions?: ReactNode;
+  eyebrow?: string;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
+    <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="font-display text-3xl md:text-4xl">{title}</h1>
-        {description && <p className="text-muted-foreground mt-1 max-w-2xl">{description}</p>}
+        {eyebrow && (
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.32em] text-accent">
+            {eyebrow}
+          </div>
+        )}
+        <h1 className="font-display text-4xl font-light leading-tight text-foreground md:text-5xl">
+          {title}
+        </h1>
+        {description && (
+          <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">
+            {description}
+          </p>
+        )}
       </div>
       {actions && <div className="flex gap-2">{actions}</div>}
     </div>
@@ -41,6 +54,7 @@ export function FormDialog({
   onSubmit,
   submitting,
   submitLabel = "Guardar",
+  contentClassName = "max-w-2xl",
 }: {
   trigger?: ReactNode;
   title: string;
@@ -51,11 +65,17 @@ export function FormDialog({
   onSubmit: (e: React.FormEvent) => void;
   submitting?: boolean;
   submitLabel?: string;
+  contentClassName?: string;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className={`${contentClassName} max-h-[90vh] overflow-y-auto`}
+        onEscapeKeyDown={(event) => event.preventDefault()}
+        onInteractOutside={(event) => event.preventDefault()}
+        onPointerDownOutside={(event) => event.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="font-display">{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
@@ -75,7 +95,7 @@ export function FormDialog({
 
 export function NewButton({ onClick, label = "Nuevo" }: { onClick?: () => void; label?: string }) {
   return (
-    <Button onClick={onClick} variant="hero" size="sm">
+    <Button onClick={onClick} variant="hero" size="lg" className="rounded-full px-6 shadow-lg">
       <Plus className="h-4 w-4" /> {label}
     </Button>
   );

@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2 } from "lucide-react";
+import { ImageIcon, Pencil, Trash2, Upload } from "lucide-react";
 import {
   PageHeader,
   FormDialog,
@@ -33,6 +33,7 @@ import {
   formatDate,
 } from "@/components/admin-ui";
 import { adminListNews, adminUpsertNews, adminDeleteNews } from "@/lib/admin-content.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/admin/novedades")({ component: NewsPage });
 
@@ -73,7 +74,7 @@ function NewsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const p = { ...form, slug: form.slug || slugify(form.title) };
+      const p = { ...form, slug: buildNewsSlug(form, rows) };
       for (const k of ["cover_image_url", "summary", "content", "cta_type", "cta_url"])
         if (p[k] === "") p[k] = null;
       await upsert({ data: p });
@@ -170,14 +171,6 @@ function NewsPage() {
             />
           </div>
           <div>
-            <Label>Slug *</Label>
-            <Input
-              required
-              value={form.slug}
-              onChange={(e) => setForm((f: any) => ({ ...f, slug: slugify(e.target.value) }))}
-            />
-          </div>
-          <div>
             <Label>Categoría *</Label>
             <Select
               value={form.category}
@@ -222,20 +215,8 @@ function NewsPage() {
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>URL imagen de portada</Label>
-            <Input
-              value={form.cover_image_url ?? ""}
-              onChange={(e) => setForm((f: any) => ({ ...f, cover_image_url: e.target.value }))}
-              placeholder="https://..."
-            />
-          </div>
-          <div>
-            <Label>CTA URL</Label>
-            <Input
-              value={form.cta_url ?? ""}
-              onChange={(e) => setForm((f: any) => ({ ...f, cta_url: e.target.value }))}
-            />
+          <div className="sm:col-span-2">
+            <NewsImageDropzone form={form} setForm={setForm} />
           </div>
         </div>
         <div>
@@ -267,6 +248,94 @@ function NewsPage() {
   );
 }
 
+function NewsImageDropzone({ form, setForm }: { form: any; setForm: (fn: any) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const inputId = "news-cover-upload";
+
+  async function uploadFile(file?: File) {
+    if (!file) return;
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      toast.error("Solo se permiten imágenes JPG o PNG.");
+      return;
+    }
+    if (file.size > 6 * 1024 * 1024) {
+      toast.error("La imagen no debe superar 6 MB.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const extension = file.type === "image/png" ? "png" : "jpg";
+      const base = slugify(form.title || "publicacion");
+      const path = `${base}-${Date.now()}.${extension}`;
+      const { error } = await supabase.storage.from("news-images").upload(path, file, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: file.type,
+      });
+      if (error) throw error;
+      const { data } = supabase.storage.from("news-images").getPublicUrl(path);
+      setForm((current: any) => ({ ...current, cover_image_url: data.publicUrl }));
+      toast.success("Imagen agregada");
+    } catch (error: any) {
+      toast.error(error.message ?? "No se pudo subir la imagen.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div>
+      <Label>Imagen de portada (JPG o PNG)</Label>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => document.getElementById(inputId)?.click()}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") document.getElementById(inputId)?.click();
+        }}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          uploadFile(event.dataTransfer.files?.[0]);
+        }}
+        className="mt-2 flex min-h-[116px] cursor-pointer items-center gap-4 rounded-2xl border border-dashed border-sand bg-cream/25 p-4 transition hover:border-accent/60"
+      >
+        {form.cover_image_url ? (
+          <img
+            src={form.cover_image_url}
+            alt="Vista previa de portada"
+            className="h-20 w-28 rounded-xl object-cover"
+          />
+        ) : (
+          <div className="flex h-20 w-28 items-center justify-center rounded-xl bg-warm-white text-accent/70">
+            <ImageIcon className="h-7 w-7" />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="font-medium">
+            {uploading ? "Subiendo imagen..." : "Arrastra una imagen o haz clic para seleccionar"}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Formatos permitidos: JPG o PNG. Tamaño máximo: 6 MB.
+          </p>
+          <Button type="button" variant="outline" size="sm" className="mt-3 rounded-full">
+            <Upload className="h-4 w-4" />
+            Agregar imagen
+          </Button>
+        </div>
+      </div>
+      <input
+        id={inputId}
+        type="file"
+        accept="image/jpeg,image/png"
+        className="hidden"
+        onChange={(event) => uploadFile(event.target.files?.[0])}
+      />
+    </div>
+  );
+}
+
 function blank() {
   return {
     title: "",
@@ -280,4 +349,18 @@ function blank() {
     cta_type: "",
     cta_url: "",
   };
+}
+
+function buildNewsSlug(form: any, rows: any[]) {
+  const base = safeNewsSlug(form.slug || form.title || form.category || "publicacion");
+  const siblings = rows.filter((row) => row.id !== form.id).map((row) => row.slug);
+  if (!siblings.includes(base)) return base;
+  let index = 2;
+  while (siblings.includes(`${base}-${index}`)) index += 1;
+  return `${base}-${index}`;
+}
+
+function safeNewsSlug(value: string) {
+  const slug = slugify(value);
+  return slug.length >= 2 ? slug : `publicacion-${Date.now()}`;
 }

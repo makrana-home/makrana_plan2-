@@ -176,6 +176,7 @@ export type Database = {
           id: string;
           movement_type: Database["public"]["Enums"]["movement_type"];
           notes: string | null;
+          presentation_id: string | null;
           product_id: string;
           quantity: number;
           reason: string | null;
@@ -189,6 +190,7 @@ export type Database = {
           id?: string;
           movement_type: Database["public"]["Enums"]["movement_type"];
           notes?: string | null;
+          presentation_id?: string | null;
           product_id: string;
           quantity: number;
           reason?: string | null;
@@ -202,6 +204,7 @@ export type Database = {
           id?: string;
           movement_type?: Database["public"]["Enums"]["movement_type"];
           notes?: string | null;
+          presentation_id?: string | null;
           product_id?: string;
           quantity?: number;
           reason?: string | null;
@@ -210,6 +213,13 @@ export type Database = {
           warehouse_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "inventory_movements_presentation_id_fkey";
+            columns: ["presentation_id"];
+            isOneToOne: false;
+            referencedRelation: "material_presentations";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "inventory_movements_product_id_fkey";
             columns: ["product_id"];
@@ -236,6 +246,7 @@ export type Database = {
       inventory_stock: {
         Row: {
           id: string;
+          presentation_id: string | null;
           product_id: string;
           quantity: number;
           updated_at: string;
@@ -243,6 +254,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
+          presentation_id?: string | null;
           product_id: string;
           quantity?: number;
           updated_at?: string;
@@ -250,12 +262,20 @@ export type Database = {
         };
         Update: {
           id?: string;
+          presentation_id?: string | null;
           product_id?: string;
           quantity?: number;
           updated_at?: string;
           warehouse_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "inventory_stock_presentation_id_fkey";
+            columns: ["presentation_id"];
+            isOneToOne: false;
+            referencedRelation: "material_presentations";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "inventory_stock_product_id_fkey";
             columns: ["product_id"];
@@ -308,31 +328,174 @@ export type Database = {
         };
         Relationships: [];
       };
+      manual_images: {
+        Row: {
+          alt_text: string | null;
+          created_at: string;
+          id: string;
+          image_url: string;
+          manual_id: string;
+          order_index: number;
+          storage_path: string | null;
+        };
+        Insert: {
+          alt_text?: string | null;
+          created_at?: string;
+          id?: string;
+          image_url: string;
+          manual_id: string;
+          order_index?: number;
+          storage_path?: string | null;
+        };
+        Update: {
+          alt_text?: string | null;
+          created_at?: string;
+          id?: string;
+          image_url?: string;
+          manual_id?: string;
+          order_index?: number;
+          storage_path?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "manual_images_manual_id_fkey";
+            columns: ["manual_id"];
+            isOneToOne: false;
+            referencedRelation: "manuals";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      manual_materials: {
+        Row: {
+          created_at: string;
+          id: string;
+          manual_id: string;
+          material_id: string;
+          material_presentation_id: string | null;
+          notes: string | null;
+          quantity: number;
+          unit: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          manual_id: string;
+          material_id: string;
+          material_presentation_id?: string | null;
+          notes?: string | null;
+          quantity?: number;
+          unit?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          manual_id?: string;
+          material_id?: string;
+          material_presentation_id?: string | null;
+          notes?: string | null;
+          quantity?: number;
+          unit?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "manual_materials_manual_id_fkey";
+            columns: ["manual_id"];
+            isOneToOne: false;
+            referencedRelation: "manuals";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "manual_materials_material_id_fkey";
+            columns: ["material_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "manual_materials_material_presentation_id_fkey";
+            columns: ["material_presentation_id"];
+            isOneToOne: false;
+            referencedRelation: "material_presentations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      manuals: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          id: string;
+          measurements: string | null;
+          notes: string | null;
+          piece_id: string;
+          quantity: number;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          measurements?: string | null;
+          notes?: string | null;
+          piece_id: string;
+          quantity?: number;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          measurements?: string | null;
+          notes?: string | null;
+          piece_id?: string;
+          quantity?: number;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "manuals_piece_id_fkey";
+            columns: ["piece_id"];
+            isOneToOne: true;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       material_presentations: {
         Row: {
           created_at: string;
+          cost: number;
           id: string;
           label: string | null;
           price: number;
           product_id: string;
+          sku: string | null;
           unit: Database["public"]["Enums"]["presentation_unit"];
           units_in_presentation: number;
         };
         Insert: {
           created_at?: string;
+          cost?: number;
           id?: string;
           label?: string | null;
           price: number;
           product_id: string;
+          sku?: string | null;
           unit: Database["public"]["Enums"]["presentation_unit"];
           units_in_presentation?: number;
         };
         Update: {
           created_at?: string;
+          cost?: number;
           id?: string;
           label?: string | null;
           price?: number;
           product_id?: string;
+          sku?: string | null;
           unit?: Database["public"]["Enums"]["presentation_unit"];
           units_in_presentation?: number;
         };
@@ -942,6 +1105,7 @@ export type Database = {
         Args: {
           _movement_type: Database["public"]["Enums"]["movement_type"];
           _notes?: string;
+          _presentation_id?: string;
           _product_id: string;
           _quantity: number;
           _reason?: string;
@@ -986,11 +1150,25 @@ export type Database = {
       presentation_unit:
         | "unidad"
         | "metro"
+        | "centimetro"
         | "rollo"
         | "madeja"
         | "paquete"
+        | "bolsa"
+        | "caja"
+        | "cono"
+        | "bobina"
+        | "ovillo"
+        | "par"
+        | "media_docena"
         | "docena"
         | "ciento"
+        | "gramo"
+        | "kilogramo"
+        | "litro"
+        | "mililitro"
+        | "set"
+        | "kit"
         | "combo"
         | "otro";
       product_status: "disponible" | "por_encargo" | "agotado" | "reservado";
@@ -1143,11 +1321,25 @@ export const Constants = {
       presentation_unit: [
         "unidad",
         "metro",
+        "centimetro",
         "rollo",
         "madeja",
         "paquete",
+        "bolsa",
+        "caja",
+        "cono",
+        "bobina",
+        "ovillo",
+        "par",
+        "media_docena",
         "docena",
         "ciento",
+        "gramo",
+        "kilogramo",
+        "litro",
+        "mililitro",
+        "set",
+        "kit",
         "combo",
         "otro",
       ],

@@ -2,12 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Printer, Eye } from "lucide-react";
+import { Eye } from "lucide-react";
 import { moneyPEN, formatDate } from "@/components/admin-ui";
 import { clientGetProfile } from "@/lib/admin-content.functions";
-import { ReceiptDoc } from "./admin.comprobantes";
 import { adminGetReceipt } from "@/lib/admin-sales.functions";
+import { ReceiptPreviewDialog } from "@/components/admin/receipt-documents";
 
 export const Route = createFileRoute("/_authenticated/cliente/comprobantes")({
   component: Comprobantes,
@@ -57,19 +56,12 @@ function Comprobantes() {
           </li>
         ))}
       </ul>
-      <Dialog open={!!active} onOpenChange={(v) => !v && setActive(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-display sr-only">Comprobante</DialogTitle>
-          </DialogHeader>
-          {active && <ReceiptDoc r={active} />}
-          <div className="flex justify-end print:hidden mt-4">
-            <Button variant="outline" onClick={() => window.print()}>
-              <Printer className="h-4 w-4" /> Imprimir / PDF
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ReceiptPreviewDialog
+        receipt={active}
+        open={!!active}
+        onOpenChange={(open) => !open && setActive(null)}
+        initialVariant="note"
+      />
     </div>
   );
 }

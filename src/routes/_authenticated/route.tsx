@@ -3,8 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { getDevAdminEmail, hasDevAdminSession } from "@/lib/dev-admin";
 
 export const Route = createFileRoute("/_authenticated")({
-  ssr: false,
   beforeLoad: async () => {
+    if (typeof window === "undefined") {
+      throw redirect({ to: "/auth" });
+    }
+
     if (hasDevAdminSession()) {
       return { user: { id: "dev-admin", email: getDevAdminEmail() } };
     }
