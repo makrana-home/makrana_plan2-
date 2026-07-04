@@ -49,17 +49,17 @@ const heroSlides = [
   {
     src: heroArbolDeLaVida,
     alt: "Árbol de la vida tejido en macramé sobre una pared artesanal",
-    position: "center center",
+    position: "center 38%",
   },
   {
     src: heroTelar,
     alt: "Telar de macramé en una sala cálida con detalles naturales",
-    position: "center center",
+    position: "62% 43%",
   },
   {
     src: heroTelarSala,
     alt: "Tapiz de macramé sobre un sofá en una sala luminosa",
-    position: "center center",
+    position: "center 42%",
   },
   {
     src: hero,
@@ -119,7 +119,7 @@ function Home_() {
 
   return (
     <>
-      <section className="relative isolate min-h-[calc(100svh-5rem)] overflow-hidden bg-primary md:min-h-[720px] lg:min-h-[760px]">
+      <section className="relative isolate min-h-[calc(100svh-5rem)] overflow-hidden bg-primary">
         <div className="absolute inset-0 -z-10" aria-hidden="true">
           {heroSlides.map((slide, index) => (
             <img
@@ -134,11 +134,11 @@ function Home_() {
               style={{ objectPosition: slide.position }}
             />
           ))}
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,oklch(0.965_0.018_78_/_0.94)_0%,oklch(0.965_0.018_78_/_0.82)_28%,oklch(0.965_0.018_78_/_0.32)_58%,oklch(0.24_0.02_60_/_0.42)_100%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-primary/45 to-transparent" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,oklch(0.965_0.018_78_/_0.68)_0%,oklch(0.965_0.018_78_/_0.48)_28%,oklch(0.965_0.018_78_/_0.14)_58%,oklch(0.24_0.02_60_/_0.34)_100%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-primary/30 to-transparent" />
         </div>
 
-        <div className="container-makrana relative z-10 flex min-h-[calc(100svh-5rem)] flex-col items-center justify-between pt-7 pb-8 text-center md:min-h-[720px] md:pt-8 md:pb-10 lg:min-h-[760px]">
+        <div className="container-makrana relative z-10 flex min-h-[calc(100svh-5rem)] flex-col items-center justify-between pt-7 pb-8 text-center md:pt-8 md:pb-10">
           <div className="flex w-full flex-col items-center">
             <h1 className="flex justify-center">
               <span className="sr-only">Makrana Home Art</span>
