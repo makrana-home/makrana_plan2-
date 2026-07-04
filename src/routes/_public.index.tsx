@@ -49,22 +49,30 @@ const heroSlides = [
   {
     src: heroArbolDeLaVida,
     alt: "Árbol de la vida tejido en macramé sobre una pared artesanal",
-    position: "center 38%",
+    position: "center 26%",
+    translateX: "-9%",
+    scale: 1.18,
   },
   {
     src: heroTelar,
     alt: "Telar de macramé en una sala cálida con detalles naturales",
-    position: "center 28%",
+    position: "center 18%",
+    translateX: "-15%",
+    scale: 1.34,
   },
   {
     src: heroTelarSala,
     alt: "Tapiz de macramé sobre un sofá en una sala luminosa",
-    position: "center 35%",
+    position: "center 27%",
+    translateX: "-3%",
+    scale: 1.08,
   },
   {
     src: hero,
     alt: "Hojas decorativas de macramé artesanal en colores cálidos",
     position: "center center",
+    translateX: "0%",
+    scale: 1,
   },
 ] as const;
 
@@ -121,19 +129,26 @@ function Home_() {
     <>
       <section className="relative isolate min-h-[100svh] overflow-hidden bg-primary">
         <div className="absolute inset-0 -z-10" aria-hidden="true">
-          {heroSlides.map((slide, index) => (
-            <img
-              key={slide.src}
-              src={slide.src}
-              alt=""
-              className={`absolute inset-0 h-full w-full object-cover transition-all duration-1000 ease-out ${
-                activeHeroIndex === index
-                  ? "scale-100 opacity-100"
-                  : "pointer-events-none scale-105 opacity-0"
-              }`}
-              style={{ objectPosition: slide.position }}
-            />
-          ))}
+          {heroSlides.map((slide, index) => {
+            const isActive = activeHeroIndex === index;
+
+            return (
+              <img
+                key={slide.src}
+                src={slide.src}
+                alt=""
+                className={`absolute inset-0 h-full w-full object-cover transition-all duration-1000 ease-out ${
+                  isActive ? "opacity-100" : "pointer-events-none opacity-0"
+                }`}
+                style={{
+                  objectPosition: slide.position,
+                  transform: `translate3d(${slide.translateX}, 0, 0) scale(${
+                    isActive ? slide.scale : slide.scale + 0.04
+                  })`,
+                }}
+              />
+            );
+          })}
           <div className="absolute inset-0 bg-[linear-gradient(180deg,oklch(0.965_0.018_78_/_0.68)_0%,oklch(0.965_0.018_78_/_0.48)_28%,oklch(0.965_0.018_78_/_0.14)_58%,oklch(0.24_0.02_60_/_0.34)_100%)]" />
           <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-primary/30 to-transparent" />
         </div>
