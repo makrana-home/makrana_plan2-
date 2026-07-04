@@ -54,12 +54,12 @@ const heroSlides = [
   {
     src: heroTelar,
     alt: "Telar de macramé en una sala cálida con detalles naturales",
-    position: "62% 43%",
+    position: "center 28%",
   },
   {
     src: heroTelarSala,
     alt: "Tapiz de macramé sobre un sofá en una sala luminosa",
-    position: "center 42%",
+    position: "center 35%",
   },
   {
     src: hero,
@@ -119,7 +119,7 @@ function Home_() {
 
   return (
     <>
-      <section className="relative isolate min-h-[calc(100svh-5rem)] overflow-hidden bg-primary">
+      <section className="relative isolate min-h-[100svh] overflow-hidden bg-primary">
         <div className="absolute inset-0 -z-10" aria-hidden="true">
           {heroSlides.map((slide, index) => (
             <img
@@ -138,7 +138,7 @@ function Home_() {
           <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-primary/30 to-transparent" />
         </div>
 
-        <div className="container-makrana relative z-10 flex min-h-[calc(100svh-5rem)] flex-col items-center justify-between pt-7 pb-8 text-center md:pt-8 md:pb-10">
+        <div className="container-makrana relative z-10 flex min-h-[100svh] flex-col items-center justify-between pt-20 pb-8 text-center sm:pt-24 md:pt-28 md:pb-10">
           <div className="flex w-full flex-col items-center">
             <h1 className="flex justify-center">
               <span className="sr-only">Makrana Home Art</span>

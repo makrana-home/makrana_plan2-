@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import type { SVGProps } from "react";
 import { Facebook, Instagram, Menu, MessageCircle, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/components/brand-logo";
@@ -33,11 +33,41 @@ const socialLinks = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [hasScrolledPastHero, setHasScrolledPastHero] = useState(false);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isHome = pathname === "/";
   const isActive = (to: string) => (to === "/" ? pathname === "/" : pathname.startsWith(to));
+  const hideHeaderOnHero = isHome && !hasScrolledPastHero && !open;
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isHome) {
+      setHasScrolledPastHero(true);
+      return;
+    }
+
+    const handleScroll = () => {
+      setHasScrolledPastHero(window.scrollY > 48);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isHome]);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-sand/70 bg-warm-white/95 shadow-[0_4px_18px_rgba(128,52,44,0.08)] backdrop-blur">
+    <header
+      className={cn(
+        "fixed top-0 z-40 w-full border-b border-sand/70 bg-warm-white/95 shadow-[0_4px_18px_rgba(128,52,44,0.08)] backdrop-blur transition-all duration-300 ease-out",
+        hideHeaderOnHero
+          ? "invisible pointer-events-none -translate-y-full opacity-0"
+          : "visible translate-y-0 opacity-100",
+      )}
+    >
       <div className="container-makrana flex min-h-20 max-w-full items-center gap-3 py-3 lg:min-h-24 lg:gap-4">
         <Link to="/" className="flex shrink-0 items-center">
           <BrandLogo variant="horizontal" imageClassName="w-40 sm:w-44 lg:w-48 xl:w-52" />
