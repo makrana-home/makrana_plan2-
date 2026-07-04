@@ -47,24 +47,24 @@ const emptyFeatured = ["Tapices murales", "Maceteros colgantes", "Cortinas decor
 
 const heroSlides = [
   {
-    src: hero,
-    alt: "Hojas decorativas de macramé artesanal en colores cálidos",
-    position: "72% center",
+    src: heroArbolDeLaVida,
+    alt: "Árbol de la vida tejido en macramé sobre una pared artesanal",
+    position: "center center",
   },
   {
     src: heroTelar,
     alt: "Telar de macramé en una sala cálida con detalles naturales",
-    position: "72% center",
-  },
-  {
-    src: heroArbolDeLaVida,
-    alt: "Árbol de la vida tejido en macramé sobre una pared artesanal",
-    position: "72% center",
+    position: "center center",
   },
   {
     src: heroTelarSala,
     alt: "Tapiz de macramé sobre un sofá en una sala luminosa",
-    position: "68% center",
+    position: "center center",
+  },
+  {
+    src: hero,
+    alt: "Hojas decorativas de macramé artesanal en colores cálidos",
+    position: "center center",
   },
 ] as const;
 
@@ -102,68 +102,69 @@ function Home_() {
 
   return (
     <>
-      <section className="relative min-h-[560px] overflow-hidden bg-cream md:min-h-[620px] lg:min-h-[640px]">
-        <div className="absolute inset-0" aria-hidden="true">
-          <div className="hero-carousel-track absolute inset-0 h-full">
-            {heroSlides.map((slide) => (
-              <div key={slide.src} className="relative h-full min-w-full overflow-hidden">
-                <img
-                  src={slide.src}
-                  alt=""
-                  className="absolute inset-0 h-full w-full scale-110 object-cover opacity-45 blur-2xl"
-                  style={{ objectPosition: slide.position }}
-                />
-                <img
-                  src={slide.src}
-                  alt=""
-                  className="hero-carousel-image relative z-10 h-full w-full object-contain px-0 py-6 sm:p-8 lg:px-10 lg:py-8"
-                  style={{ objectPosition: slide.position }}
-                />
-              </div>
-            ))}
-          </div>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_42%,transparent_0%,transparent_33%,oklch(0.965_0.018_78_/_0.35)_58%,var(--cream)_100%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--cream)_0%,oklch(0.965_0.018_78_/_0.97)_30%,oklch(0.965_0.018_78_/_0.7)_47%,transparent_76%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-cream via-cream/50 to-transparent" />
-        </div>
+      <section className="relative isolate overflow-hidden bg-[linear-gradient(180deg,var(--cream)_0%,var(--warm-white)_100%)]">
+        <div
+          className="absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(circle_at_50%_0%,oklch(1_0_0_/_0.9)_0%,transparent_68%)]"
+          aria-hidden="true"
+        />
 
-        <div className="container-makrana relative z-10 flex min-h-[560px] items-center py-14 md:min-h-[620px] lg:min-h-[640px] lg:py-20">
-          <div className="max-w-[24rem]">
-            <h1>
+        <div className="container-makrana relative z-10 flex min-h-[calc(100svh-5rem)] flex-col items-center justify-start pt-7 pb-8 text-center md:min-h-[700px] md:pt-8 md:pb-10 lg:min-h-[720px]">
+          <div className="flex w-full flex-col items-center">
+            <h1 className="flex justify-center">
               <span className="sr-only">Makrana Home Art</span>
-              <BrandLogo imageClassName="w-full max-w-[18rem] drop-shadow-[0_8px_28px_rgba(128,52,44,0.18)] sm:max-w-[21rem] md:max-w-[22rem]" />
+              <BrandLogo imageClassName="w-[min(76vw,21rem)] drop-shadow-[0_8px_28px_rgba(128,52,44,0.16)] md:w-[22rem] lg:w-[24rem]" />
             </h1>
-            <p className="mt-5 max-w-[22rem] text-[15px] leading-7 text-foreground md:text-base md:leading-8">
-              Piezas creadas nudo a nudo, donde la paciencia y el detalle se transforman en diseños
-              únicos. Artesanía que aporta calidez, autenticidad y estilo a cada rincón de tu hogar.
+            <p className="mt-3 max-w-3xl text-base leading-7 text-foreground md:text-xl md:leading-8">
+              Piezas artesanales nudo a nudo para llenar tu hogar de calidez, textura y
+              autenticidad.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3 sm:gap-4">
-              <Button
-                asChild
-                size="lg"
-                variant="hero"
-                className="h-12 w-full rounded-xl px-8 sm:w-auto"
-              >
+            <div className="mt-5 flex flex-wrap justify-center gap-3 sm:gap-4">
+              <Button asChild size="lg" variant="hero" className="h-12 rounded-full px-8">
                 <Link to="/catalogo">Ver catálogo</Link>
               </Button>
               <Button
                 asChild
                 size="lg"
                 variant="outline"
-                className="h-12 w-full rounded-xl border-accent bg-warm-white/70 px-8 text-accent hover:bg-warm-white sm:w-auto"
+                className="h-12 rounded-full border-accent bg-warm-white/70 px-8 text-accent hover:bg-warm-white"
               >
                 <Link to="/talleres">Talleres</Link>
               </Button>
             </div>
-            <div className="mt-8 flex items-center gap-2" aria-hidden="true">
-              {heroSlides.map((slide, index) => (
-                <span
-                  key={slide.alt}
-                  className="hero-carousel-dot"
-                  style={{ "--hero-dot-delay": `${index * 7}s` } as CSSProperties}
-                />
+          </div>
+
+          <div className="hero-showcase relative mt-6 w-full max-w-[82rem] overflow-hidden md:mt-7 lg:mt-8">
+            <div className="hero-carousel-track h-full">
+              {heroSlides.map((slide) => (
+                <div
+                  key={slide.src}
+                  className="relative flex h-full min-w-full items-center justify-center overflow-hidden"
+                >
+                  <img
+                    src={slide.src}
+                    alt=""
+                    className="absolute left-1/2 top-1/2 h-[118%] w-[118%] -translate-x-1/2 -translate-y-1/2 scale-105 object-cover opacity-20 blur-3xl"
+                    style={{ objectPosition: slide.position }}
+                  />
+                  <img
+                    src={slide.src}
+                    alt=""
+                    className="hero-carousel-image relative z-10 h-full w-full object-contain"
+                    style={{ objectPosition: slide.position }}
+                  />
+                </div>
               ))}
             </div>
+          </div>
+
+          <div className="mt-5 flex items-center gap-2" aria-hidden="true">
+            {heroSlides.map((slide, index) => (
+              <span
+                key={slide.alt}
+                className="hero-carousel-dot"
+                style={{ "--hero-dot-delay": `${index * 7}s` } as CSSProperties}
+              />
+            ))}
           </div>
         </div>
       </section>

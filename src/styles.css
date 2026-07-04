@@ -167,8 +167,13 @@
 @layer components {
   .hero-carousel-track {
     display: flex;
+    height: 100%;
     will-change: transform;
     animation: hero-carousel-scroll 28s ease-in-out infinite;
+  }
+
+  .hero-showcase {
+    height: clamp(17rem, 38svh, 27rem);
   }
 
   .hero-carousel-image {
@@ -198,6 +203,18 @@
     opacity: 0;
     animation: hero-carousel-dot 28s linear infinite;
     animation-delay: var(--hero-dot-delay, 0s);
+  }
+}
+
+@media (min-width: 768px) {
+  .hero-showcase {
+    height: clamp(24rem, 38svh, 32rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-showcase {
+    height: clamp(26rem, 43svh, 34rem);
   }
 }
 
