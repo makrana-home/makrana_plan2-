@@ -22,7 +22,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS inventory_stock_product_warehouse_presentation
 UPDATE public.inventory_stock stock
 SET presentation_id = only_presentation.id
 FROM (
-  SELECT product_id, min(id) AS id
+  SELECT product_id, min(id::text)::uuid AS id
   FROM public.material_presentations
   GROUP BY product_id
   HAVING count(*) = 1
