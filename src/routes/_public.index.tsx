@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import type { CSSProperties } from "react";
 import { BookOpen, Calendar, Hand, Heart, Sparkles } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { ProductCard } from "@/components/product-card";
@@ -7,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { listNews, listProducts, listWorkshops } from "@/lib/public.functions";
 import anaMaria from "@/assets/ana-maria-makrana.jpg";
 import hero from "@/assets/portada-makrana.jpg";
+import heroArbolDeLaVida from "@/assets/hero-arbol-de-la-vida.jpg";
+import heroTelar from "@/assets/hero-telar.jpg";
+import heroTelarSala from "@/assets/hero-telar-sala.jpg";
 
 const featuredQ = queryOptions({
   queryKey: ["public", "featured-products"],
@@ -40,6 +44,29 @@ const emptyNews = [
 ];
 
 const emptyFeatured = ["Tapices murales", "Maceteros colgantes", "Cortinas decorativas"];
+
+const heroSlides = [
+  {
+    src: hero,
+    alt: "Hojas decorativas de macramé artesanal en colores cálidos",
+    position: "72% center",
+  },
+  {
+    src: heroTelar,
+    alt: "Telar de macramé en una sala cálida con detalles naturales",
+    position: "72% center",
+  },
+  {
+    src: heroArbolDeLaVida,
+    alt: "Árbol de la vida tejido en macramé sobre una pared artesanal",
+    position: "72% center",
+  },
+  {
+    src: heroTelarSala,
+    alt: "Tapiz de macramé sobre un sofá en una sala luminosa",
+    position: "68% center",
+  },
+] as const;
 
 export const Route = createFileRoute("/_public/")({
   head: () => ({
@@ -75,30 +102,36 @@ function Home_() {
 
   return (
     <>
-      <section className="relative min-h-[520px] overflow-hidden bg-cream md:min-h-[560px] lg:min-h-[600px]">
-        <div className="absolute inset-0">
-          <img
-            src={hero}
-            alt="Hojas decorativas de macramé artesanal en colores cálidos"
-            width={1456}
-            height={1088}
-            className="h-full w-full object-cover object-[68%_center]"
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(90deg, var(--cream) 0%, oklch(0.965 0.018 78 / 0.96) 30%, oklch(0.965 0.018 78 / 0.58) 46%, transparent 68%)",
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-cream/10" />
+      <section className="relative min-h-[560px] overflow-hidden bg-cream md:min-h-[620px] lg:min-h-[640px]">
+        <div className="absolute inset-0" aria-hidden="true">
+          <div className="hero-carousel-track absolute inset-0 h-full">
+            {heroSlides.map((slide) => (
+              <div key={slide.src} className="relative h-full min-w-full overflow-hidden">
+                <img
+                  src={slide.src}
+                  alt=""
+                  className="absolute inset-0 h-full w-full scale-110 object-cover opacity-45 blur-2xl"
+                  style={{ objectPosition: slide.position }}
+                />
+                <img
+                  src={slide.src}
+                  alt=""
+                  className="hero-carousel-image relative z-10 h-full w-full object-contain px-0 py-6 sm:p-8 lg:px-10 lg:py-8"
+                  style={{ objectPosition: slide.position }}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_42%,transparent_0%,transparent_33%,oklch(0.965_0.018_78_/_0.35)_58%,var(--cream)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--cream)_0%,oklch(0.965_0.018_78_/_0.97)_30%,oklch(0.965_0.018_78_/_0.7)_47%,transparent_76%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-cream via-cream/50 to-transparent" />
         </div>
 
-        <div className="container-makrana relative flex min-h-[520px] items-center py-16 md:min-h-[560px] lg:min-h-[600px] lg:py-20">
-          <div className="max-w-[23rem]">
+        <div className="container-makrana relative z-10 flex min-h-[560px] items-center py-14 md:min-h-[620px] lg:min-h-[640px] lg:py-20">
+          <div className="max-w-[24rem]">
             <h1>
               <span className="sr-only">Makrana Home Art</span>
-              <BrandLogo imageClassName="w-full max-w-[20rem] sm:max-w-[21rem] md:max-w-[22rem]" />
+              <BrandLogo imageClassName="w-full max-w-[18rem] drop-shadow-[0_8px_28px_rgba(128,52,44,0.18)] sm:max-w-[21rem] md:max-w-[22rem]" />
             </h1>
             <p className="mt-5 max-w-[22rem] text-[15px] leading-7 text-foreground md:text-base md:leading-8">
               Piezas creadas nudo a nudo, donde la paciencia y el detalle se transforman en diseños
@@ -121,6 +154,15 @@ function Home_() {
               >
                 <Link to="/talleres">Talleres</Link>
               </Button>
+            </div>
+            <div className="mt-8 flex items-center gap-2" aria-hidden="true">
+              {heroSlides.map((slide, index) => (
+                <span
+                  key={slide.alt}
+                  className="hero-carousel-dot"
+                  style={{ "--hero-dot-delay": `${index * 7}s` } as CSSProperties}
+                />
+              ))}
             </div>
           </div>
         </div>

@@ -164,6 +164,99 @@
   }
 }
 
+@layer components {
+  .hero-carousel-track {
+    display: flex;
+    will-change: transform;
+    animation: hero-carousel-scroll 28s ease-in-out infinite;
+  }
+
+  .hero-carousel-image {
+    filter: drop-shadow(0 24px 60px oklch(0.3 0.04 55 / 0.18));
+  }
+
+  .hero-carousel-dot {
+    position: relative;
+    display: inline-flex;
+    height: 0.5rem;
+    width: 2.35rem;
+    overflow: hidden;
+    border: 1px solid oklch(0.36 0.04 55 / 0.18);
+    border-radius: 999px;
+    background: oklch(1 0 0 / 0.45);
+    box-shadow: 0 8px 18px oklch(0.3 0.04 55 / 0.08);
+  }
+
+  .hero-carousel-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: scaleX(0);
+    transform-origin: left;
+    border-radius: inherit;
+    background: var(--color-accent);
+    opacity: 0;
+    animation: hero-carousel-dot 28s linear infinite;
+    animation-delay: var(--hero-dot-delay, 0s);
+  }
+}
+
+@keyframes hero-carousel-scroll {
+  0%,
+  19% {
+    transform: translateX(0);
+  }
+  25%,
+  44% {
+    transform: translateX(-100%);
+  }
+  50%,
+  69% {
+    transform: translateX(-200%);
+  }
+  75%,
+  94% {
+    transform: translateX(-300%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes hero-carousel-dot {
+  0% {
+    opacity: 1;
+    transform: scaleX(0);
+  }
+  19% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  20%,
+  100% {
+    opacity: 0;
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-carousel-track {
+    animation: none;
+    transform: translateX(0);
+  }
+
+  .hero-carousel-dot::after {
+    animation: none;
+    opacity: 0;
+    transform: scaleX(0);
+  }
+
+  .hero-carousel-dot:first-child::after {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
 @utility container-makrana {
   width: 100%;
   margin-inline: auto;
