@@ -70,7 +70,7 @@ function Catalogo() {
   ] as const;
 
   return (
-    <section className="bg-cream/45 px-5 py-16 sm:py-20">
+    <section className="bg-cream/45 px-4 py-14 sm:px-5 sm:py-20">
       <div className="mx-auto max-w-5xl">
         <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-accent">Catálogo</p>
         <h1 className="mt-2 max-w-2xl font-display text-4xl font-light leading-tight text-foreground sm:text-5xl">

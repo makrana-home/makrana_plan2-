@@ -325,10 +325,10 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
           {items.map((it: any, idx) => (
             <div
               key={it.id}
-              className="grid grid-cols-12 gap-2 items-end border border-sand/40 rounded-md p-2"
+              className="grid gap-2 rounded-md border border-sand/40 p-2 sm:grid-cols-12 sm:items-end"
             >
-              <div className="col-span-5 text-sm font-medium">{it.product?.name}</div>
-              <div className="col-span-2">
+              <div className="text-sm font-medium sm:col-span-5">{it.product?.name}</div>
+              <div className="sm:col-span-2">
                 <Label className="text-xs">Enviado</Label>
                 <Input
                   type="number"
@@ -337,7 +337,7 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
                   onBlur={(e) => save({ ...it, qty_sent: e.target.value })}
                 />
               </div>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <Label className="text-xs">Vendido</Label>
                 <Input
                   type="number"
@@ -346,7 +346,7 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
                   onBlur={(e) => save({ ...it, qty_sold: e.target.value })}
                 />
               </div>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <Label className="text-xs">Devuelto</Label>
                 <Input
                   type="number"
@@ -355,7 +355,7 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
                   onBlur={(e) => save({ ...it, qty_returned: e.target.value })}
                 />
               </div>
-              <div className="col-span-1">
+              <div className="sm:col-span-1">
                 <Button size="icon" variant="ghost" onClick={() => remove(it.id)}>
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
@@ -364,8 +364,8 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
           ))}
           <div className="border-t border-sand pt-4 mt-4">
             <Label className="text-sm">Agregar item</Label>
-            <div className="grid grid-cols-12 gap-2 items-end mt-2">
-              <div className="col-span-5">
+            <div className="mt-2 grid gap-2 sm:grid-cols-12 sm:items-end">
+              <div className="sm:col-span-5">
                 <Select
                   value={draft.product_id}
                   onValueChange={(v) => setDraft((s: any) => ({ ...s, product_id: v }))}
@@ -382,7 +382,7 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <Input
                   type="number"
                   min="0"
@@ -392,7 +392,7 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
                   onChange={(e) => setDraft((s: any) => ({ ...s, qty_sent: e.target.value }))}
                 />
               </div>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <Input
                   type="number"
                   min="0"
@@ -402,7 +402,7 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
                   onChange={(e) => setDraft((s: any) => ({ ...s, qty_sold: e.target.value }))}
                 />
               </div>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <Input
                   type="number"
                   min="0"
@@ -412,8 +412,8 @@ function FairItemsSheet({ fair, onClose }: { fair: any; onClose: () => void }) {
                   onChange={(e) => setDraft((s: any) => ({ ...s, qty_returned: e.target.value }))}
                 />
               </div>
-              <div className="col-span-1">
-                <Button size="icon" onClick={add}>
+              <div className="sm:col-span-1">
+                <Button size="icon" onClick={add} className="w-full sm:w-9">
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>

@@ -100,9 +100,9 @@ function ProductDetail() {
           <p className="text-xs uppercase tracking-widest text-muted-foreground mt-4">
             {p.category?.name}
           </p>
-          <h1 className="font-display text-4xl mt-2">{p.name}</h1>
+          <h1 className="mt-2 font-display text-3xl leading-tight sm:text-4xl">{p.name}</h1>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <span className="font-display text-3xl leading-tight">
+            <span className="font-display text-2xl leading-tight sm:text-3xl">
               {hasPresentations
                 ? "En distintas presentaciones"
                 : `S/ ${Number(p.price).toFixed(2)}`}
@@ -113,7 +113,7 @@ function ProductDetail() {
             {p.description ?? p.short_description}
           </p>
 
-          <dl className="mt-6 grid grid-cols-2 gap-y-3 text-sm">
+          <dl className="mt-6 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 text-sm">
             {p.measurements && (
               <>
                 <dt className="text-muted-foreground">Medidas</dt>
@@ -141,8 +141,11 @@ function ProductDetail() {
               <p className="text-xs uppercase tracking-widest text-accent mb-2">Presentaciones</p>
               <ul className="divide-y divide-sand/60 rounded-lg border border-sand/60 overflow-hidden">
                 {p.presentations.map((pr: any) => (
-                  <li key={pr.id} className="flex justify-between px-4 py-3 text-sm bg-cream/40">
-                    <span>{getPresentationUnitLabel(pr.unit, pr.label)}</span>
+                  <li
+                    key={pr.id}
+                    className="flex flex-wrap justify-between gap-x-4 gap-y-1 bg-cream/40 px-4 py-3 text-sm"
+                  >
+                    <span className="min-w-0">{getPresentationUnitLabel(pr.unit, pr.label)}</span>
                     <span className="font-medium">S/ {Number(pr.price).toFixed(2)}</span>
                   </li>
                 ))}
@@ -151,12 +154,12 @@ function ProductDetail() {
           )}
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild size="lg" variant="hero">
+            <Button asChild size="lg" variant="hero" className="w-full sm:w-auto">
               <a href={waLink(p.name)} target="_blank" rel="noreferrer">
                 Consultar por WhatsApp
               </a>
             </Button>
-            <Button asChild size="lg" variant="outline">
+            <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
               <Link to="/catalogo">Seguir explorando</Link>
             </Button>
           </div>

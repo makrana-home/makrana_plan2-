@@ -271,7 +271,7 @@ function WarehousesPage() {
                 </p>
               </div>
               {selectedWarehouse && (
-                <div className="flex min-w-[260px] flex-wrap items-center justify-end gap-2">
+                <div className="flex w-full flex-wrap items-center justify-stretch gap-2 sm:w-auto sm:min-w-[260px] sm:justify-end">
                   <Button
                     type="button"
                     size="sm"
@@ -294,7 +294,7 @@ function WarehousesPage() {
                     {allVisibleSelected ? "Limpiar selección" : "Seleccionar todo"}
                   </Button>
                   <Select value={destinationWarehouseId} onValueChange={setDestinationWarehouseId}>
-                    <SelectTrigger className="h-10 w-[190px] rounded-xl">
+                    <SelectTrigger className="h-10 w-full rounded-xl sm:w-[190px]">
                       <SelectValue placeholder="Destino" />
                     </SelectTrigger>
                     <SelectContent>

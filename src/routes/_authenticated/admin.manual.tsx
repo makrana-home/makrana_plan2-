@@ -500,16 +500,21 @@ function ManualMaterialsField({
   return (
     <section className="rounded-2xl border border-sand/70 bg-warm-white p-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
+        <div className="min-w-0 flex-1">
           <Label className="text-base">Materiales usados</Label>
           <Input
             value={materialSearch}
             onChange={(event) => setMaterialSearch(event.target.value)}
             placeholder="Buscar material por nombre o SKU"
-            className="mt-2 w-full min-w-[260px]"
+            className="mt-2 w-full min-w-0 sm:min-w-[260px]"
           />
         </div>
-        <Button type="button" variant="outline" className="rounded-full" onClick={addMaterial}>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full rounded-full sm:w-auto"
+          onClick={addMaterial}
+        >
           <Plus className="h-4 w-4" /> Agregar material
         </Button>
       </div>

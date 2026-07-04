@@ -52,7 +52,7 @@ function NewsDetail() {
         <p className="text-xs uppercase tracking-widest text-accent mt-6">
           {post.category.replaceAll("_", " ")}
         </p>
-        <h1 className="font-display text-5xl mt-2">{post.title}</h1>
+        <h1 className="mt-2 font-display text-3xl leading-tight sm:text-5xl">{post.title}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {post.published_at &&
             new Date(post.published_at).toLocaleDateString("es-PE", {

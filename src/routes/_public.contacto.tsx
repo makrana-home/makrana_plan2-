@@ -19,7 +19,7 @@ function Contact() {
     <section className="section-padded">
       <div className="container-makrana max-w-3xl">
         <p className="text-xs uppercase tracking-widest text-accent">Conversemos</p>
-        <h1 className="font-display text-5xl mt-2">Contacto</h1>
+        <h1 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">Contacto</h1>
         <p className="mt-3 text-muted-foreground">
           Cuéntanos qué buscas y conversemos. Estamos en Lima, Perú.
         </p>
@@ -48,7 +48,7 @@ function Contact() {
         </div>
 
         <div className="mt-10">
-          <Button asChild size="lg" variant="hero">
+          <Button asChild size="lg" variant="hero" className="w-full sm:w-auto">
             <a href="https://wa.me/51986608552" target="_blank" rel="noreferrer">
               Escribir por WhatsApp
             </a>

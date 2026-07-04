@@ -102,7 +102,7 @@ function AuthPage() {
         </div>
         <p className="text-sm opacity-70">© {new Date().getFullYear()} Makrana Home Art</p>
       </div>
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center px-5 py-10 sm:p-8">
         <div className="w-full max-w-md">
           <Link to="/" className="text-sm text-accent">
             ← Volver al inicio

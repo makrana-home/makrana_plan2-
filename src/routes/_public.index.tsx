@@ -104,15 +104,20 @@ function Home_() {
               Piezas creadas nudo a nudo, donde la paciencia y el detalle se transforman en diseños
               únicos. Artesanía que aporta calidez, autenticidad y estilo a cada rincón de tu hogar.
             </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Button asChild size="lg" variant="hero" className="h-12 rounded-xl px-8">
+            <div className="mt-8 flex flex-wrap gap-3 sm:gap-4">
+              <Button
+                asChild
+                size="lg"
+                variant="hero"
+                className="h-12 w-full rounded-xl px-8 sm:w-auto"
+              >
                 <Link to="/catalogo">Ver catálogo</Link>
               </Button>
               <Button
                 asChild
                 size="lg"
                 variant="outline"
-                className="h-12 rounded-xl border-accent bg-warm-white/70 px-8 text-accent hover:bg-warm-white"
+                className="h-12 w-full rounded-xl border-accent bg-warm-white/70 px-8 text-accent hover:bg-warm-white sm:w-auto"
               >
                 <Link to="/talleres">Talleres</Link>
               </Button>
@@ -125,7 +130,7 @@ function Home_() {
         <div className="container-makrana grid gap-12 lg:grid-cols-2 lg:items-center">
           <div>
             <div className="text-[11px] uppercase tracking-[0.22em] text-accent">Bienvenida</div>
-            <h2 className="mt-3 font-display text-4xl leading-tight md:text-5xl">
+            <h2 className="mt-3 font-display text-3xl leading-tight sm:text-4xl md:text-5xl">
               Cada nudo cuenta una historia.
             </h2>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
@@ -156,7 +161,9 @@ function Home_() {
         <div className="container-makrana py-16 md:py-20">
           <div>
             <div className="text-[11px] uppercase tracking-[0.22em] text-accent">Novedades</div>
-            <h2 className="mt-2 font-display text-4xl">Lo que está pasando en el taller</h2>
+            <h2 className="mt-2 font-display text-3xl leading-tight sm:text-4xl">
+              Lo que está pasando en el taller
+            </h2>
           </div>
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {news.length > 0
@@ -197,7 +204,9 @@ function Home_() {
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4">
             <div className="min-w-0">
               <div className="text-[11px] uppercase tracking-[0.22em] text-accent">Catálogo</div>
-              <h2 className="mt-2 font-display text-4xl">Piezas destacadas</h2>
+              <h2 className="mt-2 font-display text-3xl leading-tight sm:text-4xl">
+                Piezas destacadas
+              </h2>
             </div>
             <Link
               to="/catalogo"
@@ -243,13 +252,13 @@ function Home_() {
               instructora.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button asChild className="rounded-full" variant="hero">
+              <Button asChild className="w-full rounded-full sm:w-auto" variant="hero">
                 <Link to="/talleres">
                   <Calendar className="h-4 w-4" />
                   Ver talleres
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="rounded-full">
+              <Button asChild variant="outline" className="w-full rounded-full sm:w-auto">
                 <Link to="/registro">
                   <BookOpen className="h-4 w-4" />
                   Solicitar información

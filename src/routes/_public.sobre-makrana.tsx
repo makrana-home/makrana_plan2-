@@ -21,7 +21,9 @@ function About() {
     <section className="section-padded">
       <div className="container-makrana max-w-4xl">
         <p className="text-xs uppercase tracking-widest text-accent">NUESTRA HISTORIA</p>
-        <h1 className="font-display text-5xl mt-2">Hecho con paciencia, pensado para tu hogar.</h1>
+        <h1 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">
+          Hecho con paciencia, pensado para tu hogar.
+        </h1>
         <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
           Makrana Home Art nace de la pasión de Ana María por el arte, el macramé y la belleza de
           los detalles. Fascinada por las texturas, la combinación de colores y el diseño artesanal,

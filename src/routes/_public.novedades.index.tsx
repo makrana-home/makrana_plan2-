@@ -25,7 +25,7 @@ function NewsIndex() {
     <section className="section-padded">
       <div className="container-makrana">
         <p className="text-xs uppercase tracking-widest text-accent">Del taller</p>
-        <h1 className="font-display text-5xl mt-2">Novedades</h1>
+        <h1 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">Novedades</h1>
         <p className="mt-3 text-muted-foreground max-w-prose">
           Eventos, ferias, talleres y nuevas colecciones de Makrana Home Art.
         </p>

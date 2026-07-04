@@ -51,7 +51,7 @@ function ClientShell() {
   }
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background">
+      <div className="flex min-h-screen w-full max-w-full overflow-x-clip bg-background">
         <Sidebar>
           <SidebarHeader>
             <Link to="/" className="px-2 py-3 inline-flex">
@@ -80,17 +80,17 @@ function ClientShell() {
             </SidebarGroup>
           </SidebarContent>
         </Sidebar>
-        <div className="flex-1 flex flex-col">
-          <header className="h-14 border-b border-sand/60 flex items-center justify-between px-4 bg-warm-white">
-            <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="flex min-h-14 items-center justify-between gap-3 border-b border-sand/60 bg-warm-white px-3 sm:px-4">
+            <div className="flex min-w-0 items-center gap-2">
               <SidebarTrigger />
-              <span className="font-medium">Intranet del cliente</span>
+              <span className="truncate font-medium">Intranet del cliente</span>
             </div>
             <Button size="sm" variant="ghost" onClick={signOut}>
               <LogOut className="h-4 w-4" /> Salir
             </Button>
           </header>
-          <main className="flex-1 p-6">
+          <main className="min-w-0 flex-1 px-3 py-6 sm:px-6">
             <Outlet />
           </main>
         </div>

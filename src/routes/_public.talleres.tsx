@@ -68,7 +68,7 @@ function Workshops() {
     <section className="section-padded">
       <div className="container-makrana">
         <p className="text-xs uppercase tracking-widest text-accent">Aprende</p>
-        <h1 className="font-display text-5xl mt-2">Talleres</h1>
+        <h1 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">Talleres</h1>
         <p className="mt-3 max-w-prose text-muted-foreground">
           Vive el macramé en persona o desde casa: experiencias para todos los niveles.
         </p>
@@ -108,11 +108,12 @@ function Workshops() {
                   <dt className="text-muted-foreground">Cupos</dt>
                   <dd>{w.capacity - w.enrolled_count} disponibles</dd>
                 </dl>
-                <div className="mt-4 flex items-center justify-between">
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                   <span className="font-display text-xl">S/ {Number(w.price).toFixed(2)}</span>
                   <Button
                     variant="hero"
                     size="sm"
+                    className="w-full sm:w-auto"
                     disabled={w.status !== "abierto" || w.enrolled_count >= w.capacity}
                     onClick={() => setActive(w)}
                   >

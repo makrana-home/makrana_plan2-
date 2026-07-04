@@ -1339,12 +1339,12 @@ export function ProductFormFields({
           onChange={(e) => upd("internal_notes", e.target.value)}
         />
       </div>
-      <div className="flex gap-6">
-        <label className="flex items-center gap-2">
+      <div className="flex flex-wrap gap-3 sm:gap-6">
+        <label className="flex min-h-10 items-center gap-2">
           <Switch checked={form.is_visible} onCheckedChange={(v) => upd("is_visible", v)} /> Visible
           en web
         </label>
-        <label className="flex items-center gap-2">
+        <label className="flex min-h-10 items-center gap-2">
           <Switch checked={form.is_featured} onCheckedChange={(v) => upd("is_featured", v)} />{" "}
           Mostrar como pieza destacada
         </label>
@@ -1470,7 +1470,7 @@ function ProductImageDropzone({
           e.preventDefault();
           uploadFile(e.dataTransfer.files?.[0]);
         }}
-        className="grid min-h-20 cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-3 rounded-xl border border-dashed border-sand bg-cream/40 px-4 py-3 text-left transition hover:border-accent hover:bg-cream"
+        className="grid min-h-20 cursor-pointer grid-cols-[auto_1fr] items-center gap-3 rounded-xl border border-dashed border-sand bg-cream/40 px-4 py-3 text-left transition hover:border-accent hover:bg-cream sm:grid-cols-[auto_1fr_auto]"
       >
         {form.main_image_url ? (
           <img
@@ -1483,13 +1483,13 @@ function ProductImageDropzone({
             <ImageIcon className="h-5 w-5" />
           </span>
         )}
-        <span>
+        <span className="min-w-0">
           <span className="block text-sm font-medium">
             {uploading ? "Subiendo imagen..." : "Arrastra o selecciona una imagen"}
           </span>
           <span className="block text-xs text-muted-foreground">JPG o PNG. Máximo 6 MB.</span>
         </span>
-        <span className="inline-flex items-center gap-1 rounded-full border border-sand bg-warm-white px-3 py-1 text-xs text-accent">
+        <span className="col-span-2 inline-flex w-fit items-center gap-1 rounded-full border border-sand bg-warm-white px-3 py-1 text-xs text-accent sm:col-span-1">
           <Upload className="h-3.5 w-3.5" /> Agregar imagen
         </span>
       </label>
