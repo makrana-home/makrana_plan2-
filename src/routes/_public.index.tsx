@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
-import type { CSSProperties } from "react";
-import { BookOpen, Calendar, Hand, Heart, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BookOpen, Calendar, ChevronLeft, ChevronRight, Hand, Heart, Sparkles } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
@@ -92,6 +92,7 @@ function Home_() {
   const { data: featured } = useSuspenseQuery(featuredQ);
   const { data: news } = useSuspenseQuery(newsQ);
   const { data: workshops } = useSuspenseQuery(workshopsQ);
+  const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const availableWorkshops = workshops.filter((workshop) => workshop.status === "abierto");
   const inPersonWorkshops = availableWorkshops.filter(
     (workshop) => workshop.modality === "presencial" || workshop.modality === "hibrido",
@@ -100,19 +101,48 @@ function Home_() {
     (workshop) => workshop.modality === "virtual" || workshop.modality === "hibrido",
   ).length;
 
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setActiveHeroIndex((current) => (current + 1) % heroSlides.length);
+    }, 5500);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const goToPreviousHeroSlide = () => {
+    setActiveHeroIndex((current) => (current - 1 + heroSlides.length) % heroSlides.length);
+  };
+
+  const goToNextHeroSlide = () => {
+    setActiveHeroIndex((current) => (current + 1) % heroSlides.length);
+  };
+
   return (
     <>
-      <section className="relative isolate overflow-hidden bg-[linear-gradient(180deg,var(--cream)_0%,var(--warm-white)_100%)]">
-        <div
-          className="absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(circle_at_50%_0%,oklch(1_0_0_/_0.9)_0%,transparent_68%)]"
-          aria-hidden="true"
-        />
+      <section className="relative isolate min-h-[calc(100svh-5rem)] overflow-hidden bg-primary md:min-h-[720px] lg:min-h-[760px]">
+        <div className="absolute inset-0 -z-10" aria-hidden="true">
+          {heroSlides.map((slide, index) => (
+            <img
+              key={slide.src}
+              src={slide.src}
+              alt=""
+              className={`absolute inset-0 h-full w-full object-cover transition-all duration-1000 ease-out ${
+                activeHeroIndex === index
+                  ? "scale-100 opacity-100"
+                  : "pointer-events-none scale-105 opacity-0"
+              }`}
+              style={{ objectPosition: slide.position }}
+            />
+          ))}
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,oklch(0.965_0.018_78_/_0.94)_0%,oklch(0.965_0.018_78_/_0.82)_28%,oklch(0.965_0.018_78_/_0.32)_58%,oklch(0.24_0.02_60_/_0.42)_100%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-primary/45 to-transparent" />
+        </div>
 
-        <div className="container-makrana relative z-10 flex min-h-[calc(100svh-5rem)] flex-col items-center justify-start pt-7 pb-8 text-center md:min-h-[700px] md:pt-8 md:pb-10 lg:min-h-[720px]">
+        <div className="container-makrana relative z-10 flex min-h-[calc(100svh-5rem)] flex-col items-center justify-between pt-7 pb-8 text-center md:min-h-[720px] md:pt-8 md:pb-10 lg:min-h-[760px]">
           <div className="flex w-full flex-col items-center">
             <h1 className="flex justify-center">
               <span className="sr-only">Makrana Home Art</span>
-              <BrandLogo imageClassName="w-[min(76vw,21rem)] drop-shadow-[0_8px_28px_rgba(128,52,44,0.16)] md:w-[22rem] lg:w-[24rem]" />
+              <BrandLogo imageClassName="w-[min(76vw,21rem)] drop-shadow-[0_8px_28px_rgba(128,52,44,0.18)] md:w-[22rem] lg:w-[24rem]" />
             </h1>
             <p className="mt-3 max-w-3xl text-base leading-7 text-foreground md:text-xl md:leading-8">
               Piezas artesanales nudo a nudo para llenar tu hogar de calidez, textura y
@@ -133,38 +163,42 @@ function Home_() {
             </div>
           </div>
 
-          <div className="hero-showcase relative mt-6 w-full max-w-[82rem] overflow-hidden md:mt-7 lg:mt-8">
-            <div className="hero-carousel-track h-full">
-              {heroSlides.map((slide) => (
-                <div
-                  key={slide.src}
-                  className="relative flex h-full min-w-full items-center justify-center overflow-hidden"
-                >
-                  <img
-                    src={slide.src}
-                    alt=""
-                    className="absolute left-1/2 top-1/2 h-[118%] w-[118%] -translate-x-1/2 -translate-y-1/2 scale-105 object-cover opacity-20 blur-3xl"
-                    style={{ objectPosition: slide.position }}
-                  />
-                  <img
-                    src={slide.src}
-                    alt=""
-                    className="hero-carousel-image relative z-10 h-full w-full object-contain"
-                    style={{ objectPosition: slide.position }}
-                  />
-                </div>
+          <div className="flex w-full items-end justify-between gap-4">
+            <button
+              type="button"
+              className="hero-carousel-arrow"
+              aria-label="Imagen anterior"
+              onClick={goToPreviousHeroSlide}
+            >
+              <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+            </button>
+
+            <div
+              className="flex items-center gap-2"
+              role="group"
+              aria-label="Seleccionar imagen del carrusel"
+            >
+              {heroSlides.map((slide, index) => (
+                <button
+                  key={slide.alt}
+                  type="button"
+                  className="hero-carousel-dot"
+                  data-active={activeHeroIndex === index}
+                  aria-label={`Ver ${slide.alt}`}
+                  aria-pressed={activeHeroIndex === index}
+                  onClick={() => setActiveHeroIndex(index)}
+                />
               ))}
             </div>
-          </div>
 
-          <div className="mt-5 flex items-center gap-2" aria-hidden="true">
-            {heroSlides.map((slide, index) => (
-              <span
-                key={slide.alt}
-                className="hero-carousel-dot"
-                style={{ "--hero-dot-delay": `${index * 7}s` } as CSSProperties}
-              />
-            ))}
+            <button
+              type="button"
+              className="hero-carousel-arrow"
+              aria-label="Siguiente imagen"
+              onClick={goToNextHeroSlide}
+            >
+              <ChevronRight className="h-5 w-5" aria-hidden="true" />
+            </button>
           </div>
         </div>
       </section>

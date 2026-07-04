@@ -165,112 +165,57 @@
 }
 
 @layer components {
-  .hero-carousel-track {
-    display: flex;
-    height: 100%;
-    will-change: transform;
-    animation: hero-carousel-scroll 28s ease-in-out infinite;
+  .hero-carousel-arrow {
+    display: inline-flex;
+    height: 2.75rem;
+    width: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid oklch(1 0 0 / 0.48);
+    border-radius: 999px;
+    background: oklch(0.985 0.008 80 / 0.74);
+    color: var(--color-primary);
+    box-shadow: 0 14px 36px oklch(0.24 0.02 60 / 0.16);
+    backdrop-filter: blur(16px);
+    transition:
+      background-color 0.2s ease,
+      transform 0.2s ease;
   }
 
-  .hero-showcase {
-    height: clamp(17rem, 38svh, 27rem);
+  .hero-carousel-arrow:hover {
+    background: var(--color-warm-white);
+    transform: translateY(-1px);
   }
 
-  .hero-carousel-image {
-    filter: drop-shadow(0 24px 60px oklch(0.3 0.04 55 / 0.18));
+  .hero-carousel-arrow:focus-visible {
+    outline: 3px solid var(--color-ring);
+    outline-offset: 3px;
   }
 
   .hero-carousel-dot {
     position: relative;
     display: inline-flex;
-    height: 0.5rem;
-    width: 2.35rem;
+    height: 0.55rem;
+    width: 2.25rem;
     overflow: hidden;
-    border: 1px solid oklch(0.36 0.04 55 / 0.18);
+    border: 1px solid oklch(1 0 0 / 0.55);
     border-radius: 999px;
-    background: oklch(1 0 0 / 0.45);
-    box-shadow: 0 8px 18px oklch(0.3 0.04 55 / 0.08);
+    background: oklch(0.985 0.008 80 / 0.52);
+    box-shadow: 0 8px 18px oklch(0.24 0.02 60 / 0.12);
+    backdrop-filter: blur(14px);
+    transition:
+      background-color 0.2s ease,
+      width 0.2s ease;
   }
 
-  .hero-carousel-dot::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    transform: scaleX(0);
-    transform-origin: left;
-    border-radius: inherit;
+  .hero-carousel-dot[data-active="true"] {
+    width: 3.2rem;
     background: var(--color-accent);
-    opacity: 0;
-    animation: hero-carousel-dot 28s linear infinite;
-    animation-delay: var(--hero-dot-delay, 0s);
-  }
-}
-
-@media (min-width: 768px) {
-  .hero-showcase {
-    height: clamp(24rem, 38svh, 32rem);
-  }
-}
-
-@media (min-width: 1024px) {
-  .hero-showcase {
-    height: clamp(26rem, 43svh, 34rem);
-  }
-}
-
-@keyframes hero-carousel-scroll {
-  0%,
-  19% {
-    transform: translateX(0);
-  }
-  25%,
-  44% {
-    transform: translateX(-100%);
-  }
-  50%,
-  69% {
-    transform: translateX(-200%);
-  }
-  75%,
-  94% {
-    transform: translateX(-300%);
-  }
-  100% {
-    transform: translateX(0);
-  }
-}
-
-@keyframes hero-carousel-dot {
-  0% {
-    opacity: 1;
-    transform: scaleX(0);
-  }
-  19% {
-    opacity: 1;
-    transform: scaleX(1);
-  }
-  20%,
-  100% {
-    opacity: 0;
-    transform: scaleX(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hero-carousel-track {
-    animation: none;
-    transform: translateX(0);
   }
 
-  .hero-carousel-dot::after {
-    animation: none;
-    opacity: 0;
-    transform: scaleX(0);
-  }
-
-  .hero-carousel-dot:first-child::after {
-    opacity: 1;
-    transform: scaleX(1);
+  .hero-carousel-dot:focus-visible {
+    outline: 3px solid var(--color-ring);
+    outline-offset: 3px;
   }
 }
 
