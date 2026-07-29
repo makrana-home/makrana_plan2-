@@ -70,7 +70,10 @@ export function SiteHeader() {
     >
       <div className="container-makrana flex min-h-20 max-w-full items-center gap-3 py-3 lg:min-h-24 lg:gap-4">
         <Link to="/" className="flex shrink-0 items-center">
-          <BrandLogo variant="horizontal" imageClassName="w-40 sm:w-44 lg:w-48 xl:w-52" />
+          <BrandLogo
+            variant="horizontal"
+            imageClassName="h-auto w-36 object-contain sm:w-40 lg:w-44 xl:w-48"
+          />
         </Link>
         <nav className="hidden min-w-0 flex-1 items-center justify-center gap-2 lg:flex xl:gap-3">
           {links.map((l) => (
