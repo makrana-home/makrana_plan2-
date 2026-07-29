@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Calendar, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
@@ -112,6 +112,22 @@ function Home_() {
   const { data: workshops } = useSuspenseQuery(workshopsQ);
   const { data: homeCategories } = useSuspenseQuery(homeCategoriesQ);
   const { data: homeSections } = useSuspenseQuery(homeSectionsQ);
+
+  useEffect(() => {
+    if (
+      !homeSections.testimonials ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setActiveTestimonial((current) => (current + 1) % testimonials.length);
+    }, 6500);
+
+    return () => window.clearInterval(interval);
+  }, [activeTestimonial, homeSections.testimonials]);
+
   const availableWorkshops = workshops.filter((workshop) => workshop.status === "abierto");
   const inPersonWorkshops = availableWorkshops.filter(
     (workshop) => workshop.modality === "presencial" || workshop.modality === "hibrido",
@@ -534,20 +550,32 @@ function Home_() {
                 <div className="text-[10px] uppercase tracking-[0.25em] text-accent">
                   Lo que dicen nuestros clientes
                 </div>
-                <blockquote className="relative mt-7 pl-10">
-                  <span
-                    className="absolute left-0 top-[-0.35rem] font-display text-6xl leading-none text-accent/70"
-                    aria-hidden="true"
+                <div className="mt-7 overflow-hidden">
+                  <div
+                    className="flex transition-transform duration-700 ease-in-out"
+                    style={{ transform: `translateX(-${activeTestimonial * 100}%)` }}
                   >
-                    “
-                  </span>
-                  <p className="font-display text-lg leading-relaxed text-foreground sm:text-xl">
-                    {testimonials[activeTestimonial].quote}
-                  </p>
-                  <footer className="mt-5 text-xs font-medium text-muted-foreground">
-                    — {testimonials[activeTestimonial].author}
-                  </footer>
-                </blockquote>
+                    {testimonials.map((testimonial) => (
+                      <blockquote
+                        key={testimonial.author}
+                        className="relative min-w-full shrink-0 pl-10"
+                      >
+                        <span
+                          className="absolute left-0 top-[-0.35rem] font-display text-6xl leading-none text-accent/70"
+                          aria-hidden="true"
+                        >
+                          “
+                        </span>
+                        <p className="font-display text-lg leading-relaxed text-foreground sm:text-xl">
+                          {testimonial.quote}
+                        </p>
+                        <footer className="mt-5 text-xs font-medium text-muted-foreground">
+                          — {testimonial.author}
+                        </footer>
+                      </blockquote>
+                    ))}
+                  </div>
+                </div>
                 <div className="mt-8 flex items-center gap-2 pl-10" aria-label="Testimonios">
                   {testimonials.map((testimonial, index) => (
                     <button
