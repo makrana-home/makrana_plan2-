@@ -144,7 +144,7 @@ function CustomersTab() {
             <TableRow>
               <TableHead>Nombre</TableHead>
               <TableHead>Contacto</TableHead>
-              <TableHead>UbicaciÃ³n</TableHead>
+              <TableHead>Distrito</TableHead>
               <TableHead>Origen</TableHead>
               <TableHead></TableHead>
             </TableRow>
@@ -261,7 +261,7 @@ function CustomerRegistrationCard({
           </div>
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="admin_customer_location">Ubicación</Label>
+          <Label htmlFor="admin_customer_location">Distrito</Label>
           <div className="relative">
             <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-accent" />
             <Input
@@ -269,7 +269,7 @@ function CustomerRegistrationCard({
               maxLength={160}
               value={form.location ?? ""}
               onChange={(e) => update("location", e.target.value)}
-              placeholder="Lima, Perú"
+              placeholder="Ej. Miraflores"
               className={fieldClass}
             />
           </div>
