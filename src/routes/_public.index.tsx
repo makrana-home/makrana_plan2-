@@ -207,7 +207,7 @@ function Home_() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Cotizar un proyecto
+                  Cotiza tu pieza
                   <ArrowRight className="h-4 w-4" />
                 </a>
               </Button>
@@ -405,6 +405,8 @@ function Home_() {
                   <ProductCard
                     key={product.id}
                     product={product as any}
+                    showPrice={false}
+                    actionLabel="Ver más"
                   />
                 ))
               : emptyFeatured.map((name, index) => (
@@ -445,7 +447,7 @@ function Home_() {
               <div className="text-[10px] uppercase tracking-[0.28em] text-primary-foreground/70">
                 Proyectos a medida
               </div>
-              <h2 className="mt-3 max-w-xl font-display text-3xl leading-tight sm:text-4xl">
+              <h2 className="mt-3 max-w-xl font-display text-4xl leading-[1.08] sm:text-5xl">
                 Creamos una pieza ideal para tu proyecto
               </h2>
               <p className="mt-4 max-w-xl text-sm leading-relaxed text-primary-foreground/75">
@@ -475,7 +477,7 @@ function Home_() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Solicitar propuesta
+                  Cotiza tu pieza
                 </a>
               </Button>
             </div>
@@ -488,17 +490,17 @@ function Home_() {
           <div
             className={`container-makrana grid gap-12 ${
               homeSections.workshops && homeSections.testimonials
-                ? "lg:grid-cols-[1.12fr_0.88fr]"
+                ? "lg:grid-cols-[1.2fr_0.8fr]"
                 : ""
             }`}
           >
             {homeSections.workshops && (
-              <article className="grid gap-7 sm:grid-cols-[0.82fr_1.18fr] sm:items-center">
+              <article className="grid gap-7 sm:grid-cols-[1fr_1.1fr] sm:items-center">
                 <div>
                   <div className="text-[10px] uppercase tracking-[0.25em] text-accent">
                     Talleres presenciales
                   </div>
-                  <h2 className="mt-3 font-display text-3xl leading-tight">
+                  <h2 className="mt-3 font-display text-4xl leading-[1.08] sm:text-5xl">
                     Aprende a crear con tus propias manos
                   </h2>
                   <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
@@ -539,7 +541,7 @@ function Home_() {
                   >
                     “
                   </span>
-                  <p className="font-display text-xl leading-relaxed text-foreground sm:text-2xl">
+                  <p className="font-display text-lg leading-relaxed text-foreground sm:text-xl">
                     {testimonials[activeTestimonial].quote}
                   </p>
                   <footer className="mt-5 text-xs font-medium text-muted-foreground">

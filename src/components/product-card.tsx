@@ -31,11 +31,13 @@ const statusClass: Record<string, string> = {
 export function ProductCard({
   product,
   showPrice = true,
+  actionLabel,
   minimal = false,
   portraitImage = false,
 }: {
   product: Product;
   showPrice?: boolean;
+  actionLabel?: string;
   minimal?: boolean;
   portraitImage?: boolean;
 }) {
@@ -92,7 +94,7 @@ export function ProductCard({
         <div
           className={cn(
             "mt-auto flex items-end gap-3 pt-4",
-            showPrice ? "justify-between" : "justify-end",
+            showPrice || actionLabel ? "justify-between" : "justify-end",
           )}
         >
           {showPrice && (
@@ -108,6 +110,15 @@ export function ProductCard({
                   ? "Cotizar"
                 : `S/ ${Number(product.price).toFixed(0)}`}
             </span>
+          )}
+          {!showPrice && actionLabel && (
+            <Link
+              to="/catalogo/$slug"
+              params={{ slug: product.slug }}
+              className="text-sm font-bold text-accent transition-colors hover:text-accent/80"
+            >
+              {actionLabel}
+            </Link>
           )}
           <span className="text-[10px] font-semibold text-muted-foreground">
             {product.category?.name ?? typeLabel}
