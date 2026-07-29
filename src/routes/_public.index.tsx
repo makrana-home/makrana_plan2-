@@ -173,11 +173,11 @@ function Home_() {
         </div>
 
         <div className="container-makrana relative z-10 flex min-h-[100svh] items-center">
-          <div className="max-w-2xl pb-6 pt-20 text-left sm:pt-24 md:-ml-24 md:-translate-y-8">
+          <div className="w-full max-w-2xl pb-8 pt-20 text-left sm:pt-24 md:-translate-y-6 lg:max-w-[42rem]">
             <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-white sm:text-xs">
               Arte textil contemporáneo
             </p>
-            <h1 className="mt-4 max-w-xl font-display text-4xl leading-[1.04] text-white sm:text-5xl md:text-6xl">
+            <h1 className="mt-4 max-w-[15ch] font-display text-[clamp(2.25rem,5vw,4rem)] leading-[1.04] text-white">
               Piezas de macramé que transforman espacios
             </h1>
             <p className="mt-6 max-w-xl text-sm leading-relaxed text-white/90 sm:text-base">

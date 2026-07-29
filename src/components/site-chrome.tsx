@@ -105,16 +105,16 @@ export function SiteHeader() {
           <Link to="/" className="flex shrink-0 items-center">
             <BrandLogo
               variant="horizontal"
-              imageClassName="h-auto w-36 object-contain sm:w-40 lg:w-44 xl:w-48"
+              imageClassName="h-auto w-36 object-contain sm:w-40 lg:w-44 xl:w-40 2xl:w-48"
             />
           </Link>
-          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-2 2xl:flex 2xl:gap-3">
+          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 xl:flex 2xl:gap-3">
             {visibleLinks.map((l) => (
               <Link
                 key={l.to}
                 to={l.to}
                 className={cn(
-                  "rounded-full px-3 py-2 text-[14px] font-semibold transition-colors xl:px-4 xl:text-[15px]",
+                  "rounded-full px-2.5 py-2 text-[13px] font-semibold transition-colors 2xl:px-4 2xl:text-[15px]",
                   isActive(l.to)
                     ? "bg-accent text-warm-white shadow-sm shadow-accent/15"
                     : "text-foreground/85 hover:bg-cream hover:text-accent",
@@ -124,12 +124,12 @@ export function SiteHeader() {
               </Link>
             ))}
           </nav>
-          <div className="ml-auto hidden shrink-0 items-center gap-2 2xl:flex 2xl:gap-3">
+          <div className="ml-auto hidden shrink-0 items-center gap-2 xl:flex 2xl:gap-3">
             <Button
               asChild
               variant="outline"
               size="sm"
-              className="h-10 rounded-full px-4 text-[13px]"
+              className="h-9 rounded-full px-3 text-xs 2xl:h-10 2xl:px-4 2xl:text-[13px]"
             >
               <Link to="/registro">Quiero saber más</Link>
             </Button>
@@ -137,7 +137,7 @@ export function SiteHeader() {
               asChild
               variant="hero"
               size="sm"
-              className="h-10 rounded-full px-4 text-[13px] shadow-md shadow-clay/20"
+              className="h-9 rounded-full px-3 text-xs shadow-md shadow-clay/20 2xl:h-10 2xl:px-4 2xl:text-[13px]"
             >
               <a
                 href="https://wa.me/51986608552?text=Hola%20Makrana%2C%20quiero%20cotizar%20una%20pieza%20para%20mi%20espacio."
@@ -149,14 +149,14 @@ export function SiteHeader() {
             </Button>
           </div>
           <button
-            className="ml-auto p-2 text-foreground 2xl:hidden"
+            className="ml-auto p-2 text-foreground xl:hidden"
             onClick={() => setOpen((v) => !v)}
             aria-label="Abrir menú"
           >
             {open ? <X /> : <Menu />}
           </button>
         </div>
-        <div className={cn("border-t border-sand/60 2xl:hidden", open ? "block" : "hidden")}>
+        <div className={cn("border-t border-sand/60 xl:hidden", open ? "block" : "hidden")}>
           <div className="container-makrana py-4 flex flex-col gap-3">
             {visibleLinks.map((l) => (
               <Link
