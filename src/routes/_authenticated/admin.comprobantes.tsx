@@ -79,11 +79,17 @@ function ReceiptsPage() {
                     <Button
                       size="sm"
                       variant="outline"
+                      className="border-transparent bg-transparent text-muted-foreground shadow-none hover:bg-cream hover:text-foreground"
                       onClick={() => view(receipt.id, "internal")}
                     >
                       <Eye className="h-4 w-4" /> Interno
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => view(receipt.id, "note")}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900"
+                      onClick={() => view(receipt.id, "note")}
+                    >
                       <Eye className="h-4 w-4" /> Nota de venta
                     </Button>
                   </div>

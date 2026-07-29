@@ -46,23 +46,36 @@ import {
   adminConfirmSale,
   adminCancelSale,
   adminListCustomers,
+  adminUpsertCustomer,
 } from "@/lib/admin-sales.functions";
 import { adminListWarehouses, adminListProducts } from "@/lib/admin.functions";
 import { ReceiptPreviewDialog, type ReceiptVariant } from "@/components/admin/receipt-documents";
+import { buildQuotationReceipt } from "@/lib/quotation-receipts";
 import { formatUnits } from "@/lib/format-units";
 import { getPresentationUnitLabel } from "@/lib/presentation-units";
+import {
+  getChannelFromSaleNotes,
+  getCleanSaleNotes,
+  getManualCustomerNameFromSaleNotes,
+  getSaleCustomerDisplayName,
+} from "@/lib/sale-notes";
 
 export const Route = createFileRoute("/_authenticated/admin/ventas")({ component: SalesPage });
 
 const deliveryStatusOptions = [
-  { value: "pendiente", label: "Pendiente" },
-  { value: "en_preparacion", label: "En preparación" },
-  { value: "entregado", label: "Entregado" },
-  { value: "enviado", label: "Enviado" },
-  { value: "cancelado", label: "Cancelado" },
+  { value: "pendiente", label: "Pendiente", dotClass: "bg-rose-600" },
+  { value: "en_preparacion", label: "En preparación", dotClass: "bg-violet-600" },
+  { value: "enviado", label: "Enviado", dotClass: "bg-blue-600" },
+  { value: "entregado", label: "Entregado", dotClass: "bg-emerald-600" },
 ] as const;
 
 const PROVISIONAL_SOURCE = "feria_provisional";
+const internalDocumentButtonClass =
+  "border-transparent bg-transparent text-muted-foreground shadow-none hover:bg-cream hover:text-foreground";
+const saleNoteButtonClass =
+  "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900";
+const quotationButtonClass =
+  "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900";
 
 function blankSaleItem(keepManualMode = false) {
   return {
@@ -94,15 +107,41 @@ function parseNonNegativeNumber(value: unknown) {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 }
 
+function getSaleConfirmationError(error: unknown) {
+  const message = String((error as any)?.message ?? error ?? "").toLowerCase();
+
+  if (message.includes("stock insuficiente")) {
+    return "No se puede emitir la nota porque uno o más artículos no tienen stock suficiente en el almacén seleccionado.";
+  }
+  if (message.includes("forbidden")) {
+    return "Tu usuario no tiene permiso de administrador o ventas para emitir notas.";
+  }
+  if (message.includes("venta no tiene items")) {
+    return "Agrega al menos un artículo antes de confirmar y emitir la nota.";
+  }
+  if (
+    message.includes("ambiguous") ||
+    message.includes("schema cache") ||
+    message.includes("confirm_sale")
+  ) {
+    return "La función de emisión de notas requiere actualizarse en Supabase.";
+  }
+
+  return (error as any)?.message ?? "No se pudo confirmar ni emitir la nota de venta.";
+}
+
 function SalesPage() {
   const listFn = useServerFn(adminListSales);
   const create = useServerFn(adminCreateSale);
   const cancel = useServerFn(adminCancelSale);
+  const getSale = useServerFn(adminGetSale);
   const getReceipt = useServerFn(adminGetReceipt);
   const listWh = useServerFn(adminListWarehouses);
   const listCustomers = useServerFn(adminListCustomers);
+  const upsertCustomer = useServerFn(adminUpsertCustomer);
 
   const [rows, setRows] = useState<any[]>([]);
+  const [documentFilter, setDocumentFilter] = useState<"all" | "quote" | "note">("all");
   const [wh, setWh] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -110,6 +149,7 @@ function SalesPage() {
   const [newForm, setNewForm] = useState<any>({
     warehouse_id: "",
     customer_id: "",
+    manual_customer_name: "",
     channel: "Showroom",
     delivery_status: "pendiente",
     notes: "",
@@ -117,6 +157,24 @@ function SalesPage() {
   const [receiptPreview, setReceiptPreview] = useState<any>(null);
   const [receiptVariant, setReceiptVariant] = useState<ReceiptVariant>("internal");
   const [saving, setSaving] = useState(false);
+  const customerDlg = useDialog();
+  const [customerSaving, setCustomerSaving] = useState(false);
+  const [customerForm, setCustomerForm] = useState({
+    full_name: "",
+    phone: "",
+    email: "",
+    document: "",
+  });
+  const filteredRows = useMemo(
+    () =>
+      rows.filter((sale) => {
+        const hasSaleNote = Boolean(getSaleReceipt(sale)?.id);
+        if (documentFilter === "note") return hasSaleNote;
+        if (documentFilter === "quote") return !hasSaleNote;
+        return true;
+      }),
+    [documentFilter, rows],
+  );
 
   async function refresh() {
     setRows(await listFn());
@@ -135,6 +193,7 @@ function SalesPage() {
         data: {
           warehouse_id: newForm.warehouse_id,
           customer_id: newForm.customer_id || null,
+          manual_customer_name: newForm.manual_customer_name || null,
           channel: newForm.channel,
           notes: newForm.notes || null,
           delivery_status: getDefaultDeliveryStatusForWarehouse(
@@ -159,6 +218,26 @@ function SalesPage() {
       setSaving(false);
     }
   }
+  async function onCreateCustomer(e: React.FormEvent) {
+    e.preventDefault();
+    setCustomerSaving(true);
+    try {
+      const created = await upsertCustomer({ data: customerForm });
+      const updatedCustomers = await listCustomers();
+      setCustomers(updatedCustomers);
+      setNewForm((form: any) => ({
+        ...form,
+        customer_id: created.id,
+        manual_customer_name: "",
+      }));
+      customerDlg.close();
+      toast.success("Cliente agregado y seleccionado");
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudo agregar el cliente");
+    } finally {
+      setCustomerSaving(false);
+    }
+  }
   async function onCancel(r: any) {
     const message =
       r.status === "confirmada"
@@ -178,6 +257,27 @@ function SalesPage() {
       const receipt = await getReceipt({ data: { id } });
       setReceiptVariant(variant);
       setReceiptPreview(receipt);
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  }
+  async function viewQuotation(saleId: string) {
+    try {
+      const sale = await getSale({ data: { id: saleId } });
+      previewQuotationFromSale(sale);
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  }
+  function previewQuotationFromSale(sale: any) {
+    setReceiptVariant("quote");
+    setReceiptPreview(buildQuotationReceipt(sale));
+  }
+  async function viewInternalDocument(saleId: string) {
+    try {
+      const sale = await getSale({ data: { id: saleId } });
+      setReceiptVariant("internal");
+      setReceiptPreview(buildQuotationReceipt(sale));
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -207,6 +307,7 @@ function SalesPage() {
               setNewForm({
                 warehouse_id: wh[0]?.id ?? "",
                 customer_id: "",
+                manual_customer_name: "",
                 channel: isFairWarehouse(wh[0]) ? "Feria" : "Showroom",
                 delivery_status: getDefaultDeliveryStatusForWarehouse(wh[0], "pendiente"),
                 notes: "",
@@ -218,25 +319,66 @@ function SalesPage() {
         }
       />
 
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant={documentFilter === "all" ? "default" : "outline"}
+          onClick={() => setDocumentFilter("all")}
+        >
+          Todos ({rows.length})
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className={
+            documentFilter === "quote"
+              ? "border-amber-300 bg-amber-100 text-amber-900 hover:bg-amber-100"
+              : quotationButtonClass
+          }
+          onClick={() => setDocumentFilter("quote")}
+        >
+          <FileText className="h-3.5 w-3.5" />
+          Cotizaciones ({rows.filter((sale) => !getSaleReceipt(sale)?.id).length})
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className={
+            documentFilter === "note"
+              ? "border-emerald-300 bg-emerald-100 text-emerald-900 hover:bg-emerald-100"
+              : saleNoteButtonClass
+          }
+          onClick={() => setDocumentFilter("note")}
+        >
+          <Eye className="h-3.5 w-3.5" />
+          Notas de venta ({rows.filter((sale) => getSaleReceipt(sale)?.id).length})
+        </Button>
+      </div>
+
       <div className="grid gap-3 md:hidden">
-        {rows.length === 0 && (
+        {filteredRows.length === 0 && (
           <div className="rounded-xl border border-sand/60 bg-warm-white px-4 py-8 text-center text-sm text-muted-foreground">
-            Sin ventas.
+            No hay documentos en este filtro.
           </div>
         )}
-        {rows.map((r) => (
+        {filteredRows.map((r) => (
           <SaleMobileCard
             key={r.id}
             sale={r}
             onOpen={() => setOpenId(r.id)}
             onCancel={() => onCancel(r)}
             onViewReceipt={(id) => viewReceipt(id, "note")}
+            onViewQuotation={(id) => viewQuotation(id)}
+            onViewInternal={(id) => viewInternalDocument(id)}
           />
         ))}
       </div>
 
       <div className="hidden overflow-hidden rounded-xl border border-sand/60 bg-warm-white md:block">
-        <Table className="min-w-[980px]">
+        <Table className="min-w-[1120px]">
           <TableHeader>
             <TableRow>
               <TableHead>Fecha</TableHead>
@@ -245,64 +387,85 @@ function SalesPage() {
               <TableHead>Estado</TableHead>
               <TableHead>Pago</TableHead>
               <TableHead>Entrega</TableHead>
+              <TableHead>Nota</TableHead>
               <TableHead className="text-right">Total</TableHead>
-              <TableHead>Nota de venta</TableHead>
+              <TableHead className="min-w-[265px]">Documentos</TableHead>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.length === 0 && (
+            {filteredRows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                  Sin ventas.
+                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                  No hay documentos en este filtro.
                 </TableCell>
               </TableRow>
             )}
-            {rows.map((r) => (
+            {filteredRows.map((r) => (
               <TableRow key={r.id}>
                 <TableCell className="text-xs text-muted-foreground">
                   {formatDate(r.created_at)}
                 </TableCell>
                 <TableCell>
-                  {r.customer?.full_name ?? (
+                  {getSaleCustomerDisplayName(r, "") || (
                     <span className="text-muted-foreground">— sin cliente —</span>
                   )}
                 </TableCell>
                 <TableCell className="text-xs">{r.warehouse?.name}</TableCell>
                 <TableCell>
-                  <Badge
-                    variant={
-                      r.status === "confirmada"
-                        ? "default"
-                        : r.status === "anulada"
-                          ? "destructive"
-                          : "outline"
-                    }
-                  >
-                    {r.status}
-                  </Badge>
+                  <SaleStatusBadge status={r.status} />
                 </TableCell>
                 <TableCell>
-                  <Badge variant="secondary">{r.payment_status}</Badge>
+                  {r.status === "borrador" ? (
+                    <span className="text-muted-foreground">—</span>
+                  ) : (
+                    <PaymentStatusBadge status={r.payment_status} />
+                  )}
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline">{r.delivery_status}</Badge>
+                  {r.status === "borrador" ? (
+                    <span className="text-muted-foreground">—</span>
+                  ) : (
+                    <DeliveryStatusBadge status={r.delivery_status} />
+                  )}
+                </TableCell>
+                <TableCell className="max-w-[220px] text-xs text-muted-foreground">
+                  <span className="line-clamp-2" title={getCleanSaleNotes(r.notes)}>
+                    {getCleanSaleNotes(r.notes) || "—"}
+                  </span>
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{moneyPEN(r.total)}</TableCell>
                 <TableCell>
-                  {getSaleReceipt(r)?.id ? (
-                    <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-nowrap gap-2 whitespace-nowrap">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className={internalDocumentButtonClass}
+                      onClick={() => viewInternalDocument(r.id)}
+                    >
+                      <Eye className="h-3.5 w-3.5" /> Interno
+                    </Button>
+                    {getSaleReceipt(r)?.id ? (
                       <Button
                         size="sm"
                         variant="outline"
+                        className={saleNoteButtonClass}
                         onClick={() => viewReceipt(getSaleReceipt(r).id, "note")}
                       >
                         <Eye className="h-3.5 w-3.5" /> Nota de venta
                       </Button>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">—</span>
-                  )}
+                    ) : null}
+                    {!getSaleReceipt(r)?.id && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className={quotationButtonClass}
+                        onClick={() => viewQuotation(r.id)}
+                      >
+                        <FileText className="h-3.5 w-3.5" /> Cotización
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
                   <Button size="icon" variant="ghost" onClick={() => setOpenId(r.id)}>
@@ -393,11 +556,30 @@ function SalesPage() {
               )}
             </div>
             <div>
-              <Label>Cliente</Label>
+              <div className="mb-1.5 flex items-center justify-between gap-3">
+                <Label>Cliente</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-accent hover:bg-accent/10 hover:text-accent"
+                  onClick={() => {
+                    setCustomerForm({ full_name: "", phone: "", email: "", document: "" });
+                    customerDlg.openWith(null);
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Agregar cliente
+                </Button>
+              </div>
               <Select
                 value={newForm.customer_id || "_none"}
                 onValueChange={(v) =>
-                  setNewForm((f: any) => ({ ...f, customer_id: v === "_none" ? "" : v }))
+                  setNewForm((f: any) => ({
+                    ...f,
+                    customer_id: v === "_none" ? "" : v,
+                    manual_customer_name: v === "_none" ? f.manual_customer_name : "",
+                  }))
                 }
               >
                 <SelectTrigger>
@@ -413,6 +595,21 @@ function SalesPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Cliente manual</Label>
+              <Input
+                value={newForm.manual_customer_name}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewForm((f: any) => ({
+                    ...f,
+                    customer_id: value.trim() ? "" : f.customer_id,
+                    manual_customer_name: value,
+                  }));
+                }}
+                placeholder="Nombre para cotizacion"
+              />
+            </div>
             <div className="sm:col-span-2">
               <Label>Notas</Label>
               <Textarea
@@ -426,6 +623,61 @@ function SalesPage() {
         </div>
       </FormDialog>
 
+      <FormDialog
+        open={customerDlg.open}
+        onOpenChange={customerDlg.setOpen}
+        title="Agregar cliente"
+        onSubmit={onCreateCustomer}
+        submitting={customerSaving}
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Label htmlFor="sale_customer_name">Nombres y apellidos *</Label>
+            <Input
+              id="sale_customer_name"
+              required
+              minLength={2}
+              maxLength={160}
+              value={customerForm.full_name}
+              onChange={(e) =>
+                setCustomerForm((form) => ({ ...form, full_name: e.target.value }))
+              }
+              placeholder="Nombre del cliente"
+            />
+          </div>
+          <div>
+            <Label htmlFor="sale_customer_phone">Teléfono</Label>
+            <Input
+              id="sale_customer_phone"
+              value={customerForm.phone}
+              onChange={(e) => setCustomerForm((form) => ({ ...form, phone: e.target.value }))}
+              placeholder="999 999 999"
+            />
+          </div>
+          <div>
+            <Label htmlFor="sale_customer_document">DNI / RUC</Label>
+            <Input
+              id="sale_customer_document"
+              value={customerForm.document}
+              onChange={(e) =>
+                setCustomerForm((form) => ({ ...form, document: e.target.value }))
+              }
+              placeholder="Documento"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <Label htmlFor="sale_customer_email">Correo</Label>
+            <Input
+              id="sale_customer_email"
+              type="email"
+              value={customerForm.email}
+              onChange={(e) => setCustomerForm((form) => ({ ...form, email: e.target.value }))}
+              placeholder="cliente@correo.com"
+            />
+          </div>
+        </div>
+      </FormDialog>
+
       <SaleDrawer
         saleId={openId}
         onClose={() => {
@@ -435,6 +687,11 @@ function SalesPage() {
         customers={customers}
         warehouses={wh}
         onViewReceipt={viewReceipt}
+        onViewQuotation={previewQuotationFromSale}
+        onViewInternal={(sale) => {
+          setReceiptVariant("internal");
+          setReceiptPreview(buildQuotationReceipt(sale));
+        }}
       />
 
       <ReceiptPreviewDialog
@@ -442,7 +699,7 @@ function SalesPage() {
         open={!!receiptPreview}
         onOpenChange={(open) => !open && setReceiptPreview(null)}
         initialVariant={receiptVariant}
-        noteOnly
+        variantOnly
       />
     </div>
   );
@@ -453,11 +710,15 @@ function SaleMobileCard({
   onOpen,
   onCancel,
   onViewReceipt,
+  onViewQuotation,
+  onViewInternal,
 }: {
   sale: any;
   onOpen: () => void;
   onCancel: () => void;
   onViewReceipt: (receiptId: string) => void;
+  onViewQuotation: (saleId: string) => void;
+  onViewInternal: (saleId: string) => void;
 }) {
   const receipt = getSaleReceipt(sale);
   return (
@@ -466,7 +727,7 @@ function SaleMobileCard({
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">{formatDate(sale.created_at)}</p>
           <h2 className="mt-1 truncate text-base font-semibold">
-            {sale.customer?.full_name ?? "Sin cliente"}
+            {getSaleCustomerDisplayName(sale, "Sin cliente")}
           </h2>
           <p className="mt-1 truncate text-xs text-muted-foreground">
             {sale.warehouse?.name ?? "Sin almacen"}
@@ -478,20 +739,17 @@ function SaleMobileCard({
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2 text-xs">
-        <Badge
-          variant={
-            sale.status === "confirmada"
-              ? "default"
-              : sale.status === "anulada"
-                ? "destructive"
-                : "outline"
-          }
-        >
-          {sale.status}
-        </Badge>
-        <Badge variant="secondary">{sale.payment_status}</Badge>
-        <Badge variant="outline">{sale.delivery_status}</Badge>
+        <SaleStatusBadge status={sale.status} />
+        {sale.status !== "borrador" && (
+          <>
+            <PaymentStatusBadge status={sale.payment_status} />
+            <DeliveryStatusBadge status={sale.delivery_status} />
+          </>
+        )}
       </div>
+      {getCleanSaleNotes(sale.notes) && (
+        <p className="mt-3 text-sm text-muted-foreground">{getCleanSaleNotes(sale.notes)}</p>
+      )}
 
       <div className="mt-4 grid grid-cols-2 gap-2">
         <Button type="button" variant="outline" className="h-11" onClick={onOpen}>
@@ -501,7 +759,7 @@ function SaleMobileCard({
           <Button
             type="button"
             variant="outline"
-            className="h-11"
+            className={`h-11 ${saleNoteButtonClass}`}
             onClick={() => onViewReceipt(receipt.id)}
           >
             <Eye className="h-4 w-4" /> Nota
@@ -511,11 +769,27 @@ function SaleMobileCard({
             <FileText className="h-4 w-4" /> Nota
           </Button>
         )}
+        <Button
+          type="button"
+          variant="outline"
+          className={`h-11 ${internalDocumentButtonClass}`}
+          onClick={() => onViewInternal(sale.id)}
+        >
+          <Eye className="h-4 w-4" /> Interno
+        </Button>
+        {!receipt?.id && <Button
+          type="button"
+          variant="outline"
+          className={`h-11 ${quotationButtonClass}`}
+          onClick={() => onViewQuotation(sale.id)}
+        >
+          <FileText className="h-4 w-4" /> Cotización
+        </Button>}
         {["borrador", "confirmada"].includes(sale.status) && (
           <Button
             type="button"
             variant="ghost"
-            className="col-span-2 h-11 text-destructive"
+            className="h-11 text-destructive"
             onClick={onCancel}
           >
             <XCircle className="h-4 w-4" /> Anular
@@ -536,7 +810,8 @@ function isFairWarehouse(warehouse?: any) {
 }
 
 function getDefaultDeliveryStatusForWarehouse(warehouse?: any, current = "pendiente") {
-  return isFairWarehouse(warehouse) ? "cancelado" : current || "pendiente";
+  if (isFairWarehouse(warehouse) || current === "cancelado") return "entregado";
+  return current || "pendiente";
 }
 
 function normalizeSaleSearch(value: string) {
@@ -629,6 +904,51 @@ function getSaleReceipt(sale: any) {
   return Array.isArray(receipt) ? receipt[0] : receipt;
 }
 
+function SaleStatusBadge({ status }: { status: string }) {
+  if (status === "confirmada") {
+    return <Badge className="border-emerald-200 bg-emerald-100 text-emerald-800">Venta</Badge>;
+  }
+  if (status === "borrador") {
+    return <Badge className="border-amber-200 bg-amber-50 text-amber-800">Cotización</Badge>;
+  }
+  return <Badge variant={status === "anulada" ? "destructive" : "outline"}>{status}</Badge>;
+}
+
+function PaymentStatusBadge({ status }: { status?: string | null }) {
+  if (status === "pagado") {
+    return <Badge className="border-emerald-200 bg-emerald-100 text-emerald-800">Pagado</Badge>;
+  }
+  if (status === "pendiente") {
+    return <Badge className="border-rose-200 bg-rose-100 text-rose-800">Pendiente</Badge>;
+  }
+  if (status === "parcial") {
+    return <Badge className="border-amber-200 bg-amber-50 text-amber-800">Parcial</Badge>;
+  }
+  return <Badge className="border-sand bg-cream text-muted-foreground">{status || "Sin pago"}</Badge>;
+}
+
+function DeliveryStatusBadge({ status }: { status?: string | null }) {
+  const normalized = status === "cancelado" ? "entregado" : status || "pendiente";
+  const styles: Record<string, string> = {
+    pendiente: "border-rose-200 bg-rose-50 text-rose-800",
+    en_preparacion: "border-violet-200 bg-violet-50 text-violet-800",
+    enviado: "border-blue-200 bg-blue-50 text-blue-800",
+    entregado: "border-emerald-200 bg-emerald-100 text-emerald-800",
+  };
+  const label =
+    deliveryStatusOptions.find((option) => option.value === normalized)?.label ?? normalized;
+  return <Badge className={styles[normalized] ?? ""}>{label}</Badge>;
+}
+
+function getDeliverySelectClass(status?: string | null) {
+  const normalized = status === "cancelado" ? "entregado" : status;
+  if (normalized === "entregado") return "border-emerald-300 bg-emerald-50 text-emerald-900";
+  if (normalized === "enviado") return "border-blue-300 bg-blue-50 text-blue-900";
+  if (normalized === "en_preparacion")
+    return "border-violet-300 bg-violet-50 text-violet-900";
+  return "border-rose-300 bg-rose-50 text-rose-900";
+}
+
 function getActionErrorMessage(error: any, fallback: string) {
   const message = String(error?.message ?? error ?? "");
   if (message.includes("<!doctype html") || message.includes("This page didn't load")) {
@@ -637,18 +957,32 @@ function getActionErrorMessage(error: any, fallback: string) {
   return message || fallback;
 }
 
+function prepareSaleForEdit(sale: any) {
+  return {
+    ...sale,
+    delivery_status: sale?.delivery_status === "cancelado" ? "entregado" : sale?.delivery_status,
+    channel: getChannelFromSaleNotes(sale?.notes),
+    manual_customer_name: getManualCustomerNameFromSaleNotes(sale?.notes),
+    notes: getCleanSaleNotes(sale?.notes),
+  };
+}
+
 function SaleDrawer({
   saleId,
   onClose,
   customers,
   warehouses,
   onViewReceipt,
+  onViewQuotation,
+  onViewInternal,
 }: {
   saleId: string | null;
   onClose: () => void;
   customers: any[];
   warehouses: any[];
   onViewReceipt: (id: string, variant: ReceiptVariant) => void;
+  onViewQuotation: (sale: any) => void;
+  onViewInternal: (sale: any) => void;
 }) {
   const getSale = useServerFn(adminGetSale);
   const update = useServerFn(adminUpdateSale);
@@ -667,7 +1001,7 @@ function SaleDrawer({
   async function refresh() {
     if (!saleId) return;
     const s = await getSale({ data: { id: saleId } });
-    setSale(s);
+    setSale(prepareSaleForEdit(s));
   }
   useEffect(() => {
     if (saleId) {
@@ -695,6 +1029,8 @@ function SaleDrawer({
           id: sale.id,
           warehouse_id: sale.warehouse_id,
           customer_id: sale.customer_id,
+          manual_customer_name: sale.manual_customer_name || null,
+          channel: sale.channel,
           discount: Number(sale.discount),
           notes: sale.notes,
           delivery_status: sale.delivery_status,
@@ -711,6 +1047,7 @@ function SaleDrawer({
     const unitPrice = parsePositiveNumber(item.unit_price);
     const discount = parseNonNegativeNumber(item.discount);
     const manualItemName = String(item.manual_item_name ?? "").trim();
+    const itemDescription = String(item.description ?? "").trim();
 
     if (!quantity) return toast.error("Indica una cantidad mayor a 0.");
     if (!unitPrice) return toast.error("Indica un precio unitario mayor a 0.");
@@ -736,11 +1073,11 @@ function SaleDrawer({
         payload.is_manual_item = true;
         payload.manual_item_name = manualItemName;
         payload.provisional_source = PROVISIONAL_SOURCE;
-        payload.description = manualItemName;
+        payload.description = itemDescription || manualItemName;
       } else {
         payload.product_id = item.product_id;
         payload.presentation_id = item.presentation_id || null;
-        payload.description = item.description || null;
+        payload.description = itemDescription || null;
       }
 
       await addItem({
@@ -792,7 +1129,7 @@ function SaleDrawer({
       const r = await confirm_({ data: { id: sale.id } });
       toast.success(`Comprobante emitido: ${r?.[0]?.receipt_number ?? ""}`);
       const updatedSale = await getSale({ data: { id: sale.id } });
-      setSale(updatedSale);
+      setSale(prepareSaleForEdit(updatedSale));
       const receiptId = getSaleReceipt(updatedSale)?.id;
       if (receiptId) {
         onClose();
@@ -801,7 +1138,7 @@ function SaleDrawer({
         refresh();
       }
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(getSaleConfirmationError(e));
     }
   }
 
@@ -814,7 +1151,7 @@ function SaleDrawer({
       product_id: option.product_id,
       presentation_id: option.presentation_id ?? null,
       unit_price: option.price > 0 ? String(option.price) : "",
-      description: option.description,
+      description: "",
     }));
   }
 
@@ -831,8 +1168,12 @@ function SaleDrawer({
                 <Badge variant={sale.status === "confirmada" ? "default" : "outline"}>
                   {sale.status}
                 </Badge>
-                <Badge variant="secondary">pago: {sale.payment_status}</Badge>
-                <Badge variant="outline">entrega: {sale.delivery_status}</Badge>
+                {sale.status !== "borrador" && (
+                  <>
+                    <PaymentStatusBadge status={sale.payment_status} />
+                    <DeliveryStatusBadge status={sale.delivery_status} />
+                  </>
+                )}
                 {getSaleReceipt(sale) && <Badge>Comprobante {getSaleReceipt(sale).number}</Badge>}
               </div>
             </SheetHeader>
@@ -844,7 +1185,11 @@ function SaleDrawer({
                   disabled={sale.status !== "borrador"}
                   value={sale.customer_id || "_none"}
                   onValueChange={(v) =>
-                    setSale((s: any) => ({ ...s, customer_id: v === "_none" ? null : v }))
+                    setSale((s: any) => ({
+                      ...s,
+                      customer_id: v === "_none" ? null : v,
+                      manual_customer_name: v === "_none" ? s.manual_customer_name : "",
+                    }))
                   }
                 >
                   <SelectTrigger>
@@ -859,6 +1204,22 @@ function SaleDrawer({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label>Cliente manual</Label>
+                <Input
+                  disabled={sale.status !== "borrador"}
+                  value={sale.manual_customer_name ?? ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSale((s: any) => ({
+                      ...s,
+                      customer_id: value.trim() ? null : s.customer_id,
+                      manual_customer_name: value,
+                    }));
+                  }}
+                  placeholder="Nombre para cotizacion"
+                />
               </div>
               <div>
                 <Label>Almacén</Label>
@@ -902,18 +1263,26 @@ function SaleDrawer({
                 />
               </div>
               <div>
-                <Label>Estado entrega</Label>
+                <Label>Estado de entrega *</Label>
                 <Select
+                  required
                   value={sale.delivery_status}
                   onValueChange={(v) => setSale((s: any) => ({ ...s, delivery_status: v }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={getDeliverySelectClass(sale.delivery_status)}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {deliveryStatusOptions.map((status) => (
-                      <SelectItem key={status.value} value={status.value}>
-                        {status.label}
+                      <SelectItem
+                        key={status.value}
+                        value={status.value}
+                        className="data-[state=checked]:bg-cream data-[state=checked]:text-foreground data-[highlighted]:bg-cream data-[highlighted]:text-foreground"
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className={`h-2.5 w-2.5 rounded-full ${status.dotClass}`} />
+                          {status.label}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1117,7 +1486,7 @@ function SaleDrawer({
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className={item.is_manual_item ? "sm:col-span-2" : "sm:col-span-1"}>
+                    <div className="sm:col-span-2">
                       <Label className="text-xs">Cant.</Label>
                       <Input
                         type="number"
@@ -1128,7 +1497,7 @@ function SaleDrawer({
                         onChange={(e) => setItem((s: any) => ({ ...s, quantity: e.target.value }))}
                       />
                     </div>
-                    <div className={item.is_manual_item ? "sm:col-span-2" : "sm:col-span-2"}>
+                    <div className={item.is_manual_item ? "sm:col-span-2" : "sm:col-span-1"}>
                       <Label className="text-xs">P. unit (S/)</Label>
                       <Input
                         type="number"
@@ -1141,6 +1510,19 @@ function SaleDrawer({
                         placeholder="Precio"
                       />
                     </div>
+                    {item.is_manual_item && (
+                      <div className="sm:col-span-10">
+                        <Label className="text-xs">Descripción del artículo</Label>
+                        <Textarea
+                          rows={2}
+                          value={item.description}
+                          onChange={(e) =>
+                            setItem((s: any) => ({ ...s, description: e.target.value }))
+                          }
+                          placeholder="Detalle del pedido especial"
+                        />
+                      </div>
+                    )}
                     <div className={item.is_manual_item ? "sm:col-span-2" : "sm:col-span-1"}>
                       <Button onClick={onAddItem} className="h-11 w-full">
                         <Plus className="h-4 w-4" /> Agregar
@@ -1235,17 +1617,33 @@ function SaleDrawer({
                     <CheckCircle2 className="h-4 w-4" /> Confirmar y emitir
                   </Button>
                 )}
-                {getSaleReceipt(sale)?.id && (
-                  <div className="mt-2">
+                <div className="mt-2 grid gap-2">
+                  <Button
+                    variant="outline"
+                    className={`w-full ${internalDocumentButtonClass}`}
+                    onClick={() => onViewInternal(sale)}
+                  >
+                    <Eye className="h-4 w-4" /> Interno
+                  </Button>
+                  {getSaleReceipt(sale)?.id && (
                     <Button
                       variant="outline"
-                      className="w-full"
+                      className={`w-full ${saleNoteButtonClass}`}
                       onClick={() => onViewReceipt(getSaleReceipt(sale).id, "note")}
                     >
                       <FileText className="h-4 w-4" /> Nota de venta
                     </Button>
-                  </div>
-                )}
+                  )}
+                  {!getSaleReceipt(sale)?.id && (
+                    <Button
+                      variant="outline"
+                      className={`w-full ${quotationButtonClass}`}
+                      onClick={() => onViewQuotation(sale)}
+                    >
+                      <FileText className="h-4 w-4" /> Cotización
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </>

@@ -101,13 +101,23 @@ function WarehousesPage() {
   }
 
   async function onDelete(row: any) {
-    if (!confirm(`¿Eliminar almacén "${row.name}"?`)) return;
+    if (
+      !confirm(
+        `¿Eliminar almacén "${row.name}"?\n\nSe ocultará de la operación, pero se conservará su historial de movimientos y ventas.`,
+      )
+    )
+      return;
     try {
       await del({ data: { id: row.id } });
-      toast.success("Eliminado");
-      refresh();
+      toast.success("Almacén eliminado. Su historial se conservó.");
+      if (selectedWarehouseId === row.id) {
+        setSelectedWarehouseId("");
+        setSelectedStockIds({});
+        setDestinationWarehouseId("");
+      }
+      await refresh();
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(e.message ?? "No se pudo eliminar el almacén.");
     }
   }
 

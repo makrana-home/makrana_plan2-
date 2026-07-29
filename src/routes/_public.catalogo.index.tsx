@@ -34,7 +34,9 @@ export const Route = createFileRoute("/_public/catalogo/")({
 function Catalogo() {
   const { data: products } = useSuspenseQuery(allQ);
   const { data: categories } = useSuspenseQuery(catsQ);
-  const [activeType, setActiveType] = useState<"all" | "pieces" | "materials">("all");
+  const [activeType, setActiveType] = useState<"featured" | "pieces" | "materials" | null>(
+    "featured",
+  );
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -42,7 +44,8 @@ function Catalogo() {
     const q = normalizeSearch(searchTerm);
     return products.filter((p: any) => {
       const matchesType =
-        activeType === "all" ||
+        activeType === null ||
+        (activeType === "featured" && p.is_featured) ||
         (activeType === "pieces" && ["producto_terminado", "kit"].includes(p.type)) ||
         (activeType === "materials" && p.type === "material");
       const matchesCategory = !activeCat || p.category?.slug === activeCat;
@@ -64,7 +67,7 @@ function Catalogo() {
   }, [products, activeType, activeCat, searchTerm]);
 
   const typeFilters = [
-    { value: "all", label: "Todo" },
+    { value: "featured", label: "Destacados" },
     { value: "pieces", label: "Piezas" },
     { value: "materials", label: "Materiales" },
   ] as const;
@@ -104,6 +107,7 @@ function Catalogo() {
               params={{ slug: c.slug }}
               onClick={(e) => {
                 e.preventDefault();
+                setActiveType(null);
                 setActiveCat(c.slug);
               }}
               className={filterClass(activeCat === c.slug)}

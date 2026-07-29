@@ -1,6 +1,6 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader } from "@/components/admin-ui";
-import { useMemo, useState } from "react";
+import { FormDialog, PageHeader, formatDate, useDialog } from "@/components/admin-ui";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { adminConfirmBulkImport, adminValidateBulkImport } from "@/lib/admin-bulk-import.functions";
-import { CheckCircle2, Download, FileSpreadsheet, Upload, XCircle } from "lucide-react";
+import { adminCreateStaffUser, adminListStaffUsers } from "@/lib/admin-users.functions";
+import {
+  CheckCircle2,
+  Download,
+  FileSpreadsheet,
+  ShieldCheck,
+  Upload,
+  UserPlus,
+  Users,
+  XCircle,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/configuracion")({
   component: ConfigPage,
@@ -81,9 +91,254 @@ function ConfigPage() {
             electrónica.
           </p>
         </div>
+        <UsersAccessPanel />
         <BulkImportPanel />
       </div>
     </div>
+  );
+}
+
+const staffProfiles = {
+  admin: {
+    label: "Administrador",
+    description: "Control total de la plataforma y configuración.",
+    modules: ["Todos los módulos", "Usuarios y configuración"],
+  },
+  ventas: {
+    label: "Vendedor",
+    description: "Gestiona clientes, cotizaciones, ventas y comprobantes.",
+    modules: ["Piezas y materiales", "Manual", "Ventas", "Clientes", "Reportes"],
+  },
+  almacen: {
+    label: "Logística",
+    description: "Gestiona inventario, almacenes y movimientos de stock.",
+    modules: ["Piezas y materiales", "Manual", "Almacenes", "Movimientos", "Reportes"],
+  },
+} as const;
+
+type StaffRole = keyof typeof staffProfiles;
+
+function UsersAccessPanel() {
+  const listUsers = useServerFn(adminListStaffUsers);
+  const createUser = useServerFn(adminCreateStaffUser);
+  const dialog = useDialog();
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    full_name: "",
+    email: "",
+    password: "",
+    role: "ventas" as StaffRole,
+  });
+
+  async function refresh() {
+    setLoading(true);
+    try {
+      setUsers(await listUsers());
+    } catch (error: any) {
+      toast.error(error.message ?? "No se pudieron cargar los usuarios.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void refresh();
+  }, []);
+
+  async function onSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await createUser({ data: form });
+      toast.success("Usuario creado correctamente");
+      dialog.close();
+      await refresh();
+    } catch (error: any) {
+      toast.error(error.message ?? "No se pudo crear el usuario.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const selectedProfile = staffProfiles[form.role];
+
+  return (
+    <section className="rounded-xl border border-sand/60 bg-warm-white p-6 sm:col-span-2">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-accent">
+            <Users className="h-3.5 w-3.5" />
+            Usuarios
+          </div>
+          <h2 className="font-display text-xl">Usuarios y módulos</h2>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            Crea accesos para el equipo y asigna los módulos correspondientes a su función.
+          </p>
+        </div>
+        <Button
+          type="button"
+          className="rounded-full"
+          onClick={() => {
+            setForm({ full_name: "", email: "", password: "", role: "ventas" });
+            dialog.openWith(null);
+          }}
+        >
+          <UserPlus className="h-4 w-4" /> Nuevo usuario
+        </Button>
+      </div>
+
+      <div className="mt-6 overflow-x-auto rounded-xl border border-sand/70">
+        <Table className="min-w-[760px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Usuario</TableHead>
+              <TableHead>Perfil</TableHead>
+              <TableHead>Módulos</TableHead>
+              <TableHead>Creado</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading && (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  Cargando usuarios...
+                </TableCell>
+              </TableRow>
+            )}
+            {!loading && users.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  Todavía no hay usuarios del equipo.
+                </TableCell>
+              </TableRow>
+            )}
+            {!loading &&
+              users.map((user) => {
+                const role = (user.roles?.[0] ?? "ventas") as StaffRole;
+                const profile = staffProfiles[role] ?? staffProfiles.ventas;
+                return (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div className="font-medium">{user.full_name || "Sin nombre"}</div>
+                      <div className="text-xs text-muted-foreground">{user.email}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className="border-sand bg-cream text-foreground">
+                        {profile.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex max-w-xl flex-wrap gap-1.5">
+                        {profile.modules.map((module) => (
+                          <span
+                            key={module}
+                            className="rounded-full border border-sand/70 bg-warm-white px-2 py-1 text-xs text-muted-foreground"
+                          >
+                            {module}
+                          </span>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {formatDate(user.created_at)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+          </TableBody>
+        </Table>
+      </div>
+
+      <FormDialog
+        open={dialog.open}
+        onOpenChange={dialog.setOpen}
+        title="Crear usuario"
+        onSubmit={onSubmit}
+        submitting={saving}
+      >
+        <div className="space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Label htmlFor="staff_full_name">Nombre completo *</Label>
+              <Input
+                id="staff_full_name"
+                required
+                minLength={2}
+                value={form.full_name}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, full_name: event.target.value }))
+                }
+                placeholder="Nombre del colaborador"
+              />
+            </div>
+            <div>
+              <Label htmlFor="staff_email">Correo *</Label>
+              <Input
+                id="staff_email"
+                type="email"
+                required
+                value={form.email}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, email: event.target.value }))
+                }
+                placeholder="usuario@makrana.com"
+              />
+            </div>
+            <div>
+              <Label htmlFor="staff_password">Contraseña *</Label>
+              <Input
+                id="staff_password"
+                type="password"
+                required
+                minLength={8}
+                value={form.password}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, password: event.target.value }))
+                }
+                placeholder="Mínimo 8 caracteres"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Tipo de usuario *</Label>
+              <Select
+                value={form.role}
+                onValueChange={(role) =>
+                  setForm((current) => ({ ...current, role: role as StaffRole }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(staffProfiles).map(([role, profile]) => (
+                    <SelectItem key={role} value={role}>
+                      {profile.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-sand/70 bg-cream/40 p-4">
+            <div className="flex items-center gap-2 font-semibold">
+              <ShieldCheck className="h-4 w-4 text-accent" />
+              Módulos de {selectedProfile.label}
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">{selectedProfile.description}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {selectedProfile.modules.map((module) => (
+                <Badge key={module} className="border-sand bg-warm-white text-foreground">
+                  {module}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </div>
+      </FormDialog>
+    </section>
   );
 }
 

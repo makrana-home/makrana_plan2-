@@ -28,7 +28,13 @@ const statusClass: Record<string, string> = {
   reservado: "bg-sky-100 text-sky-700",
 };
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({
+  product,
+  showPrice = true,
+}: {
+  product: Product;
+  showPrice?: boolean;
+}) {
   const typeLabel =
     product.type === "material" ? "Material" : product.type === "kit" ? "Kit" : "Pieza";
   const hasPresentations = product.type === "material" && (product.presentations?.length ?? 0) > 0;
@@ -68,17 +74,24 @@ export function ProductCard({ product }: { product: Product }) {
         <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
           {product.short_description || "Pieza tejida artesanalmente para tu hogar."}
         </p>
-        <div className="mt-auto flex items-end justify-between gap-3 pt-4">
-          <span
-            className={cn(
-              "font-extrabold leading-tight text-accent",
-              hasPresentations ? "max-w-40 text-xs" : "text-sm",
-            )}
-          >
-            {hasPresentations
-              ? "En distintas presentaciones"
-              : `S/ ${Number(product.price).toFixed(0)}`}
-          </span>
+        <div
+          className={cn(
+            "mt-auto flex items-end gap-3 pt-4",
+            showPrice ? "justify-between" : "justify-end",
+          )}
+        >
+          {showPrice && (
+            <span
+              className={cn(
+                "font-extrabold leading-tight text-accent",
+                hasPresentations ? "max-w-40 text-xs" : "text-sm",
+              )}
+            >
+              {hasPresentations
+                ? "En distintas presentaciones"
+                : `S/ ${Number(product.price).toFixed(0)}`}
+            </span>
+          )}
           <span className="text-[10px] font-semibold text-muted-foreground">
             {product.category?.name ?? typeLabel}
           </span>

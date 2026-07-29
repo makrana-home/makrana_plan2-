@@ -41,6 +41,7 @@ import { Route as AuthenticatedAdminMovimientosRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminMaterialesRouteImport } from './routes/_authenticated/admin.materiales'
 import { Route as AuthenticatedAdminManualRouteImport } from './routes/_authenticated/admin.manual'
 import { Route as AuthenticatedAdminFeriasRouteImport } from './routes/_authenticated/admin.ferias'
+import { Route as AuthenticatedAdminCotizacionesRouteImport } from './routes/_authenticated/admin.cotizaciones'
 import { Route as AuthenticatedAdminConfiguracionRouteImport } from './routes/_authenticated/admin.configuracion'
 import { Route as AuthenticatedAdminComprobantesRouteImport } from './routes/_authenticated/admin.comprobantes'
 import { Route as AuthenticatedAdminClientesRouteImport } from './routes/_authenticated/admin.clientes'
@@ -219,6 +220,12 @@ const AuthenticatedAdminFeriasRoute =
     path: '/ferias',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminCotizacionesRoute =
+  AuthenticatedAdminCotizacionesRouteImport.update({
+    id: '/cotizaciones',
+    path: '/cotizaciones',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminConfiguracionRoute =
   AuthenticatedAdminConfiguracionRouteImport.update({
     id: '/configuracion',
@@ -259,6 +266,7 @@ export interface FileRoutesByFullPath {
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/admin/comprobantes': typeof AuthenticatedAdminComprobantesRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
+  '/admin/cotizaciones': typeof AuthenticatedAdminCotizacionesRoute
   '/admin/ferias': typeof AuthenticatedAdminFeriasRoute
   '/admin/manual': typeof AuthenticatedAdminManualRoute
   '/admin/materiales': typeof AuthenticatedAdminMaterialesRoute
@@ -293,6 +301,7 @@ export interface FileRoutesByTo {
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/admin/comprobantes': typeof AuthenticatedAdminComprobantesRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
+  '/admin/cotizaciones': typeof AuthenticatedAdminCotizacionesRoute
   '/admin/ferias': typeof AuthenticatedAdminFeriasRoute
   '/admin/manual': typeof AuthenticatedAdminManualRoute
   '/admin/materiales': typeof AuthenticatedAdminMaterialesRoute
@@ -332,6 +341,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/_authenticated/admin/comprobantes': typeof AuthenticatedAdminComprobantesRoute
   '/_authenticated/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
+  '/_authenticated/admin/cotizaciones': typeof AuthenticatedAdminCotizacionesRoute
   '/_authenticated/admin/ferias': typeof AuthenticatedAdminFeriasRoute
   '/_authenticated/admin/manual': typeof AuthenticatedAdminManualRoute
   '/_authenticated/admin/materiales': typeof AuthenticatedAdminMaterialesRoute
@@ -370,6 +380,7 @@ export interface FileRouteTypes {
     | '/admin/clientes'
     | '/admin/comprobantes'
     | '/admin/configuracion'
+    | '/admin/cotizaciones'
     | '/admin/ferias'
     | '/admin/manual'
     | '/admin/materiales'
@@ -404,6 +415,7 @@ export interface FileRouteTypes {
     | '/admin/clientes'
     | '/admin/comprobantes'
     | '/admin/configuracion'
+    | '/admin/cotizaciones'
     | '/admin/ferias'
     | '/admin/manual'
     | '/admin/materiales'
@@ -442,6 +454,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/clientes'
     | '/_authenticated/admin/comprobantes'
     | '/_authenticated/admin/configuracion'
+    | '/_authenticated/admin/cotizaciones'
     | '/_authenticated/admin/ferias'
     | '/_authenticated/admin/manual'
     | '/_authenticated/admin/materiales'
@@ -697,6 +710,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminFeriasRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/cotizaciones': {
+      id: '/_authenticated/admin/cotizaciones'
+      path: '/cotizaciones'
+      fullPath: '/admin/cotizaciones'
+      preLoaderRoute: typeof AuthenticatedAdminCotizacionesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/configuracion': {
       id: '/_authenticated/admin/configuracion'
       path: '/configuracion'
@@ -733,6 +753,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminClientesRoute: typeof AuthenticatedAdminClientesRoute
   AuthenticatedAdminComprobantesRoute: typeof AuthenticatedAdminComprobantesRoute
   AuthenticatedAdminConfiguracionRoute: typeof AuthenticatedAdminConfiguracionRoute
+  AuthenticatedAdminCotizacionesRoute: typeof AuthenticatedAdminCotizacionesRoute
   AuthenticatedAdminFeriasRoute: typeof AuthenticatedAdminFeriasRoute
   AuthenticatedAdminManualRoute: typeof AuthenticatedAdminManualRoute
   AuthenticatedAdminMaterialesRoute: typeof AuthenticatedAdminMaterialesRoute
@@ -750,6 +771,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminClientesRoute: AuthenticatedAdminClientesRoute,
   AuthenticatedAdminComprobantesRoute: AuthenticatedAdminComprobantesRoute,
   AuthenticatedAdminConfiguracionRoute: AuthenticatedAdminConfiguracionRoute,
+  AuthenticatedAdminCotizacionesRoute: AuthenticatedAdminCotizacionesRoute,
   AuthenticatedAdminFeriasRoute: AuthenticatedAdminFeriasRoute,
   AuthenticatedAdminManualRoute: AuthenticatedAdminManualRoute,
   AuthenticatedAdminMaterialesRoute: AuthenticatedAdminMaterialesRoute,

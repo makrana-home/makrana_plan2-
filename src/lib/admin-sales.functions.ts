@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { composeSaleNotes } from "@/lib/sale-notes";
 
 async function assertStaff(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("is_staff", { _user_id: ctx.userId });
@@ -125,11 +126,11 @@ const saleSchema = z.object({
   customer_id: z.string().uuid().optional().nullable(),
   warehouse_id: z.string().uuid(),
   channel: z.string().trim().max(60).optional().nullable(), // stored in notes prefix
+  manual_customer_name: z.string().trim().max(160).optional().nullable().or(z.literal("")),
   discount: z.coerce.number().nonnegative().default(0),
   notes: z.string().trim().max(1000).optional().nullable(),
   delivery_status: z
-    .enum(["pendiente", "en_preparacion", "entregado", "enviado", "cancelado"])
-    .optional(),
+    .enum(["pendiente", "en_preparacion", "entregado", "enviado", "cancelado"]),
 });
 
 export const adminListSales = createServerFn({ method: "GET" })
@@ -167,9 +168,11 @@ export const adminCreateSale = createServerFn({ method: "POST" })
   .inputValidator((d) => saleSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertSales(context);
-    const notes = data.channel
-      ? `[${data.channel}] ${data.notes ?? ""}`.trim()
-      : (data.notes ?? null);
+    const notes = composeSaleNotes({
+      channel: data.channel,
+      notes: data.notes,
+      manualCustomerName: data.manual_customer_name,
+    });
     const { data: row, error } = await context.supabase
       .from("sales")
       .insert({
@@ -177,7 +180,7 @@ export const adminCreateSale = createServerFn({ method: "POST" })
         warehouse_id: data.warehouse_id,
         discount: data.discount ?? 0,
         notes,
-        delivery_status: data.delivery_status ?? "pendiente",
+        delivery_status: data.delivery_status,
       })
       .select("id")
       .single();
@@ -190,14 +193,19 @@ export const adminUpdateSale = createServerFn({ method: "POST" })
   .inputValidator((d) => saleSchema.extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertSales(context);
+    const notes = composeSaleNotes({
+      channel: data.channel,
+      notes: data.notes,
+      manualCustomerName: data.manual_customer_name,
+    });
     const { error } = await context.supabase
       .from("sales")
       .update({
         customer_id: data.customer_id ?? null,
         warehouse_id: data.warehouse_id,
         discount: data.discount ?? 0,
-        notes: data.notes ?? null,
-        delivery_status: data.delivery_status ?? "pendiente",
+        notes,
+        delivery_status: data.delivery_status,
       })
       .eq("id", data.id);
     if (error) throw error;
@@ -213,7 +221,7 @@ const saleItemSchema = z
     is_manual_item: z.boolean().optional().default(false),
     manual_item_name: z.string().trim().max(160).optional().nullable(),
     provisional_source: z.string().trim().max(80).optional().nullable(),
-    description: z.string().trim().max(200).optional().nullable(),
+    description: z.string().trim().max(500).optional().nullable(),
     quantity: z.coerce.number().positive(),
     unit_price: z.coerce.number().nonnegative(),
     discount: z.coerce.number().nonnegative().default(0),

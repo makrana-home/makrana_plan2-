@@ -1,5 +1,5 @@
 import logo from "@/assets/makrana-logo.png";
-import horizontalLogo from "@/assets/makrana-logo-horizontal.png";
+import horizontalLogo from "@/assets/makrana-logo-guinda-horizontal.png";
 import { cn } from "@/lib/utils";
 
 type BrandLogoProps = {
@@ -22,8 +22,8 @@ export function BrandLogo({
       <img
         src={isHorizontal ? horizontalLogo : logo}
         alt={alt}
-        width={isHorizontal ? 660 : 489}
-        height={isHorizontal ? 78 : 132}
+        width={isHorizontal ? 1998 : 489}
+        height={isHorizontal ? 584 : 132}
         className={cn("block h-auto w-40", imageClassName)}
       />
     </span>

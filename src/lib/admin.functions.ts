@@ -262,6 +262,7 @@ export const adminListWarehouses = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("warehouses")
       .select("id, code, name, address, is_active")
+      .eq("is_active", true)
       .order("created_at", { ascending: true });
     if (error) throw error;
     return data ?? [];
@@ -287,9 +288,12 @@ export const adminDeleteWarehouse = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
-    const { error } = await context.supabase.from("warehouses").delete().eq("id", data.id);
+    const { error } = await context.supabase
+      .from("warehouses")
+      .update({ is_active: false })
+      .eq("id", data.id);
     if (error) throw error;
-    return { ok: true };
+    return { ok: true, archived: true };
   });
 
 // ============ STOCK ============

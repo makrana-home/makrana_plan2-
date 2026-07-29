@@ -126,15 +126,23 @@ function AdminShell() {
   const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [userName, setUserName] = useState("Usuario");
+  const [userRoles, setUserRoles] = useState<string[]>(() =>
+    hasDevAdminSession() ? ["admin"] : [],
+  );
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(menuGroups.map((group) => [group.key, isGroupActive(group, pathname)])),
   );
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       const user = data.user;
       if (!user) return;
       setUserName(formatUserName(user.email, user.user_metadata));
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+      setUserRoles((roles ?? []).map((item: any) => item.role));
     });
   }, []);
 
@@ -172,6 +180,8 @@ function AdminShell() {
   }
 
   function renderNavGroup(group: (typeof menuGroups)[number]) {
+    const visibleItems = group.items.filter((item) => canAccessModule(item.to, userRoles));
+    if (visibleItems.length === 0) return null;
     const GroupIcon = group.icon;
     return (
       <SidebarMenuItem key={group.key}>
@@ -192,7 +202,7 @@ function AdminShell() {
           </CollapsibleTrigger>
           <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
             <SidebarMenuSub className="my-1 ml-5 gap-1 border-l-sand/80">
-              {group.items.map((i) => (
+              {visibleItems.map((i) => (
                 <SidebarMenuSubItem key={i.to}>
                   <SidebarMenuSubButton
                     asChild
@@ -233,11 +243,17 @@ function AdminShell() {
                 <SidebarMenu className="gap-2">
                   {topItems.map(renderNavItem)}
                   {menuGroups.slice(0, 1).map(renderNavGroup)}
-                  {standaloneItems.slice(0, 1).map(renderNavItem)}
+                  {standaloneItems
+                    .slice(0, 1)
+                    .filter((item) => canAccessModule(item.to, userRoles))
+                    .map(renderNavItem)}
                   {menuGroups.slice(1, 3).map(renderNavGroup)}
-                  {standaloneItems.slice(1).map(renderNavItem)}
+                  {standaloneItems
+                    .slice(1)
+                    .filter((item) => canAccessModule(item.to, userRoles))
+                    .map(renderNavItem)}
                   {menuGroups.slice(3).map(renderNavGroup)}
-                  {configItems.map((i) => (
+                  {configItems.filter((item) => canAccessModule(item.to, userRoles)).map((i) => (
                     <SidebarMenuItem key={i.to}>
                       <SidebarMenuButton
                         asChild
@@ -283,7 +299,7 @@ function AdminShell() {
               </span>
               <span className="hidden h-11 items-center gap-2 rounded-full border border-sand bg-warm-white px-4 text-sm font-semibold md:inline-flex">
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                Rol Administrador
+                {getRoleLabel(userRoles)}
               </span>
               <Button size="sm" variant="ghost" onClick={signOut} className="h-11 rounded-full">
                 <LogOut className="h-4 w-4" /> <span className="hidden sm:inline">Salir</span>
@@ -316,4 +332,37 @@ function formatUserName(email?: string, metadata?: Record<string, any> | null) {
 
 function isGroupActive(group: (typeof menuGroups)[number], pathname: string) {
   return group.items.some((item) => pathname.startsWith(item.to));
+}
+
+function canAccessModule(path: string, roles: string[]) {
+  if (roles.includes("admin")) return true;
+  if (roles.includes("ventas")) {
+    return [
+      "/admin/productos",
+      "/admin/materiales",
+      "/admin/manual",
+      "/admin/ventas",
+      "/admin/comprobantes",
+      "/admin/clientes",
+      "/admin/reportes",
+    ].some((allowed) => path.startsWith(allowed));
+  }
+  if (roles.includes("almacen")) {
+    return [
+      "/admin/productos",
+      "/admin/materiales",
+      "/admin/manual",
+      "/admin/almacenes",
+      "/admin/movimientos",
+      "/admin/reportes",
+    ].some((allowed) => path.startsWith(allowed));
+  }
+  return false;
+}
+
+function getRoleLabel(roles: string[]) {
+  if (roles.includes("admin")) return "Administrador";
+  if (roles.includes("ventas")) return "Vendedor";
+  if (roles.includes("almacen")) return "Logística";
+  return "Usuario";
 }
