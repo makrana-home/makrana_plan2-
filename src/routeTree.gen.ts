@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as PlataformaRouteImport } from './routes/plataforma'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PublicRouteImport } from './routes/_public'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -36,6 +37,7 @@ import { Route as AuthenticatedAdminVentasRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminTalleresRouteImport } from './routes/_authenticated/admin.talleres'
 import { Route as AuthenticatedAdminReportesRouteImport } from './routes/_authenticated/admin.reportes'
 import { Route as AuthenticatedAdminProductosRouteImport } from './routes/_authenticated/admin.productos'
+import { Route as AuthenticatedAdminPaginaWebRouteImport } from './routes/_authenticated/admin.pagina-web'
 import { Route as AuthenticatedAdminNovedadesRouteImport } from './routes/_authenticated/admin.novedades'
 import { Route as AuthenticatedAdminMovimientosRouteImport } from './routes/_authenticated/admin.movimientos'
 import { Route as AuthenticatedAdminMaterialesRouteImport } from './routes/_authenticated/admin.materiales'
@@ -50,6 +52,11 @@ import { Route as AuthenticatedAdminAlmacenesRouteImport } from './routes/_authe
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlataformaRoute = PlataformaRouteImport.update({
+  id: '/plataforma',
+  path: '/plataforma',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -190,6 +197,12 @@ const AuthenticatedAdminProductosRoute =
     path: '/productos',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminPaginaWebRoute =
+  AuthenticatedAdminPaginaWebRouteImport.update({
+    id: '/pagina-web',
+    path: '/pagina-web',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminNovedadesRoute =
   AuthenticatedAdminNovedadesRouteImport.update({
     id: '/novedades',
@@ -254,6 +267,7 @@ const AuthenticatedAdminAlmacenesRoute =
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
   '/auth': typeof AuthRoute
+  '/plataforma': typeof PlataformaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/cliente': typeof AuthenticatedClienteRouteWithChildren
@@ -272,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/admin/materiales': typeof AuthenticatedAdminMaterialesRoute
   '/admin/movimientos': typeof AuthenticatedAdminMovimientosRoute
   '/admin/novedades': typeof AuthenticatedAdminNovedadesRoute
+  '/admin/pagina-web': typeof AuthenticatedAdminPaginaWebRoute
   '/admin/productos': typeof AuthenticatedAdminProductosRoute
   '/admin/reportes': typeof AuthenticatedAdminReportesRoute
   '/admin/talleres': typeof AuthenticatedAdminTalleresRoute
@@ -291,6 +306,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
   '/auth': typeof AuthRoute
+  '/plataforma': typeof PlataformaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/contacto': typeof PublicContactoRoute
   '/registro': typeof PublicRegistroRoute
@@ -307,6 +323,7 @@ export interface FileRoutesByTo {
   '/admin/materiales': typeof AuthenticatedAdminMaterialesRoute
   '/admin/movimientos': typeof AuthenticatedAdminMovimientosRoute
   '/admin/novedades': typeof AuthenticatedAdminNovedadesRoute
+  '/admin/pagina-web': typeof AuthenticatedAdminPaginaWebRoute
   '/admin/productos': typeof AuthenticatedAdminProductosRoute
   '/admin/reportes': typeof AuthenticatedAdminReportesRoute
   '/admin/talleres': typeof AuthenticatedAdminTalleresRoute
@@ -328,6 +345,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_public': typeof PublicRouteWithChildren
   '/auth': typeof AuthRoute
+  '/plataforma': typeof PlataformaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/cliente': typeof AuthenticatedClienteRouteWithChildren
@@ -347,6 +365,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/materiales': typeof AuthenticatedAdminMaterialesRoute
   '/_authenticated/admin/movimientos': typeof AuthenticatedAdminMovimientosRoute
   '/_authenticated/admin/novedades': typeof AuthenticatedAdminNovedadesRoute
+  '/_authenticated/admin/pagina-web': typeof AuthenticatedAdminPaginaWebRoute
   '/_authenticated/admin/productos': typeof AuthenticatedAdminProductosRoute
   '/_authenticated/admin/reportes': typeof AuthenticatedAdminReportesRoute
   '/_authenticated/admin/talleres': typeof AuthenticatedAdminTalleresRoute
@@ -368,6 +387,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/plataforma'
     | '/sitemap.xml'
     | '/admin'
     | '/cliente'
@@ -386,6 +406,7 @@ export interface FileRouteTypes {
     | '/admin/materiales'
     | '/admin/movimientos'
     | '/admin/novedades'
+    | '/admin/pagina-web'
     | '/admin/productos'
     | '/admin/reportes'
     | '/admin/talleres'
@@ -405,6 +426,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/plataforma'
     | '/sitemap.xml'
     | '/contacto'
     | '/registro'
@@ -421,6 +443,7 @@ export interface FileRouteTypes {
     | '/admin/materiales'
     | '/admin/movimientos'
     | '/admin/novedades'
+    | '/admin/pagina-web'
     | '/admin/productos'
     | '/admin/reportes'
     | '/admin/talleres'
@@ -441,6 +464,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/_public'
     | '/auth'
+    | '/plataforma'
     | '/sitemap.xml'
     | '/_authenticated/admin'
     | '/_authenticated/cliente'
@@ -460,6 +484,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/materiales'
     | '/_authenticated/admin/movimientos'
     | '/_authenticated/admin/novedades'
+    | '/_authenticated/admin/pagina-web'
     | '/_authenticated/admin/productos'
     | '/_authenticated/admin/reportes'
     | '/_authenticated/admin/talleres'
@@ -481,6 +506,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   PublicRoute: typeof PublicRouteWithChildren
   AuthRoute: typeof AuthRoute
+  PlataformaRoute: typeof PlataformaRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
@@ -491,6 +517,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plataforma': {
+      id: '/plataforma'
+      path: '/plataforma'
+      fullPath: '/plataforma'
+      preLoaderRoute: typeof PlataformaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -675,6 +708,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminProductosRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/pagina-web': {
+      id: '/_authenticated/admin/pagina-web'
+      path: '/pagina-web'
+      fullPath: '/admin/pagina-web'
+      preLoaderRoute: typeof AuthenticatedAdminPaginaWebRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/novedades': {
       id: '/_authenticated/admin/novedades'
       path: '/novedades'
@@ -759,6 +799,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminMaterialesRoute: typeof AuthenticatedAdminMaterialesRoute
   AuthenticatedAdminMovimientosRoute: typeof AuthenticatedAdminMovimientosRoute
   AuthenticatedAdminNovedadesRoute: typeof AuthenticatedAdminNovedadesRoute
+  AuthenticatedAdminPaginaWebRoute: typeof AuthenticatedAdminPaginaWebRoute
   AuthenticatedAdminProductosRoute: typeof AuthenticatedAdminProductosRoute
   AuthenticatedAdminReportesRoute: typeof AuthenticatedAdminReportesRoute
   AuthenticatedAdminTalleresRoute: typeof AuthenticatedAdminTalleresRoute
@@ -777,6 +818,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminMaterialesRoute: AuthenticatedAdminMaterialesRoute,
   AuthenticatedAdminMovimientosRoute: AuthenticatedAdminMovimientosRoute,
   AuthenticatedAdminNovedadesRoute: AuthenticatedAdminNovedadesRoute,
+  AuthenticatedAdminPaginaWebRoute: AuthenticatedAdminPaginaWebRoute,
   AuthenticatedAdminProductosRoute: AuthenticatedAdminProductosRoute,
   AuthenticatedAdminReportesRoute: AuthenticatedAdminReportesRoute,
   AuthenticatedAdminTalleresRoute: AuthenticatedAdminTalleresRoute,
@@ -854,6 +896,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   PublicRoute: PublicRouteWithChildren,
   AuthRoute: AuthRoute,
+  PlataformaRoute: PlataformaRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport

@@ -16,7 +16,7 @@ type Product = {
 
 const statusLabel: Record<string, string> = {
   disponible: "Disponible",
-  por_encargo: "Por encargo",
+  por_encargo: "Bajo pedido",
   agotado: "Agotado",
   reservado: "Reservado",
 };
@@ -31,24 +31,39 @@ const statusClass: Record<string, string> = {
 export function ProductCard({
   product,
   showPrice = true,
+  minimal = false,
+  portraitImage = false,
 }: {
   product: Product;
   showPrice?: boolean;
+  minimal?: boolean;
+  portraitImage?: boolean;
 }) {
   const typeLabel =
     product.type === "material" ? "Material" : product.type === "kit" ? "Kit" : "Pieza";
   const hasPresentations = product.type === "material" && (product.presentations?.length ?? 0) > 0;
 
   return (
-    <article className="group overflow-hidden rounded-2xl border border-sand/80 bg-warm-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-clay/15">
+    <article
+      className={cn(
+        "group overflow-hidden bg-warm-white transition duration-300",
+        minimal
+          ? "border-0 shadow-none"
+          : "rounded-2xl border border-sand/80 shadow-sm hover:-translate-y-1 hover:shadow-xl hover:shadow-clay/15",
+      )}
+    >
       <Link
         to="/catalogo/$slug"
         params={{ slug: product.slug }}
-        className="relative block aspect-[4/3] overflow-hidden bg-cream"
+        className={cn(
+          "relative block overflow-hidden bg-cream",
+          minimal || portraitImage ? "aspect-[4/5]" : "aspect-[4/3]",
+        )}
       >
         <span
           className={cn(
-            "absolute left-3 top-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-extrabold",
+            "absolute left-3 top-3 z-10 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.08em]",
+            !minimal && "rounded-full",
             statusClass[product.status] ?? "bg-cream text-muted-foreground",
           )}
         >
@@ -65,7 +80,7 @@ export function ProductCard({
           <div className="h-full w-full bg-sand/40" />
         )}
       </Link>
-      <div className="flex min-h-36 flex-col p-4">
+      <div className={cn("flex min-h-36 flex-col", minimal ? "px-0 py-4" : "p-4")}>
         <h3 className="font-display text-lg font-semibold leading-tight text-foreground">
           <Link to="/catalogo/$slug" params={{ slug: product.slug }}>
             {product.name}
@@ -89,6 +104,8 @@ export function ProductCard({
             >
               {hasPresentations
                 ? "En distintas presentaciones"
+                : product.status === "por_encargo"
+                  ? "Cotizar"
                 : `S/ ${Number(product.price).toFixed(0)}`}
             </span>
           )}

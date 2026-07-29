@@ -24,7 +24,16 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRightLeft, Eye, ImageIcon, PackagePlus, Pencil, Trash2, Upload } from "lucide-react";
+import {
+  ArrowRightLeft,
+  Eye,
+  ImageIcon,
+  LayoutGrid,
+  PackagePlus,
+  Pencil,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import {
   PageHeader,
   FormDialog,
@@ -40,6 +49,8 @@ import {
   adminDeleteProduct,
   adminListCategories,
   adminCreateCategory,
+  adminEnsureHomeCategories,
+  adminUpdateCategory,
   adminListWarehouses,
   adminListStock,
   adminApplyMovement,
@@ -76,6 +87,8 @@ export function ProductTypeManager({
   const listWarehouses = useServerFn(adminListWarehouses);
   const listStock = useServerFn(adminListStock);
   const applyMovement = useServerFn(adminApplyMovement);
+  const updateCategory = useServerFn(adminUpdateCategory);
+  const ensureHomeCategories = useServerFn(adminEnsureHomeCategories);
   const [rows, setRows] = useState<any[]>([]);
   const [cats, setCats] = useState<any[]>([]);
   const [warehouses, setWarehouses] = useState<any[]>([]);
@@ -83,6 +96,7 @@ export function ProductTypeManager({
   const dlg = useDialog<any>();
   const detailDlg = useDialog<any>();
   const movementDlg = useDialog<any>();
+  const categoriesDlg = useDialog<any>();
   const [saving, setSaving] = useState(false);
   const [savingMovement, setSavingMovement] = useState(false);
   const [form, setForm] = useState<any>(blank(type));
@@ -93,6 +107,8 @@ export function ProductTypeManager({
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("_all");
+  const [categoryDrafts, setCategoryDrafts] = useState<any[]>([]);
+  const [savingCategories, setSavingCategories] = useState(false);
   const categoryOptions = getCategoryOptionsForType(cats, type);
 
   const filteredRows = useMemo(() => {
@@ -121,7 +137,10 @@ export function ProductTypeManager({
   }
   useEffect(() => {
     refresh();
-    listCats().then(setCats); /* eslint-disable-line */
+    (async () => {
+      if (type === "producto_terminado") await ensureHomeCategories();
+      setCats(await listCats());
+    })(); /* eslint-disable-line */
     listWarehouses().then(setWarehouses); /* eslint-disable-line */
   }, []);
 
@@ -130,6 +149,16 @@ export function ProductTypeManager({
     setStockByWarehouse({});
     setInitialStockByWarehouse({});
     dlg.openWith(null);
+  }
+  function openHomeCategories() {
+    setCategoryDrafts(
+      getCategoryOptionsForType(cats, "producto_terminado")
+        .filter((category: any) => category.show_on_home)
+        .sort((a: any, b: any) => a.sort_order - b.sort_order)
+        .slice(0, 3)
+        .map((category: any) => ({ ...category })),
+    );
+    categoriesDlg.openWith(null);
   }
   function openMovement(row: any, movementType: "entrada" | "transferencia") {
     setMovementForm({
@@ -298,6 +327,37 @@ export function ProductTypeManager({
       setSavingMovement(false);
     }
   }
+  async function onCategoriesSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingCategories(true);
+    try {
+      const saved = [];
+      for (const category of categoryDrafts) {
+        saved.push(
+          await updateCategory({
+            data: {
+              id: category.id,
+              name: category.name,
+              home_description: category.home_description || null,
+              home_image_url: category.home_image_url || null,
+              sort_order: Number(category.sort_order),
+              show_on_home: true,
+              is_active: category.is_active,
+            },
+          }),
+        );
+      }
+      setCats((current) =>
+        current.map((category) => saved.find((item) => item.id === category.id) ?? category),
+      );
+      toast.success("Categorías del inicio actualizadas");
+      categoriesDlg.close();
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudieron actualizar las categorías");
+    } finally {
+      setSavingCategories(false);
+    }
+  }
 
   return (
     <div>
@@ -306,10 +366,24 @@ export function ProductTypeManager({
         description={description}
         eyebrow="Inventario"
         actions={
-          <NewButton
-            onClick={openNew}
-            label={`Nueva ${type === "material" ? "material" : "pieza"}`}
-          />
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            {type === "producto_terminado" && (
+              <Button
+                type="button"
+                size="lg"
+                variant="outline"
+                className="rounded-full"
+                onClick={openHomeCategories}
+              >
+                <LayoutGrid className="h-4 w-4" />
+                Categorías del inicio
+              </Button>
+            )}
+            <NewButton
+              onClick={openNew}
+              label={`Nueva ${type === "material" ? "material" : "pieza"}`}
+            />
+          </div>
         }
       />
 
@@ -481,6 +555,30 @@ export function ProductTypeManager({
         onSubmit={onMovementSubmit}
         submitting={savingMovement}
       />
+      <FormDialog
+        open={categoriesDlg.open}
+        onOpenChange={categoriesDlg.setOpen}
+        title="Categorías del inicio"
+        description="Edita las tres tarjetas que aparecen debajo del video principal."
+        onSubmit={onCategoriesSubmit}
+        submitting={savingCategories}
+        contentClassName="max-w-5xl"
+      >
+        <div className="grid gap-5 lg:grid-cols-3">
+          {categoryDrafts.map((category, index) => (
+            <HomeCategoryEditor
+              key={category.id}
+              category={category}
+              index={index}
+              onChange={(next) =>
+                setCategoryDrafts((current) =>
+                  current.map((item) => (item.id === next.id ? next : item)),
+                )
+              }
+            />
+          ))}
+        </div>
+      </FormDialog>
     </div>
   );
 }
@@ -499,6 +597,124 @@ function blankMovement() {
     reason: "",
     notes: "",
   };
+}
+
+function HomeCategoryEditor({
+  category,
+  index,
+  onChange,
+}: {
+  category: any;
+  index: number;
+  onChange: (category: any) => void;
+}) {
+  const inputId = useId();
+  const [uploading, setUploading] = useState(false);
+
+  async function uploadImage(file?: File) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecciona un archivo de imagen.");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("La imagen no debe superar 8 MB.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${category.slug}/${crypto.randomUUID()}.${extension}`;
+      const { error } = await supabase.storage.from("product-images").upload(path, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+      if (error) throw error;
+      const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+      onChange({ ...category, home_image_url: data.publicUrl });
+      toast.success("Imagen cargada");
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudo cargar la imagen");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-sand/80 bg-cream/35">
+      <div className="aspect-[5/4] bg-sand/35">
+        {category.home_image_url ? (
+          <img
+            src={category.home_image_url}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center text-muted-foreground">
+            <ImageIcon className="h-12 w-12 opacity-35" />
+          </div>
+        )}
+      </div>
+      <div className="space-y-4 p-4">
+        <div className="space-y-2">
+          <Label htmlFor={`${inputId}-name`}>Nombre</Label>
+          <Input
+            id={`${inputId}-name`}
+            value={category.name}
+            onChange={(event) => onChange({ ...category, name: event.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor={`${inputId}-description`}>Descripción breve</Label>
+          <Textarea
+            id={`${inputId}-description`}
+            value={category.home_description ?? ""}
+            rows={3}
+            maxLength={180}
+            onChange={(event) =>
+              onChange({ ...category, home_description: event.target.value })
+            }
+          />
+        </div>
+        <div className="grid grid-cols-[1fr_auto] items-end gap-3">
+          <div className="space-y-2">
+            <Label htmlFor={`${inputId}-order`}>Orden</Label>
+            <Input
+              id={`${inputId}-order`}
+              type="number"
+              min={0}
+              max={999}
+              value={category.sort_order}
+              onChange={(event) => onChange({ ...category, sort_order: event.target.value })}
+            />
+          </div>
+          <div className="flex h-10 items-center gap-2">
+            <Switch
+              checked={category.is_active}
+              onCheckedChange={(checked) => onChange({ ...category, is_active: checked })}
+              aria-label={`Mostrar ${category.name}`}
+            />
+            <span className="text-xs">Visible</span>
+          </div>
+        </div>
+        <Button asChild type="button" variant="outline" className="w-full">
+          <label htmlFor={`${inputId}-image`} className="cursor-pointer">
+            <Upload className="h-4 w-4" />
+            {uploading ? "Subiendo..." : category.home_image_url ? "Cambiar imagen" : "Agregar imagen"}
+          </label>
+        </Button>
+        <input
+          id={`${inputId}-image`}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          disabled={uploading}
+          onChange={(event) => uploadImage(event.target.files?.[0])}
+        />
+        <p className="text-center text-[11px] text-muted-foreground">Tarjeta {index + 1}</p>
+      </div>
+    </section>
+  );
 }
 
 function blank(type: "producto_terminado" | "material") {
@@ -1037,8 +1253,8 @@ function normalizeCategoryName(name: string) {
 
 function categoryScope(category: any) {
   const description = String(category?.description ?? "");
-  if (description === "scope:piece") return "piece";
-  if (description === "scope:material") return "material";
+  if (description.startsWith("scope:piece")) return "piece";
+  if (description.startsWith("scope:material")) return "material";
   return null;
 }
 
@@ -1233,6 +1449,25 @@ export function ProductFormFields({
             </SelectContent>
           </Select>
         </div>
+        {form.type !== "material" && (
+          <div className="flex items-center justify-between gap-5 rounded-2xl border border-sand/70 bg-cream/35 px-4 py-3 sm:col-span-2">
+            <div>
+              <Label htmlFor="product-made-to-order" className="font-semibold">
+                Pieza bajo pedido
+              </Label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Actívalo para mostrar “Bajo pedido” y “Cotizar” en la página web.
+              </p>
+            </div>
+            <Switch
+              id="product-made-to-order"
+              checked={form.status === "por_encargo"}
+              onCheckedChange={(checked) =>
+                upd("status", checked ? "por_encargo" : "disponible")
+              }
+            />
+          </div>
+        )}
         {!hideCommercialFields && (
           <>
             <div>

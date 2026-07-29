@@ -1,19 +1,34 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import type { SVGProps } from "react";
 import { Facebook, Instagram, Menu, MessageCircle, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/components/brand-logo";
+import { getHomeSectionVisibility } from "@/lib/public.functions";
+import {
+  homeSectionDefaults,
+  type HomeSectionVisibility,
+} from "@/lib/site-settings.functions";
 
 const links = [
-  { to: "/", label: "Inicio" },
-  { to: "/catalogo", label: "Catálogo" },
-  { to: "/novedades", label: "Novedades" },
-  { to: "/talleres", label: "Talleres" },
-  { to: "/sobre-makrana", label: "Sobre Makrana" },
-  { to: "/contacto", label: "Contacto" },
+  { to: "/", label: "Inicio", section: null },
+  { to: "/catalogo", label: "Catálogo", section: "catalog" },
+  { to: "/novedades", label: "Novedades", section: "news" },
+  { to: "/talleres", label: "Talleres", section: "workshops" },
+  { to: "/sobre-makrana", label: "Sobre Makrana", section: "welcome" },
+  { to: "/contacto", label: "Contacto", section: null },
 ] as const;
+
+function linkIsVisible(
+  section: (typeof links)[number]["section"],
+  visibility: HomeSectionVisibility,
+) {
+  if (!section) return true;
+  if (section === "catalog") return visibility.categories || visibility.featured;
+  return visibility[section];
+}
 
 function TikTokIcon(props: SVGProps<SVGSVGElement>) {
   return (
@@ -33,137 +48,168 @@ const socialLinks = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
-  const [hasScrolledPastHero, setHasScrolledPastHero] = useState(false);
+  const [hasPassedHero, setHasPassedHero] = useState(false);
+  const { data: homeSections = homeSectionDefaults } = useQuery({
+    queryKey: ["public", "home-section-visibility"],
+    queryFn: () => getHomeSectionVisibility(),
+  });
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isHome = pathname === "/";
   const isActive = (to: string) => (to === "/" ? pathname === "/" : pathname.startsWith(to));
-  const hideHeaderOnHero = isHome && !hasScrolledPastHero && !open;
+  const hideOnHero = isHome && homeSections.hero && !hasPassedHero;
+  const visibleLinks = links.filter((link) => linkIsVisible(link.section, homeSections));
 
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
 
   useEffect(() => {
-    if (!isHome) {
-      setHasScrolledPastHero(true);
-      return;
-    }
+    if (!isHome) return;
 
-    const handleScroll = () => {
-      setHasScrolledPastHero(window.scrollY > 48);
+    const updateHeaderVisibility = () => {
+      setHasPassedHero(window.scrollY >= window.innerHeight - 2);
     };
 
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    updateHeaderVisibility();
+    window.addEventListener("scroll", updateHeaderVisibility, { passive: true });
+    window.addEventListener("resize", updateHeaderVisibility);
 
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", updateHeaderVisibility);
+      window.removeEventListener("resize", updateHeaderVisibility);
+    };
   }, [isHome]);
 
   return (
-    <header
-      className={cn(
-        "fixed top-0 z-40 w-full border-b border-sand/70 bg-warm-white/95 shadow-[0_4px_18px_rgba(128,52,44,0.08)] backdrop-blur transition-all duration-300 ease-out",
-        hideHeaderOnHero
-          ? "invisible pointer-events-none -translate-y-full opacity-0"
-          : "visible translate-y-0 opacity-100",
-      )}
-    >
-      <div className="container-makrana flex min-h-20 max-w-full items-center gap-3 py-3 lg:min-h-24 lg:gap-4">
-        <Link to="/" className="flex shrink-0 items-center">
-          <BrandLogo
-            variant="horizontal"
-            imageClassName="h-auto w-36 object-contain sm:w-40 lg:w-44 xl:w-48"
-          />
-        </Link>
-        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-2 lg:flex xl:gap-3">
-          {links.map((l) => (
-            <Link
-              key={l.to}
-              to={l.to}
-              className={cn(
-                "rounded-full px-3 py-2 text-[14px] font-semibold transition-colors xl:px-4 xl:text-[15px]",
-                isActive(l.to)
-                  ? "bg-accent text-warm-white shadow-sm shadow-accent/15"
-                  : "text-foreground/85 hover:bg-cream hover:text-accent",
-              )}
+    <>
+      <aside
+        className="fixed inset-x-0 top-0 z-50 flex h-7 items-center justify-center bg-accent px-4 text-center text-[10px] font-medium tracking-[0.025em] text-warm-white sm:text-[11px]"
+        aria-label="Información de Makrana"
+      >
+        <span>Arte textil hecho a mano en Perú</span>
+        <span className="mx-2.5 text-warm-white/55" aria-hidden="true">
+          •
+        </span>
+        <span>Envíos y proyectos personalizados</span>
+      </aside>
+      <header
+        className={cn(
+          "fixed top-7 z-40 w-full border-b border-sand/60 backdrop-blur-md transition-all duration-300",
+          isHome ? "bg-warm-white/80" : "bg-warm-white/95",
+          hideOnHero
+            ? "invisible pointer-events-none -translate-y-full opacity-0"
+            : "visible translate-y-0 opacity-100",
+        )}
+      >
+        <div className="container-makrana flex min-h-20 max-w-full items-center gap-3 py-3 lg:min-h-24 lg:gap-4">
+          <Link to="/" className="flex shrink-0 items-center">
+            <BrandLogo
+              variant="horizontal"
+              imageClassName="h-auto w-36 object-contain sm:w-40 lg:w-44 xl:w-48"
+            />
+          </Link>
+          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-2 2xl:flex 2xl:gap-3">
+            {visibleLinks.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                className={cn(
+                  "rounded-full px-3 py-2 text-[14px] font-semibold transition-colors xl:px-4 xl:text-[15px]",
+                  isActive(l.to)
+                    ? "bg-accent text-warm-white shadow-sm shadow-accent/15"
+                    : "text-foreground/85 hover:bg-cream hover:text-accent",
+                )}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="ml-auto hidden shrink-0 items-center gap-2 2xl:flex 2xl:gap-3">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="h-10 rounded-full px-4 text-[13px]"
             >
-              {l.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="ml-auto hidden shrink-0 items-center gap-2 lg:flex xl:gap-3">
-          <Button
-            asChild
-            variant="ghost"
-            size="lg"
-            className="rounded-full px-3 text-[14px] font-semibold hover:bg-transparent hover:text-accent xl:px-4 xl:text-[15px]"
-          >
-            <Link to="/auth">Ingresar</Link>
-          </Button>
-          <Button
-            asChild
-            variant="hero"
-            size="lg"
-            className="rounded-2xl px-4 text-[14px] shadow-md shadow-clay/20 xl:px-6 xl:text-[15px]"
-          >
-            <Link to="/registro">Registrarme</Link>
-          </Button>
-        </div>
-        <button
-          className="ml-auto p-2 text-foreground lg:hidden"
-          onClick={() => setOpen((v) => !v)}
-          aria-label="Abrir menú"
-        >
-          {open ? <X /> : <Menu />}
-        </button>
-      </div>
-      <div className={cn("border-t border-sand/60 lg:hidden", open ? "block" : "hidden")}>
-        <div className="container-makrana py-4 flex flex-col gap-3">
-          {links.map((l) => (
-            <Link
-              key={l.to}
-              to={l.to}
-              className={cn(
-                "rounded-2xl px-4 py-3 text-sm font-semibold transition-colors",
-                isActive(l.to)
-                  ? "bg-accent text-warm-white"
-                  : "text-foreground/80 hover:bg-cream hover:text-accent",
-              )}
-              onClick={() => setOpen(false)}
-            >
-              {l.label}
-            </Link>
-          ))}
-          <div className="flex gap-2 pt-2">
-            <Button asChild variant="soft" size="sm" className="flex-1">
-              <Link to="/auth">Ingresar</Link>
+              <Link to="/registro">Quiero saber más</Link>
             </Button>
-            <Button asChild variant="hero" size="sm" className="flex-1">
-              <Link to="/registro">Registrarme</Link>
+            <Button
+              asChild
+              variant="hero"
+              size="sm"
+              className="h-10 rounded-full px-4 text-[13px] shadow-md shadow-clay/20"
+            >
+              <a
+                href="https://wa.me/51986608552?text=Hola%20Makrana%2C%20quiero%20cotizar%20una%20pieza%20para%20mi%20espacio."
+                target="_blank"
+                rel="noreferrer"
+              >
+                Cotiza tu pieza
+              </a>
             </Button>
           </div>
+          <button
+            className="ml-auto p-2 text-foreground 2xl:hidden"
+            onClick={() => setOpen((v) => !v)}
+            aria-label="Abrir menú"
+          >
+            {open ? <X /> : <Menu />}
+          </button>
         </div>
-      </div>
-    </header>
+        <div className={cn("border-t border-sand/60 2xl:hidden", open ? "block" : "hidden")}>
+          <div className="container-makrana py-4 flex flex-col gap-3">
+            {visibleLinks.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                className={cn(
+                  "rounded-2xl px-4 py-3 text-sm font-semibold transition-colors",
+                  isActive(l.to)
+                    ? "bg-accent text-warm-white"
+                    : "text-foreground/80 hover:bg-cream hover:text-accent",
+                )}
+                onClick={() => setOpen(false)}
+              >
+                {l.label}
+              </Link>
+            ))}
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <Button asChild variant="outline" size="sm" className="rounded-full">
+                <Link to="/registro">Quiero saber más</Link>
+              </Button>
+              <Button asChild variant="hero" size="sm" className="rounded-full">
+                <a
+                  href="https://wa.me/51986608552?text=Hola%20Makrana%2C%20quiero%20cotizar%20una%20pieza%20para%20mi%20espacio."
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Cotiza tu pieza
+                </a>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+    </>
   );
 }
 
 export function SiteFooter() {
   return (
-    <footer className="mt-24 border-t border-sand/60 bg-cream">
-      <div className="container-makrana py-14 grid gap-10 md:grid-cols-4">
+    <footer className="border-t border-sand/60 bg-cream">
+      <div className="container-makrana grid gap-6 py-6 md:grid-cols-4 md:py-7">
         <div>
-          <BrandLogo imageClassName="w-32 sm:w-36" />
-          <p className="mt-3 text-sm text-muted-foreground">
+          <BrandLogo imageClassName="w-28 sm:w-32" />
+          <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
             En Makrana, cada pieza es tejida a mano en Perú con dedicación y cuidado, para llevar la
             calidez, la textura y la esencia de la artesanía a tu hogar.
           </p>
         </div>
         <div>
-          <h4 className="mb-3 text-sm font-medium uppercase tracking-wider text-foreground/70">
+          <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-foreground/70">
             Explorar
           </h4>
-          <ul className="space-y-2 text-sm">
+          <ul className="space-y-1.5 text-xs">
             <li>
               <Link to="/catalogo" className="hover:text-accent">
                 Catálogo
@@ -182,10 +228,10 @@ export function SiteFooter() {
           </ul>
         </div>
         <div>
-          <h4 className="text-sm font-medium mb-3 uppercase tracking-wider text-foreground/70">
+          <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-foreground/70">
             Makrana
           </h4>
-          <ul className="space-y-2 text-sm">
+          <ul className="space-y-1.5 text-xs">
             <li>
               <Link to="/sobre-makrana" className="hover:text-accent">
                 Nuestra historia
@@ -193,7 +239,7 @@ export function SiteFooter() {
             </li>
             <li>
               <Link to="/registro" className="hover:text-accent">
-                Registrarme
+                Recibir novedades
               </Link>
             </li>
             <li>
@@ -204,21 +250,21 @@ export function SiteFooter() {
           </ul>
         </div>
         <div>
-          <h4 className="text-sm font-medium mb-3 uppercase tracking-wider text-foreground/70">
+          <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-foreground/70">
             Contacto
           </h4>
-          <ul className="space-y-2 text-sm text-muted-foreground">
+          <ul className="space-y-1.5 text-xs text-muted-foreground">
             <li>WhatsApp: +51 986608552</li>
             <li>makrnahome@gmail.com</li>
             <li>Lima, Perú</li>
           </ul>
-          <div className="mt-6">
-            <h4 className="font-display text-2xl text-accent">Síguenos</h4>
-            <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-3">
+            <h4 className="font-display text-lg text-accent">Síguenos</h4>
+            <div className="mt-2 flex flex-wrap gap-2">
               {socialLinks.map((social) => {
                 const Icon = social.icon;
                 const className =
-                  "inline-flex h-12 w-12 items-center justify-center rounded-full border border-sand bg-warm-white text-accent shadow-sm transition";
+                  "inline-flex h-8 w-8 items-center justify-center rounded-full border border-sand bg-warm-white text-accent shadow-sm transition";
                 return social.href ? (
                   <a
                     key={social.label}
@@ -228,7 +274,7 @@ export function SiteFooter() {
                     aria-label={social.label}
                     className={`${className} hover:-translate-y-0.5 hover:border-accent hover:bg-accent hover:text-warm-white`}
                   >
-                    <Icon className="h-5 w-5" />
+                    <Icon className="h-4 w-4" />
                   </a>
                 ) : (
                   <span
@@ -238,7 +284,7 @@ export function SiteFooter() {
                     title={`${social.label} no disponible`}
                     className={`${className} cursor-not-allowed opacity-45`}
                   >
-                    <Icon className="h-5 w-5" />
+                    <Icon className="h-4 w-4" />
                   </span>
                 );
               })}
@@ -247,7 +293,7 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="border-t border-sand/60">
-        <div className="container-makrana py-4 text-xs text-muted-foreground flex justify-between flex-wrap gap-2">
+        <div className="container-makrana flex flex-wrap justify-between gap-2 py-2.5 text-[11px] text-muted-foreground">
           <span>© {new Date().getFullYear()} Makrana Home Art.</span>
         </div>
       </div>

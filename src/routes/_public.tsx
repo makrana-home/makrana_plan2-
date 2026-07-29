@@ -13,7 +13,7 @@ function PublicLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
-      <main className={cn("flex-1", !isHome && "pt-20 lg:pt-24")}>
+      <main className={cn("flex-1", !isHome && "pt-[6.75rem] lg:pt-[7.75rem]")}>
         <Outlet />
       </main>
       <SiteFooter />

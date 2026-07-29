@@ -201,15 +201,129 @@ export const adminListCategories = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("categories")
       .select("id, slug, name, description, is_active, sort_order")
+      .neq("slug", "configuracion-inicio")
       .order("sort_order");
     if (error) throw error;
-    return data ?? [];
+    return (data ?? []).map(withCategoryHomeFields);
   });
 
 const categorySchema = z.object({
   name: z.string().trim().min(2).max(120),
   scope: z.enum(["piece", "material"]).optional(),
 });
+
+const editableCategorySchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().trim().min(2).max(120),
+  home_description: z.string().trim().max(180).optional().nullable(),
+  home_image_url: z.string().url().max(500).optional().nullable().or(z.literal("")),
+  sort_order: z.coerce.number().int().min(0).max(999),
+  show_on_home: z.boolean(),
+  is_active: z.boolean(),
+});
+
+export const adminUpdateCategory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => editableCategorySchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertStaff(context);
+    const payload = {
+      name: data.name,
+      sort_order: data.sort_order,
+      is_active: data.is_active,
+      description: writeCategoryHomeDescription(
+        "scope:piece",
+        data.home_description || "",
+        data.home_image_url || "",
+        data.show_on_home,
+      ),
+    };
+    const { data: row, error } = await context.supabase
+      .from("categories")
+      .update(payload)
+      .eq("id", data.id)
+      .select("id, slug, name, description, is_active, sort_order")
+      .single();
+    if (error) throw error;
+    return withCategoryHomeFields(row);
+  });
+
+export const adminEnsureHomeCategories = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertStaff(context);
+    const defaults = [
+      ["arbol-de-la-vida", "Árbol de la vida", "Símbolos de conexión y equilibrio.", 10],
+      [
+        "murales-inspirados-en-quipus",
+        "Murales inspirados en quipus",
+        "Texturas, nudos y tradición reinterpretada.",
+        20,
+      ],
+      ["murales", "Murales", "Composiciones que cuentan historias.", 30],
+    ] as const;
+    for (const [slug, name, homeDescription, sortOrder] of defaults) {
+      const { data: existing, error: readError } = await context.supabase
+        .from("categories")
+        .select("id, description")
+        .eq("slug", slug)
+        .maybeSingle();
+      if (readError) throw readError;
+      if (!existing) {
+        const { error } = await context.supabase.from("categories").insert({
+          slug,
+          name,
+          description: writeCategoryHomeDescription("scope:piece", homeDescription, "", true),
+          sort_order: sortOrder,
+          is_active: true,
+        });
+        if (error) throw error;
+      } else if (!String(existing.description ?? "").includes("\nHOME:")) {
+        const { error } = await context.supabase
+          .from("categories")
+          .update({
+            description: writeCategoryHomeDescription(
+              "scope:piece",
+              homeDescription,
+              "",
+              true,
+            ),
+            is_active: true,
+          })
+          .eq("id", existing.id);
+        if (error) throw error;
+      }
+    }
+    return { ok: true };
+  });
+
+function withCategoryHomeFields(category: any) {
+  const marker = "\nHOME:";
+  const start = String(category.description ?? "").indexOf(marker);
+  let home: any = {};
+  if (start >= 0) {
+    try {
+      home = JSON.parse(String(category.description).slice(start + marker.length));
+    } catch {
+      home = {};
+    }
+  }
+  return {
+    ...category,
+    home_description: home.description ?? null,
+    home_image_url: home.imageUrl ?? null,
+    show_on_home: home.visible === true,
+  };
+}
+
+function writeCategoryHomeDescription(
+  scope: string,
+  description: string,
+  imageUrl: string,
+  visible: boolean,
+) {
+  return `${scope}\nHOME:${JSON.stringify({ description, imageUrl, visible })}`;
+}
 
 export const adminCreateCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
