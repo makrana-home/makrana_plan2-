@@ -112,6 +112,7 @@ const menuGroups = [
     label: "Página web",
     icon: Globe2,
     items: [
+      { to: "/admin/pagina-web", label: "Página de inicio", icon: Globe2 },
       { to: "/admin/novedades", label: "Novedades", icon: Newspaper },
       { to: "/admin/talleres", label: "Talleres", icon: GraduationCap },
     ],

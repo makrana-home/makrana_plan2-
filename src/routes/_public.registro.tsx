@@ -25,12 +25,12 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_public/registro")({
   head: () => ({
     meta: [
-      { title: "Registro · Makrana Home Art" },
+      { title: "Recibe novedades · Makrana Home Art" },
       {
         name: "description",
         content: "Déjanos tus datos y descubre lo nuevo de Makrana: piezas, talleres y novedades.",
       },
-      { property: "og:title", content: "Registro · Makrana" },
+      { property: "og:title", content: "Recibe novedades · Makrana" },
       { property: "og:description", content: "Únete a la comunidad Makrana." },
     ],
   }),
@@ -82,7 +82,7 @@ function Register() {
           message: String(fd.get("message") ?? ""),
         },
       });
-      toast.success("¡Gracias por registrarte! Te contactaremos pronto.");
+      toast.success("¡Gracias por compartir tus datos! Te contactaremos pronto.");
       (e.target as HTMLFormElement).reset();
       router.navigate({ to: "/" });
     } catch (err) {
@@ -99,7 +99,7 @@ function Register() {
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs uppercase tracking-[0.24em] text-accent">Comunidad Makrana</p>
           <h1 className="mt-3 font-display text-4xl leading-tight sm:text-5xl">
-            Regístrate para recibir novedades
+            Inspírate con Makrana
           </h1>
           <p className="mt-4 text-base leading-relaxed text-muted-foreground">
             Déjanos tus datos y cuéntanos qué te interesa para enviarte piezas, talleres y noticias
@@ -238,7 +238,7 @@ function Register() {
             disabled={loading}
             className="h-12 w-full rounded-full text-base shadow-xl shadow-clay/20"
           >
-            {loading ? "Enviando..." : "Enviar registro"}
+            {loading ? "Enviando..." : "Quiero recibir novedades"}
           </Button>
         </form>
       </div>

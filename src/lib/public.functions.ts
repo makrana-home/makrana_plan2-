@@ -2,6 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
+import {
+  homeSectionDefaults,
+  type HomeSectionVisibility,
+} from "@/lib/site-settings.functions";
 
 function publicClient() {
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -22,10 +26,100 @@ export const listCategories = createServerFn({ method: "GET" }).handler(async ()
     .from("categories")
     .select("id, slug, name, sort_order")
     .eq("is_active", true)
+    .neq("slug", "configuracion-inicio")
     .order("sort_order");
   if (error) throw error;
   return data ?? [];
 });
+
+export const getHomeSectionVisibility = createServerFn({ method: "GET" }).handler(async () => {
+  const sb = publicClient();
+  const { data, error } = await sb
+    .from("categories")
+    .select("description")
+    .eq("slug", "configuracion-inicio")
+    .eq("is_active", true)
+    .maybeSingle();
+  if (error || !data?.description?.startsWith("site-home:")) return { ...homeSectionDefaults };
+  try {
+    return {
+      ...homeSectionDefaults,
+      ...(JSON.parse(data.description.slice("site-home:".length)) as Partial<HomeSectionVisibility>),
+    };
+  } catch {
+    return { ...homeSectionDefaults };
+  }
+});
+
+export const listHomeCategories = createServerFn({ method: "GET" }).handler(async () => {
+  const sb = publicClient();
+  const { data, error } = await sb
+    .from("categories")
+    .select("id, slug, name, description, sort_order")
+    .eq("is_active", true)
+    .order("sort_order")
+  if (error) throw error;
+  const configured = (data ?? [])
+    .map((category) => {
+      const home = readCategoryHome(category.description);
+      return {
+        id: category.id,
+        slug: category.slug,
+        name: category.name,
+        sort_order: category.sort_order,
+        home_description: home?.description ?? null,
+        home_image_url: home?.imageUrl ?? null,
+        show_on_home: home?.visible === true,
+      };
+    })
+    .filter((category) => category.show_on_home)
+    .slice(0, 3);
+  if (configured.length > 0) return configured;
+  return [
+    {
+      id: "home-arbol-de-la-vida",
+      slug: "arbol-de-la-vida",
+      name: "Árbol de la vida",
+      sort_order: 10,
+      home_description: "Símbolos de conexión y equilibrio.",
+      home_image_url: null,
+      show_on_home: true,
+    },
+    {
+      id: "home-murales-inspirados-en-quipus",
+      slug: "murales-inspirados-en-quipus",
+      name: "Murales inspirados en quipus",
+      sort_order: 20,
+      home_description: "Texturas, nudos y tradición reinterpretada.",
+      home_image_url: null,
+      show_on_home: true,
+    },
+    {
+      id: "home-murales",
+      slug: "murales",
+      name: "Murales",
+      sort_order: 30,
+      home_description: "Composiciones que cuentan historias.",
+      home_image_url: null,
+      show_on_home: true,
+    },
+  ];
+});
+
+function readCategoryHome(description: string | null) {
+  const marker = "\nHOME:";
+  const start = description?.indexOf(marker) ?? -1;
+  if (start < 0) return null;
+  try {
+    return JSON.parse(description!.slice(start + marker.length)) as {
+      description?: string;
+      imageUrl?: string;
+      visible?: boolean;
+    };
+  } catch {
+    return null;
+  }
+}
 
 export const listProducts = createServerFn({ method: "GET" })
   .inputValidator(

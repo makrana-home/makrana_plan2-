@@ -12,27 +12,36 @@ export type Database = {
         Row: {
           created_at: string;
           description: string | null;
+          home_description: string | null;
+          home_image_url: string | null;
           id: string;
           is_active: boolean;
           name: string;
+          show_on_home: boolean;
           slug: string;
           sort_order: number;
         };
         Insert: {
           created_at?: string;
           description?: string | null;
+          home_description?: string | null;
+          home_image_url?: string | null;
           id?: string;
           is_active?: boolean;
           name: string;
+          show_on_home?: boolean;
           slug: string;
           sort_order?: number;
         };
         Update: {
           created_at?: string;
           description?: string | null;
+          home_description?: string | null;
+          home_image_url?: string | null;
           id?: string;
           is_active?: boolean;
           name?: string;
+          show_on_home?: boolean;
           slug?: string;
           sort_order?: number;
         };

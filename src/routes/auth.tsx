@@ -22,9 +22,8 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-function AuthPage() {
+export function AuthPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<"login" | "signup">("login");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -53,32 +52,20 @@ function AuthPage() {
     const fd = new FormData(e.currentTarget);
     const email = String(fd.get("email") ?? "").trim();
     const password = String(fd.get("password") ?? "");
-    const full_name = String(fd.get("full_name") ?? "").trim();
     setLoading(true);
     try {
-      if (mode === "login" && isDevAdminLogin(email, password)) {
+      if (isDevAdminLogin(email, password)) {
         enableDevAdminSession();
         toast.success("Acceso administrativo local activado.");
         router.navigate({ to: "/admin" });
         return;
       }
 
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { data: { full_name }, emailRedirectTo: `${window.location.origin}/cliente` },
-        });
-        if (error) throw error;
-        toast.success("¡Cuenta creada! Ya puedes ingresar.");
-        setMode("login");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success("Bienvenida de vuelta a Makrana.");
-        const destination = await getDestinationForCurrentUser();
-        router.navigate({ to: destination });
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      toast.success("Bienvenida de vuelta a Makrana.");
+      const destination = await getDestinationForCurrentUser();
+      router.navigate({ to: destination });
     } catch (err: any) {
       toast.error(err?.message ?? "No pudimos procesar la solicitud.");
     } finally {
@@ -108,18 +95,12 @@ function AuthPage() {
             ← Volver al inicio
           </Link>
           <h2 className="font-display text-3xl mt-4">
-            {mode === "login" ? "Ingresa a tu cuenta" : "Crea tu cuenta"}
+            Plataforma Makrana Home Art
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            {mode === "login" ? "Acceso a la plataforma Makrana." : "Únete a la comunidad Makrana."}
+            Acceso privado para el equipo de Makrana.
           </p>
           <form onSubmit={onSubmit} className="mt-6 grid gap-4">
-            {mode === "signup" && (
-              <div className="grid gap-2">
-                <Label htmlFor="full_name">Nombre completo</Label>
-                <Input id="full_name" name="full_name" required maxLength={120} />
-              </div>
-            )}
             <div className="grid gap-2">
               <Label htmlFor="email">Correo</Label>
               <Input id="email" name="email" type="email" required maxLength={160} />
@@ -129,15 +110,9 @@ function AuthPage() {
               <Input id="password" name="password" type="password" required minLength={8} />
             </div>
             <Button type="submit" variant="hero" size="lg" disabled={loading}>
-              {loading ? "..." : mode === "login" ? "Ingresar" : "Crear cuenta"}
+              {loading ? "..." : "Ingresar a la plataforma"}
             </Button>
           </form>
-          <button
-            onClick={() => setMode(mode === "login" ? "signup" : "login")}
-            className="mt-6 text-sm text-accent"
-          >
-            {mode === "login" ? "¿No tienes cuenta? Regístrate" : "¿Ya tienes cuenta? Ingresa"}
-          </button>
         </div>
       </div>
     </div>
@@ -148,7 +123,7 @@ async function getDestinationForCurrentUser() {
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
 
-  if (!user) return "/auth";
+  if (!user) return "/plataforma";
 
   const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
 
