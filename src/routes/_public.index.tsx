@@ -168,7 +168,16 @@ function Home_() {
             preload="metadata"
             poster="/portada-makrana.svg"
           >
-            <source src="/portada-makrana.mp4" type="video/mp4" />
+            <source
+              src="/portada-makrana-mobile.mp4"
+              type="video/mp4"
+              media="(max-width: 767px)"
+            />
+            <source
+              src="/portada-makrana.mp4"
+              type="video/mp4"
+              media="(min-width: 768px)"
+            />
           </video>
         </div>
 
