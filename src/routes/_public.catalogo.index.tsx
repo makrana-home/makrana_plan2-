@@ -78,10 +78,16 @@ function Catalogo() {
         const categoryProducts = products.filter(
           (product: any) => product.category?.slug === category.slug,
         );
+        const preferredProduct =
+          category.slug === "arbol-de-la-vida"
+            ? categoryProducts.find((product: any) => product.sku === "PZ-011")
+            : undefined;
         return {
           ...category,
           count: categoryProducts.length,
-          imageUrl: categoryProducts.find((product: any) => product.main_image_url)?.main_image_url,
+          imageUrl:
+            preferredProduct?.main_image_url ??
+            categoryProducts.find((product: any) => product.main_image_url)?.main_image_url,
         };
       }),
     [categories, products],
@@ -99,7 +105,7 @@ function Catalogo() {
 
   return (
     <section className="bg-cream/45 px-4 py-14 sm:px-5 sm:py-20">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-7xl">
         <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-accent">Catálogo</p>
         <h1 className="mt-2 max-w-2xl font-display text-4xl font-light leading-tight text-foreground sm:text-5xl">
           Catálogo
@@ -135,7 +141,7 @@ function Catalogo() {
                     : "border-sand/80 hover:border-accent/40",
                 )}
               >
-                <span className="relative block aspect-[4/3] overflow-hidden bg-sand/35">
+                <span className="relative block aspect-square overflow-hidden bg-sand/35">
                   <img
                     src={category.imageUrl}
                     alt={`Piezas de ${category.name}`}
@@ -241,7 +247,7 @@ function Catalogo() {
           </div>
         </div>
 
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((p: any) => (
             <ProductCard key={p.id} product={p} />
           ))}
