@@ -2,10 +2,20 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
-import {
-  homeSectionDefaults,
-  type HomeSectionVisibility,
-} from "@/lib/site-settings.functions";
+import { homeSectionDefaults, type HomeSectionVisibility } from "@/lib/site-settings.functions";
+
+const publicCatalogCategorySlugs = [
+  "murales",
+  "murales-inspirados-en-quipus",
+  "arbol-de-la-vida",
+  "atrapasuenos",
+  "murales-de-hojas",
+  "decoracion-de-casa",
+  "espejos",
+  "navidad",
+  "adornos-de-munecos",
+  "carteras",
+];
 
 function publicClient() {
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -42,6 +52,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(async ()
     .select("id, slug, name, sort_order")
     .eq("is_active", true)
     .neq("slug", "configuracion-inicio")
+    .in("slug", publicCatalogCategorySlugs)
     .order("sort_order");
   if (error) throw error;
   return data ?? [];
@@ -59,7 +70,9 @@ export const getHomeSectionVisibility = createServerFn({ method: "GET" }).handle
   try {
     return {
       ...homeSectionDefaults,
-      ...(JSON.parse(data.description.slice("site-home:".length)) as Partial<HomeSectionVisibility>),
+      ...(JSON.parse(
+        data.description.slice("site-home:".length),
+      ) as Partial<HomeSectionVisibility>),
     };
   } catch {
     return { ...homeSectionDefaults };
@@ -72,7 +85,7 @@ export const listHomeCategories = createServerFn({ method: "GET" }).handler(asyn
     .from("categories")
     .select("id, slug, name, description, sort_order")
     .eq("is_active", true)
-    .order("sort_order")
+    .order("sort_order");
   if (error) throw error;
   const configured = (data ?? [])
     .map((category) => {

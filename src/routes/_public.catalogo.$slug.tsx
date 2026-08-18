@@ -1,5 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getProductBySlug, listProducts } from "@/lib/public.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -77,22 +79,7 @@ function ProductDetail() {
   return (
     <section className="section-padded">
       <div className="container-makrana grid lg:grid-cols-2 gap-12">
-        <div>
-          <div className="aspect-[4/5] overflow-hidden rounded-2xl bg-cream">
-            {images[0] && (
-              <img src={images[0].url} alt={images[0].alt} className="h-full w-full object-cover" />
-            )}
-          </div>
-          {images.length > 1 && (
-            <div className="mt-3 grid grid-cols-4 gap-2">
-              {images.slice(1).map((im, i) => (
-                <div key={i} className="aspect-square overflow-hidden rounded-md bg-cream">
-                  <img src={im.url} alt={im.alt} className="h-full w-full object-cover" />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <ProductGallery images={images} productName={p.name} />
         <div>
           <Link to="/catalogo" className="text-sm text-accent">
             ← Volver al catálogo
@@ -182,5 +169,89 @@ function ProductDetail() {
         </div>
       </div>
     </section>
+  );
+}
+
+function ProductGallery({
+  images,
+  productName,
+}: {
+  images: { url: string; alt?: string }[];
+  productName: string;
+}) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const hasMultiple = images.length > 1;
+
+  function show(index: number) {
+    setActiveIndex((index + images.length) % images.length);
+  }
+
+  if (images.length === 0) {
+    return <div className="aspect-square rounded-2xl bg-cream" aria-label="Producto sin imagen" />;
+  }
+
+  return (
+    <div aria-label={`Galería de ${productName}`}>
+      <div className="group relative aspect-square overflow-hidden rounded-2xl bg-cream">
+        <img
+          key={images[activeIndex].url}
+          src={images[activeIndex].url}
+          alt={images[activeIndex].alt || `${productName}, imagen ${activeIndex + 1}`}
+          width={1000}
+          height={1000}
+          className="h-full w-full object-cover motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300"
+        />
+        {hasMultiple && (
+          <>
+            <button
+              type="button"
+              onClick={() => show(activeIndex - 1)}
+              aria-label="Ver imagen anterior"
+              className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-warm-white/95 text-foreground shadow-md transition hover:bg-warm-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => show(activeIndex + 1)}
+              aria-label="Ver imagen siguiente"
+              className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-warm-white/95 text-foreground shadow-md transition hover:bg-warm-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <ChevronRight className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <span className="absolute bottom-3 right-3 rounded-full bg-foreground/75 px-3 py-1 text-xs font-semibold text-warm-white">
+              {activeIndex + 1} / {images.length}
+            </span>
+          </>
+        )}
+      </div>
+      {hasMultiple && (
+        <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5">
+          {images.map((image, index) => (
+            <button
+              key={`${image.url}-${index}`}
+              type="button"
+              onClick={() => show(index)}
+              aria-label={`Ver imagen ${index + 1} de ${productName}`}
+              aria-current={activeIndex === index ? "true" : undefined}
+              className={`aspect-square min-h-11 overflow-hidden rounded-lg border-2 bg-cream transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                activeIndex === index
+                  ? "border-accent shadow-sm"
+                  : "border-transparent opacity-75 hover:opacity-100"
+              }`}
+            >
+              <img
+                src={image.url}
+                alt=""
+                width={160}
+                height={160}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

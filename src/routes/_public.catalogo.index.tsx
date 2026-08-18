@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { listCategories, listProducts } from "@/lib/public.functions";
 import { ProductCard } from "@/components/product-card";
@@ -34,9 +34,7 @@ export const Route = createFileRoute("/_public/catalogo/")({
 function Catalogo() {
   const { data: products } = useSuspenseQuery(allQ);
   const { data: categories } = useSuspenseQuery(catsQ);
-  const [activeType, setActiveType] = useState<"featured" | "pieces" | "materials" | null>(
-    "featured",
-  );
+  const [activeType, setActiveType] = useState<"featured" | "pieces" | "materials" | null>(null);
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -67,10 +65,34 @@ function Catalogo() {
   }, [products, activeType, activeCat, searchTerm]);
 
   const typeFilters = [
+    { value: "all", label: "Todo" },
     { value: "featured", label: "Destacados" },
     { value: "pieces", label: "Piezas" },
     { value: "materials", label: "Materiales" },
   ] as const;
+
+  const categoryCards = useMemo(
+    () =>
+      categories.map((category) => {
+        const categoryProducts = products.filter(
+          (product: any) => product.category?.slug === category.slug,
+        );
+        return {
+          ...category,
+          count: categoryProducts.length,
+          imageUrl: categoryProducts.find((product: any) => product.main_image_url)?.main_image_url,
+        };
+      }),
+    [categories, products],
+  );
+
+  function selectCategory(slug: string | null) {
+    setActiveType(null);
+    setActiveCat(slug);
+    requestAnimationFrame(() =>
+      document.getElementById("catalog-products")?.scrollIntoView({ behavior: "smooth" }),
+    );
+  }
 
   return (
     <section className="bg-cream/45 px-4 py-14 sm:px-5 sm:py-20">
@@ -80,44 +102,103 @@ function Catalogo() {
           Catálogo
         </h1>
 
-        <input
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Buscar por su nombre"
-          className="mt-6 h-12 w-full max-w-xl rounded-2xl border border-sand bg-warm-white/90 px-4 text-sm shadow-sm outline-none transition focus:border-accent"
-        />
+        <div className="mt-10 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">
+              Explora por categoría
+            </p>
+            <h2 className="mt-2 font-display text-2xl sm:text-3xl">Encuentra tu pieza ideal</h2>
+          </div>
+        </div>
 
-        <div className="mt-8 flex flex-wrap gap-2">
-          {typeFilters.map((filter) => (
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {categoryCards.map((category) => (
             <button
-              key={filter.value}
-              onClick={() => {
-                setActiveType(filter.value);
-                setActiveCat(null);
-              }}
-              className={filterClass(activeType === filter.value)}
+              key={category.id}
+              type="button"
+              onClick={() => selectCategory(category.slug)}
+              className="group min-w-0 overflow-hidden rounded-2xl border border-sand/80 bg-warm-white text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
-              {filter.label}
+              <span className="block aspect-square overflow-hidden bg-sand/35">
+                {category.imageUrl ? (
+                  <img
+                    src={category.imageUrl}
+                    alt=""
+                    width={1000}
+                    height={1000}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03] motion-reduce:transform-none"
+                  />
+                ) : (
+                  <span className="flex h-full items-center justify-center px-4 text-center font-display text-lg text-accent/70">
+                    Makrana
+                  </span>
+                )}
+              </span>
+              <span className="block p-3">
+                <span className="block text-sm font-semibold leading-tight text-foreground">
+                  {category.name}
+                </span>
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  {category.count === 1 ? "1 pieza" : `${category.count} piezas`}
+                </span>
+              </span>
             </button>
-          ))}
-          {categories.map((c) => (
-            <Link
-              key={c.id}
-              to="/catalogo/categoria/$slug"
-              params={{ slug: c.slug }}
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveType(null);
-                setActiveCat(c.slug);
-              }}
-              className={filterClass(activeCat === c.slug)}
-            >
-              {c.name}
-            </Link>
           ))}
         </div>
 
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div id="catalog-products" className="mt-16 scroll-mt-24 border-t border-sand/70 pt-10">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">
+            Catálogo general
+          </p>
+          <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="font-display text-2xl sm:text-3xl">
+              {activeCat
+                ? categories.find((category) => category.slug === activeCat)?.name
+                : "Todas las piezas"}
+            </h2>
+            <button
+              type="button"
+              onClick={() => selectCategory(null)}
+              className="min-h-11 self-start rounded-full border border-sand bg-warm-white px-4 text-xs font-semibold transition hover:border-accent/50 hover:text-accent"
+            >
+              Ver catálogo completo
+            </button>
+          </div>
+
+          <input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Buscar por nombre"
+            aria-label="Buscar en el catálogo"
+            className="mt-6 h-12 w-full max-w-xl rounded-2xl border border-sand bg-warm-white/90 px-4 text-base shadow-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+          />
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            {typeFilters.map((filter) => {
+              const isAll = filter.value === "all";
+              const active = isAll
+                ? activeType === null && !activeCat
+                : activeType === filter.value;
+              return (
+                <button
+                  key={filter.value}
+                  type="button"
+                  onClick={() => {
+                    if (filter.value === "all") setActiveType(null);
+                    else setActiveType(filter.value);
+                    setActiveCat(null);
+                  }}
+                  className={filterClass(active)}
+                >
+                  {filter.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p: any) => (
             <ProductCard key={p.id} product={p} />
           ))}
