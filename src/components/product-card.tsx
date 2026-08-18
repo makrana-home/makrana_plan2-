@@ -12,6 +12,7 @@ type Product = {
   type?: string;
   category?: { slug: string; name: string } | null;
   presentations?: unknown[] | null;
+  show_price?: boolean;
 };
 
 const statusLabel: Record<string, string> = {
@@ -97,7 +98,7 @@ export function ProductCard({
             showPrice || actionLabel ? "justify-between" : "justify-end",
           )}
         >
-          {showPrice && (
+          {showPrice && product.show_price === true && (
             <span
               className={cn(
                 "font-extrabold leading-tight text-accent",
@@ -111,7 +112,7 @@ export function ProductCard({
                 : `S/ ${Number(product.price).toFixed(0)}`}
             </span>
           )}
-          {!showPrice && actionLabel && (
+          {(!showPrice || product.show_price !== true) && actionLabel && (
             <Link
               to="/catalogo/$slug"
               params={{ slug: product.slug }}
