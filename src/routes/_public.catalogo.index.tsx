@@ -5,6 +5,7 @@ import { ProductCard } from "@/components/product-card";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { getPresentationUnitLabel } from "@/lib/presentation-units";
+import { ArrowUpRight, Sparkles } from "lucide-react";
 
 const allQ = queryOptions({
   queryKey: ["public", "all-products"],
@@ -85,6 +86,8 @@ function Catalogo() {
       }),
     [categories, products],
   );
+  const availableCategories = categoryCards.filter((category) => category.count > 0);
+  const upcomingCategories = categoryCards.filter((category) => category.count === 0);
 
   function selectCategory(slug: string | null) {
     setActiveType(null);
@@ -102,50 +105,90 @@ function Catalogo() {
           Catálogo
         </h1>
 
-        <div className="mt-10 flex items-end justify-between gap-4">
+        <div className="mt-12 max-w-2xl">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">
               Explora por categoría
             </p>
-            <h2 className="mt-2 font-display text-2xl sm:text-3xl">Encuentra tu pieza ideal</h2>
+            <h2 className="mt-2 font-display text-3xl leading-tight sm:text-4xl">
+              Encuentra tu pieza ideal
+            </h2>
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+              Descubre piezas tejidas a mano para transformar cada rincón de tu hogar.
+            </p>
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {categoryCards.map((category) => (
-            <button
-              key={category.id}
-              type="button"
-              onClick={() => selectCategory(category.slug)}
-              className="group min-w-0 overflow-hidden rounded-2xl border border-sand/80 bg-warm-white text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              <span className="block aspect-square overflow-hidden bg-sand/35">
-                {category.imageUrl ? (
+        <div className="mt-7 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          {availableCategories.map((category) => {
+            const isActive = activeCat === category.slug;
+            return (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => selectCategory(category.slug)}
+                aria-pressed={isActive}
+                className={cn(
+                  "group min-w-0 overflow-hidden rounded-[1.35rem] border bg-warm-white text-left shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 motion-reduce:transform-none",
+                  isActive
+                    ? "border-accent ring-1 ring-accent/30"
+                    : "border-sand/80 hover:border-accent/40",
+                )}
+              >
+                <span className="relative block aspect-[4/3] overflow-hidden bg-sand/35">
                   <img
                     src={category.imageUrl}
-                    alt=""
+                    alt={`Piezas de ${category.name}`}
                     width={1000}
                     height={1000}
                     loading="lazy"
-                    className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03] motion-reduce:transform-none"
+                    className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.04] motion-reduce:transform-none"
                   />
-                ) : (
-                  <span className="flex h-full items-center justify-center px-4 text-center font-display text-lg text-accent/70">
-                    Makrana
+                  <span className="absolute inset-0 bg-gradient-to-t from-foreground/20 via-transparent to-transparent opacity-60" />
+                </span>
+                <span className="flex min-h-[5.25rem] items-start justify-between gap-2 p-4">
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold leading-snug text-foreground sm:text-base">
+                      {category.name}
+                    </span>
+                    <span className="mt-1.5 block text-xs text-muted-foreground">
+                      {category.count === 1 ? "1 pieza" : `${category.count} piezas`}
+                    </span>
                   </span>
-                )}
-              </span>
-              <span className="block p-3">
-                <span className="block text-sm font-semibold leading-tight text-foreground">
-                  {category.name}
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-cream text-accent transition group-hover:bg-accent group-hover:text-warm-white">
+                    <ArrowUpRight className="size-4" aria-hidden="true" />
+                  </span>
                 </span>
-                <span className="mt-1 block text-xs text-muted-foreground">
-                  {category.count === 1 ? "1 pieza" : `${category.count} piezas`}
-                </span>
-              </span>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
+
+        {upcomingCategories.length > 0 && (
+          <div className="mt-6 rounded-2xl border border-dashed border-sand bg-warm-white/55 px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-6 sm:px-5">
+            <div className="flex items-center gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cream text-accent">
+                <Sparkles className="size-4" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Nuevas colecciones</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Muy pronto encontrarás más piezas.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2 sm:mt-0 sm:justify-end">
+              {upcomingCategories.map((category) => (
+                <span
+                  key={category.id}
+                  className="rounded-full border border-sand bg-warm-white px-3 py-2 text-xs font-medium text-muted-foreground"
+                >
+                  {category.name} · Próximamente
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div id="catalog-products" className="mt-16 scroll-mt-24 border-t border-sand/70 pt-10">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">
