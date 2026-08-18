@@ -56,6 +56,11 @@ const homeSectionOptions: Array<{
     label: "Testimonios",
     description: "Opiniones destacadas de clientes de Makrana.",
   },
+  {
+    key: "showProductPrices",
+    label: "Mostrar precios de venta",
+    description: "Autoriza o bloquea la visualización de precios en todo el catálogo público.",
+  },
 ];
 
 function WebsitePage() {

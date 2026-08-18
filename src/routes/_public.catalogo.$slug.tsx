@@ -102,11 +102,13 @@ function ProductDetail() {
           </p>
           <h1 className="mt-2 font-display text-3xl leading-tight sm:text-4xl">{p.name}</h1>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <span className="font-display text-2xl leading-tight sm:text-3xl">
-              {hasPresentations
-                ? "En distintas presentaciones"
-                : `S/ ${Number(p.price).toFixed(2)}`}
-            </span>
+            {p.show_price === true && (
+              <span className="font-display text-2xl leading-tight sm:text-3xl">
+                {hasPresentations
+                  ? "En distintas presentaciones"
+                  : `S/ ${Number(p.price).toFixed(2)}`}
+              </span>
+            )}
             <Badge>{statusLabel[p.status] ?? p.status}</Badge>
           </div>
           <p className="mt-5 text-muted-foreground whitespace-pre-line">
@@ -146,7 +148,9 @@ function ProductDetail() {
                     className="flex flex-wrap justify-between gap-x-4 gap-y-1 bg-cream/40 px-4 py-3 text-sm"
                   >
                     <span className="min-w-0">{getPresentationUnitLabel(pr.unit, pr.label)}</span>
-                    <span className="font-medium">S/ {Number(pr.price).toFixed(2)}</span>
+                    {p.show_price === true && (
+                      <span className="font-medium">S/ {Number(pr.price).toFixed(2)}</span>
+                    )}
                   </li>
                 ))}
               </ul>

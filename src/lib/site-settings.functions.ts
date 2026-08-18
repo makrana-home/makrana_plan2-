@@ -12,6 +12,7 @@ export const homeSectionDefaults = {
   customProjects: true,
   workshops: true,
   testimonials: true,
+  showProductPrices: false,
 };
 
 export type HomeSectionVisibility = typeof homeSectionDefaults;
@@ -29,6 +30,7 @@ const visibilitySchema = z.object({
   customProjects: z.boolean(),
   workshops: z.boolean(),
   testimonials: z.boolean(),
+  showProductPrices: z.boolean(),
 });
 
 function parseSettings(description?: string | null): HomeSectionVisibility {
