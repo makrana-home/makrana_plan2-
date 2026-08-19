@@ -1,5 +1,5 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
-import { FormDialog, PageHeader, formatDate, useDialog } from "@/components/admin-ui";
+import { FormDialog, PageHeader, formatDate, moneyPEN, useDialog } from "@/components/admin-ui";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  defaultModulesByRole,
+  staffModuleOptions,
+  type StaffModuleKey,
+} from "@/lib/staff-access";
 import {
   Select,
   SelectContent,
@@ -90,7 +96,7 @@ function ConfigPage() {
         <div className="border border-sand/60 rounded-xl bg-warm-white p-6 sm:col-span-2">
           <h2 className="font-display text-lg mb-2">Comprobantes</h2>
           <p className="text-sm text-muted-foreground">
-            Numeración automática <span className="font-mono">MKR-000001</span>, correlativa al
+            Numeración automática <span className="font-mono">MKR-00000000</span>, correlativa al
             confirmar cada venta. Son notas de venta internas <b>no fiscales</b>; para emitir
             boletas/facturas SUNAT en el futuro, se integrará un proveedor de facturación
             electrónica.
@@ -136,6 +142,7 @@ function UsersAccessPanel() {
     email: "",
     password: "",
     role: "ventas" as StaffRole,
+    modules: [...defaultModulesByRole.ventas] as StaffModuleKey[],
   });
 
   async function refresh() {
@@ -192,7 +199,13 @@ function UsersAccessPanel() {
           type="button"
           className="rounded-full"
           onClick={() => {
-            setForm({ full_name: "", email: "", password: "", role: "ventas" });
+            setForm({
+              full_name: "",
+              email: "",
+              password: "",
+              role: "ventas",
+              modules: [...defaultModulesByRole.ventas],
+            });
             dialog.openWith(null);
           }}
         >
@@ -207,6 +220,7 @@ function UsersAccessPanel() {
               <TableHead>Usuario</TableHead>
               <TableHead>Perfil</TableHead>
               <TableHead>Módulos</TableHead>
+              <TableHead>Actividad comercial</TableHead>
               <TableHead>Creado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
@@ -214,14 +228,14 @@ function UsersAccessPanel() {
           <TableBody>
             {loading && (
               <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                   Cargando usuarios...
                 </TableCell>
               </TableRow>
             )}
             {!loading && users.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                   Todavía no hay usuarios del equipo.
                 </TableCell>
               </TableRow>
@@ -243,14 +257,21 @@ function UsersAccessPanel() {
                     </TableCell>
                     <TableCell>
                       <div className="flex max-w-xl flex-wrap gap-1.5">
-                        {profile.modules.map((module) => (
+                        {(user.modules ?? defaultModulesByRole[role]).map((module: StaffModuleKey) => (
                           <span
                             key={module}
                             className="rounded-full border border-sand/70 bg-warm-white px-2 py-1 text-xs text-muted-foreground"
                           >
-                            {module}
+                            {staffModuleOptions.find((option) => option.key === module)?.label ?? module}
                           </span>
                         ))}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      <div>{user.activity?.sales_count ?? 0} cotizaciones/ventas creadas</div>
+                      <div>{user.activity?.receipts_count ?? 0} comprobantes emitidos</div>
+                      <div className="font-semibold text-foreground">
+                        {moneyPEN(user.activity?.total_sold ?? 0)} vendidos
                       </div>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
@@ -268,6 +289,7 @@ function UsersAccessPanel() {
                             email: user.email ?? "",
                             password: "",
                             role,
+                            modules: user.modules ?? [...defaultModulesByRole[role]],
                           });
                           dialog.openWith(user);
                         }}
@@ -339,9 +361,14 @@ function UsersAccessPanel() {
               <Label>Tipo de usuario *</Label>
               <Select
                 value={form.role}
-                onValueChange={(role) =>
-                  setForm((current) => ({ ...current, role: role as StaffRole }))
-                }
+                onValueChange={(role) => {
+                  const nextRole = role as StaffRole;
+                  setForm((current) => ({
+                    ...current,
+                    role: nextRole,
+                    modules: [...defaultModulesByRole[nextRole]],
+                  }));
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -363,13 +390,34 @@ function UsersAccessPanel() {
               Módulos de {selectedProfile.label}
             </div>
             <p className="mt-1 text-sm text-muted-foreground">{selectedProfile.description}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {selectedProfile.modules.map((module) => (
-                <Badge key={module} className="border-sand bg-warm-white text-foreground">
-                  {module}
-                </Badge>
-              ))}
-            </div>
+            {form.role === "admin" ? (
+              <p className="mt-3 text-sm font-medium">Acceso total a todos los módulos.</p>
+            ) : (
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {staffModuleOptions.map((module) => {
+                  const checked = form.modules.includes(module.key);
+                  return (
+                    <label
+                      key={module.key}
+                      className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-sand/70 bg-warm-white px-3 py-2 text-sm"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(nextChecked) =>
+                          setForm((current) => ({
+                            ...current,
+                            modules: nextChecked
+                              ? [...current.modules, module.key]
+                              : current.modules.filter((key) => key !== module.key),
+                          }))
+                        }
+                      />
+                      {module.label}
+                    </label>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </FormDialog>

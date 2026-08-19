@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import type { SVGProps } from "react";
-import { Facebook, Instagram, Menu, MessageCircle, X } from "lucide-react";
+import { BookOpen, Facebook, Instagram, Menu, MessageCircle, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -40,9 +40,9 @@ function TikTokIcon(props: SVGProps<SVGSVGElement>) {
 }
 
 const socialLinks = [
-  { label: "Instagram", href: null, icon: Instagram },
-  { label: "Facebook", href: null, icon: Facebook },
-  { label: "TikTok", href: null, icon: TikTokIcon },
+  { label: "Instagram", href: "https://www.instagram.com/makrana_homeart", icon: Instagram },
+  { label: "Facebook", href: "https://www.facebook.com/homeart.vag", icon: Facebook },
+  { label: "TikTok", href: "https://www.tiktok.com/@makrana.homeart", icon: TikTokIcon },
   { label: "WhatsApp", href: "https://wa.me/51986608552", icon: MessageCircle },
 ] as const;
 
@@ -248,6 +248,13 @@ export function SiteFooter() {
               </Link>
             </li>
           </ul>
+          <Link
+            to="/libro-de-reclamaciones"
+            className="mt-4 inline-flex w-full max-w-52 items-center gap-3 rounded-md border border-foreground/55 bg-warm-white/45 px-4 py-3 text-left text-sm font-medium leading-tight text-foreground transition hover:border-accent hover:bg-warm-white hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          >
+            <BookOpen className="h-8 w-8 shrink-0" strokeWidth={1.6} aria-hidden="true" />
+            <span>Libro de<br />Reclamaciones</span>
+          </Link>
         </div>
         <div>
           <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-foreground/70">
@@ -259,13 +266,15 @@ export function SiteFooter() {
             <li>Lima, Perú</li>
           </ul>
           <div className="mt-3">
-            <h4 className="font-display text-lg text-accent">Síguenos</h4>
+            <h4 className="text-xs font-medium uppercase tracking-wider text-foreground/70">
+              Síguenos
+            </h4>
             <div className="mt-2 flex flex-wrap gap-2">
               {socialLinks.map((social) => {
                 const Icon = social.icon;
                 const className =
                   "inline-flex h-8 w-8 items-center justify-center rounded-full border border-sand bg-warm-white text-accent shadow-sm transition";
-                return social.href ? (
+                return (
                   <a
                     key={social.label}
                     href={social.href}
@@ -276,16 +285,6 @@ export function SiteFooter() {
                   >
                     <Icon className="h-4 w-4" />
                   </a>
-                ) : (
-                  <span
-                    key={social.label}
-                    aria-label={`${social.label} no disponible`}
-                    aria-disabled="true"
-                    title={`${social.label} no disponible`}
-                    className={`${className} cursor-not-allowed opacity-45`}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </span>
                 );
               })}
             </div>

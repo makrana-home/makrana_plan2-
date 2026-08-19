@@ -19,6 +19,7 @@ import { Route as PublicTiendaRouteImport } from './routes/_public.tienda'
 import { Route as PublicTalleresRouteImport } from './routes/_public.talleres'
 import { Route as PublicSobreMakranaRouteImport } from './routes/_public.sobre-makrana'
 import { Route as PublicRegistroRouteImport } from './routes/_public.registro'
+import { Route as PublicLibroDeReclamacionesRouteImport } from './routes/_public.libro-de-reclamaciones'
 import { Route as PublicContactoRouteImport } from './routes/_public.contacto'
 import { Route as AuthenticatedClienteRouteImport } from './routes/_authenticated/cliente'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -47,6 +48,7 @@ import { Route as AuthenticatedAdminCotizacionesRouteImport } from './routes/_au
 import { Route as AuthenticatedAdminConfiguracionRouteImport } from './routes/_authenticated/admin.configuracion'
 import { Route as AuthenticatedAdminComprobantesRouteImport } from './routes/_authenticated/admin.comprobantes'
 import { Route as AuthenticatedAdminClientesRouteImport } from './routes/_authenticated/admin.clientes'
+import { Route as AuthenticatedAdminCalendarioRouteImport } from './routes/_authenticated/admin.calendario'
 import { Route as AuthenticatedAdminAlmacenesRouteImport } from './routes/_authenticated/admin.almacenes'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -97,6 +99,12 @@ const PublicRegistroRoute = PublicRegistroRouteImport.update({
   path: '/registro',
   getParentRoute: () => PublicRoute,
 } as any)
+const PublicLibroDeReclamacionesRoute =
+  PublicLibroDeReclamacionesRouteImport.update({
+    id: '/libro-de-reclamaciones',
+    path: '/libro-de-reclamaciones',
+    getParentRoute: () => PublicRoute,
+  } as any)
 const PublicContactoRoute = PublicContactoRouteImport.update({
   id: '/contacto',
   path: '/contacto',
@@ -257,6 +265,12 @@ const AuthenticatedAdminClientesRoute =
     path: '/clientes',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminCalendarioRoute =
+  AuthenticatedAdminCalendarioRouteImport.update({
+    id: '/calendario',
+    path: '/calendario',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminAlmacenesRoute =
   AuthenticatedAdminAlmacenesRouteImport.update({
     id: '/almacenes',
@@ -272,11 +286,13 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/cliente': typeof AuthenticatedClienteRouteWithChildren
   '/contacto': typeof PublicContactoRoute
+  '/libro-de-reclamaciones': typeof PublicLibroDeReclamacionesRoute
   '/registro': typeof PublicRegistroRoute
   '/sobre-makrana': typeof PublicSobreMakranaRoute
   '/talleres': typeof PublicTalleresRoute
   '/tienda': typeof PublicTiendaRoute
   '/admin/almacenes': typeof AuthenticatedAdminAlmacenesRoute
+  '/admin/calendario': typeof AuthenticatedAdminCalendarioRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/admin/comprobantes': typeof AuthenticatedAdminComprobantesRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
@@ -309,11 +325,13 @@ export interface FileRoutesByTo {
   '/plataforma': typeof PlataformaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/contacto': typeof PublicContactoRoute
+  '/libro-de-reclamaciones': typeof PublicLibroDeReclamacionesRoute
   '/registro': typeof PublicRegistroRoute
   '/sobre-makrana': typeof PublicSobreMakranaRoute
   '/talleres': typeof PublicTalleresRoute
   '/tienda': typeof PublicTiendaRoute
   '/admin/almacenes': typeof AuthenticatedAdminAlmacenesRoute
+  '/admin/calendario': typeof AuthenticatedAdminCalendarioRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/admin/comprobantes': typeof AuthenticatedAdminComprobantesRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
@@ -350,12 +368,14 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/cliente': typeof AuthenticatedClienteRouteWithChildren
   '/_public/contacto': typeof PublicContactoRoute
+  '/_public/libro-de-reclamaciones': typeof PublicLibroDeReclamacionesRoute
   '/_public/registro': typeof PublicRegistroRoute
   '/_public/sobre-makrana': typeof PublicSobreMakranaRoute
   '/_public/talleres': typeof PublicTalleresRoute
   '/_public/tienda': typeof PublicTiendaRoute
   '/_public/': typeof PublicIndexRoute
   '/_authenticated/admin/almacenes': typeof AuthenticatedAdminAlmacenesRoute
+  '/_authenticated/admin/calendario': typeof AuthenticatedAdminCalendarioRoute
   '/_authenticated/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/_authenticated/admin/comprobantes': typeof AuthenticatedAdminComprobantesRoute
   '/_authenticated/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
@@ -392,11 +412,13 @@ export interface FileRouteTypes {
     | '/admin'
     | '/cliente'
     | '/contacto'
+    | '/libro-de-reclamaciones'
     | '/registro'
     | '/sobre-makrana'
     | '/talleres'
     | '/tienda'
     | '/admin/almacenes'
+    | '/admin/calendario'
     | '/admin/clientes'
     | '/admin/comprobantes'
     | '/admin/configuracion'
@@ -429,11 +451,13 @@ export interface FileRouteTypes {
     | '/plataforma'
     | '/sitemap.xml'
     | '/contacto'
+    | '/libro-de-reclamaciones'
     | '/registro'
     | '/sobre-makrana'
     | '/talleres'
     | '/tienda'
     | '/admin/almacenes'
+    | '/admin/calendario'
     | '/admin/clientes'
     | '/admin/comprobantes'
     | '/admin/configuracion'
@@ -469,12 +493,14 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/cliente'
     | '/_public/contacto'
+    | '/_public/libro-de-reclamaciones'
     | '/_public/registro'
     | '/_public/sobre-makrana'
     | '/_public/talleres'
     | '/_public/tienda'
     | '/_public/'
     | '/_authenticated/admin/almacenes'
+    | '/_authenticated/admin/calendario'
     | '/_authenticated/admin/clientes'
     | '/_authenticated/admin/comprobantes'
     | '/_authenticated/admin/configuracion'
@@ -580,6 +606,13 @@ declare module '@tanstack/react-router' {
       path: '/registro'
       fullPath: '/registro'
       preLoaderRoute: typeof PublicRegistroRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/libro-de-reclamaciones': {
+      id: '/_public/libro-de-reclamaciones'
+      path: '/libro-de-reclamaciones'
+      fullPath: '/libro-de-reclamaciones'
+      preLoaderRoute: typeof PublicLibroDeReclamacionesRouteImport
       parentRoute: typeof PublicRoute
     }
     '/_public/contacto': {
@@ -778,6 +811,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminClientesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/calendario': {
+      id: '/_authenticated/admin/calendario'
+      path: '/calendario'
+      fullPath: '/admin/calendario'
+      preLoaderRoute: typeof AuthenticatedAdminCalendarioRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/almacenes': {
       id: '/_authenticated/admin/almacenes'
       path: '/almacenes'
@@ -790,6 +830,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAlmacenesRoute: typeof AuthenticatedAdminAlmacenesRoute
+  AuthenticatedAdminCalendarioRoute: typeof AuthenticatedAdminCalendarioRoute
   AuthenticatedAdminClientesRoute: typeof AuthenticatedAdminClientesRoute
   AuthenticatedAdminComprobantesRoute: typeof AuthenticatedAdminComprobantesRoute
   AuthenticatedAdminConfiguracionRoute: typeof AuthenticatedAdminConfiguracionRoute
@@ -809,6 +850,7 @@ interface AuthenticatedAdminRouteChildren {
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAlmacenesRoute: AuthenticatedAdminAlmacenesRoute,
+  AuthenticatedAdminCalendarioRoute: AuthenticatedAdminCalendarioRoute,
   AuthenticatedAdminClientesRoute: AuthenticatedAdminClientesRoute,
   AuthenticatedAdminComprobantesRoute: AuthenticatedAdminComprobantesRoute,
   AuthenticatedAdminConfiguracionRoute: AuthenticatedAdminConfiguracionRoute,
@@ -865,6 +907,7 @@ const AuthenticatedRouteRouteWithChildren =
 
 interface PublicRouteChildren {
   PublicContactoRoute: typeof PublicContactoRoute
+  PublicLibroDeReclamacionesRoute: typeof PublicLibroDeReclamacionesRoute
   PublicRegistroRoute: typeof PublicRegistroRoute
   PublicSobreMakranaRoute: typeof PublicSobreMakranaRoute
   PublicTalleresRoute: typeof PublicTalleresRoute
@@ -878,6 +921,7 @@ interface PublicRouteChildren {
 
 const PublicRouteChildren: PublicRouteChildren = {
   PublicContactoRoute: PublicContactoRoute,
+  PublicLibroDeReclamacionesRoute: PublicLibroDeReclamacionesRoute,
   PublicRegistroRoute: PublicRegistroRoute,
   PublicSobreMakranaRoute: PublicSobreMakranaRoute,
   PublicTalleresRoute: PublicTalleresRoute,

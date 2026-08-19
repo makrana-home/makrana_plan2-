@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Calendar, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
@@ -106,12 +106,34 @@ export const Route = createFileRoute("/_public/")({
 });
 
 function Home_() {
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const { data: featured } = useSuspenseQuery(featuredQ);
   const { data: news } = useSuspenseQuery(newsQ);
   const { data: workshops } = useSuspenseQuery(workshopsQ);
   const { data: homeCategories } = useSuspenseQuery(homeCategoriesQ);
   const { data: homeSections } = useSuspenseQuery(homeSectionsQ);
+
+  useEffect(() => {
+    const video = heroVideoRef.current;
+    if (!video || !homeSections.hero) return;
+
+    const keepPlaying = () => {
+      if (video.ended) video.currentTime = 0;
+      void video.play().catch(() => undefined);
+    };
+
+    keepPlaying();
+    video.addEventListener("ended", keepPlaying);
+    video.addEventListener("pause", keepPlaying);
+    document.addEventListener("visibilitychange", keepPlaying);
+
+    return () => {
+      video.removeEventListener("ended", keepPlaying);
+      video.removeEventListener("pause", keepPlaying);
+      document.removeEventListener("visibilitychange", keepPlaying);
+    };
+  }, [homeSections.hero]);
 
   useEffect(() => {
     if (
@@ -176,7 +198,8 @@ function Home_() {
         <section className="relative isolate min-h-[100svh] overflow-hidden bg-primary">
         <div className="absolute inset-0 -z-10" aria-hidden="true">
           <video
-            className="absolute inset-0 h-full w-full object-cover object-center"
+            ref={heroVideoRef}
+            className="absolute inset-0 h-full w-full scale-[1.22] object-cover object-center"
             autoPlay
             muted
             loop
@@ -276,8 +299,9 @@ function Home_() {
             {homeCategories.map((category) => (
               <Link
                 key={category.id}
-                to="/catalogo/categoria/$slug"
-                params={{ slug: category.slug }}
+                to="/catalogo"
+                search={{ categoria: category.slug }}
+                hash="catalog-products"
                 className="group overflow-hidden rounded-xl border border-sand/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-clay/15"
               >
                 <div className="aspect-[5/4] overflow-hidden bg-gradient-to-br from-cream via-sand/60 to-clay/20">

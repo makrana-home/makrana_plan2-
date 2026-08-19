@@ -14,6 +14,9 @@ const allQ = queryOptions({
 const catsQ = queryOptions({ queryKey: ["public", "categories"], queryFn: () => listCategories() });
 
 export const Route = createFileRoute("/_public/catalogo/")({
+  validateSearch: (search: Record<string, unknown>): { categoria?: string } => ({
+    categoria: typeof search.categoria === "string" ? search.categoria : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Catálogo · Makrana Home Art" },
@@ -33,10 +36,11 @@ export const Route = createFileRoute("/_public/catalogo/")({
 });
 
 function Catalogo() {
+  const { categoria } = Route.useSearch();
   const { data: products } = useSuspenseQuery(allQ);
   const { data: categories } = useSuspenseQuery(catsQ);
   const [activeType, setActiveType] = useState<"featured" | "pieces" | "materials" | null>(null);
-  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [activeCat, setActiveCat] = useState<string | null>(categoria ?? null);
   const [searchTerm, setSearchTerm] = useState("");
 
   const filtered = useMemo(() => {
@@ -143,7 +147,7 @@ function Catalogo() {
               >
                 <span className="relative block aspect-square overflow-hidden bg-sand/35">
                   <img
-                    src={category.imageUrl}
+                    src={category.imageUrl ?? undefined}
                     alt={`Piezas de ${category.name}`}
                     width={1000}
                     height={1000}

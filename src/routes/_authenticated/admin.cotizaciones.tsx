@@ -72,7 +72,9 @@ function QuotationsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Fecha</TableHead>
+              <TableHead>Número</TableHead>
               <TableHead>Cliente</TableHead>
+              <TableHead>Vendedor</TableHead>
               <TableHead>Almacén</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Pago</TableHead>
@@ -83,7 +85,7 @@ function QuotationsPage() {
           <TableBody>
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">
                   Sin ventas para cotizar.
                 </TableCell>
               </TableRow>
@@ -93,11 +95,15 @@ function QuotationsPage() {
                 <TableCell className="text-xs text-muted-foreground">
                   {formatDate(sale.created_at)}
                 </TableCell>
+                <TableCell className="font-mono text-xs font-medium">
+                  COT-{String(sale.quote_number ?? 0).padStart(8, "0")}
+                </TableCell>
                 <TableCell>
                   {getSaleCustomerDisplayName(sale, "") || (
                     <span className="text-muted-foreground">— sin cliente —</span>
                   )}
                 </TableCell>
+                <TableCell className="text-xs">{getCreatorName(sale)}</TableCell>
                 <TableCell className="text-xs">{sale.warehouse?.name}</TableCell>
                 <TableCell>
                   <SaleStatusBadge status={sale.status} />
@@ -148,6 +154,7 @@ function QuotationMobileCard({
           <p className="mt-1 truncate text-xs text-muted-foreground">
             {sale.warehouse?.name ?? "Sin almacén"}
           </p>
+          <p className="mt-1 text-xs text-muted-foreground">Creado por: {getCreatorName(sale)}</p>
         </div>
         <p className="shrink-0 text-lg font-semibold tabular-nums">{moneyPEN(sale.total)}</p>
       </div>
@@ -167,6 +174,10 @@ function QuotationMobileCard({
       </Button>
     </article>
   );
+}
+
+function getCreatorName(sale: any) {
+  return sale.creator?.full_name || sale.creator?.email || "No registrado";
 }
 
 function SaleStatusBadge({ status }: { status?: string }) {

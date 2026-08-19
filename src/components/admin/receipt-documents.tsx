@@ -171,11 +171,12 @@ export function SaleNoteDocument({
 }) {
   const sale = receipt.sale ?? {};
   const isQuote = variant === "quote";
+  const isCustomOrder = isQuote && hasManualReceiptItems(sale);
   return (
     <ReceiptPaper id="receipt-print" variant={variant}>
       <ReceiptHeader
         title={title}
-        subtitle={isQuote ? "Pedidos personalizado" : undefined}
+        subtitle={isCustomOrder ? "Pedido personalizado" : undefined}
         number={receipt.number}
         date={receipt.issued_at}
       />
@@ -521,6 +522,10 @@ function isManualReceiptItem(item: any) {
   return Boolean(item.is_manual_item || (!item.product_id && !item.product));
 }
 
+function hasManualReceiptItems(sale: any) {
+  return (sale.items ?? []).some((item: any) => Boolean(item.is_manual_item));
+}
+
 function getReceiptItemName(item: any) {
   const name =
     item.product?.name ??
@@ -781,17 +786,18 @@ function createSimpleReceiptPdfBlob(receipt: any, variant: ReceiptVariant) {
   const sale = receipt.sale ?? {};
   const type = getReceiptVariantLabel(variant);
   const isQuote = variant === "quote";
-  const headerNumberY = isQuote ? 738 : 750;
-  const headerDateY = isQuote ? 722 : 734;
+  const isCustomOrder = isQuote && hasManualReceiptItems(sale);
+  const headerNumberY = isCustomOrder ? 738 : 750;
+  const headerDateY = isCustomOrder ? 722 : 734;
   const lines: PdfElement[] = [
     { kind: "text", text: "Makrana", x: 56, y: 770, size: 24, color: "8f342d" },
     { kind: "text", text: "Home Art", x: 88, y: 754, size: 11, bold: true, color: "8f342d" },
     { kind: "text", text: type, x: 410, y: 770, size: 11, color: "6b5b50" },
-    ...(isQuote
+    ...(isCustomOrder
       ? [
           {
             kind: "text" as const,
-            text: "Pedidos personalizado",
+            text: "Pedido personalizado",
             x: 410,
             y: 756,
             size: 9,

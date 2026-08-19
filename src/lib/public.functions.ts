@@ -81,12 +81,23 @@ export const getHomeSectionVisibility = createServerFn({ method: "GET" }).handle
 
 export const listHomeCategories = createServerFn({ method: "GET" }).handler(async () => {
   const sb = publicClient();
-  const { data, error } = await sb
-    .from("categories")
-    .select("id, slug, name, description, sort_order")
-    .eq("is_active", true)
-    .order("sort_order");
+  const [categoriesResult, muralFerResult] = await Promise.all([
+    sb
+      .from("categories")
+      .select("id, slug, name, description, sort_order")
+      .eq("is_active", true)
+      .order("sort_order"),
+    sb
+      .from("products")
+      .select("main_image_url")
+      .eq("slug", "mural-fer-pz-024")
+      .eq("is_visible", true)
+      .maybeSingle(),
+  ]);
+  const { data, error } = categoriesResult;
   if (error) throw error;
+  if (muralFerResult.error) throw muralFerResult.error;
+  const muralFerImageUrl = muralFerResult.data?.main_image_url ?? null;
   const configured = (data ?? [])
     .map((category) => {
       const home = readCategoryHome(category.description);
@@ -96,7 +107,10 @@ export const listHomeCategories = createServerFn({ method: "GET" }).handler(asyn
         name: category.name,
         sort_order: category.sort_order,
         home_description: home?.description ?? null,
-        home_image_url: home?.imageUrl ?? null,
+        home_image_url:
+          category.slug === "murales" && muralFerImageUrl
+            ? muralFerImageUrl
+            : (home?.imageUrl ?? null),
         show_on_home: home?.visible === true,
       };
     })
@@ -128,7 +142,7 @@ export const listHomeCategories = createServerFn({ method: "GET" }).handler(asyn
       name: "Murales",
       sort_order: 30,
       home_description: "Composiciones que cuentan historias.",
-      home_image_url: null,
+      home_image_url: muralFerImageUrl,
       show_on_home: true,
     },
   ];

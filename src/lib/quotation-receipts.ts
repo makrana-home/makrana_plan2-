@@ -4,9 +4,7 @@ export function buildQuotationReceipt(sale: any) {
     ...(receipt ?? {}),
     number:
       receipt?.number ??
-      `COT-${String(sale?.id ?? "")
-        .slice(0, 8)
-        .toUpperCase()}`,
+      `COT-${String(sale?.quote_number ?? 0).padStart(8, "0")}`,
     issued_at: receipt?.issued_at ?? sale?.confirmed_at ?? sale?.created_at,
     sale,
   };

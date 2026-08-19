@@ -8,40 +8,239 @@ export type Database = {
   };
   public: {
     Tables: {
+      calendar_event_audit: {
+        Row: {
+          action: string;
+          event_id: string;
+          id: string;
+          new_values: Json | null;
+          old_values: Json | null;
+          performed_at: string;
+          performed_by: string;
+          reason: string | null;
+        };
+        Insert: {
+          action: string;
+          event_id: string;
+          id?: string;
+          new_values?: Json | null;
+          old_values?: Json | null;
+          performed_at?: string;
+          performed_by: string;
+          reason?: string | null;
+        };
+        Update: {
+          action?: string;
+          event_id?: string;
+          id?: string;
+          new_values?: Json | null;
+          old_values?: Json | null;
+          performed_at?: string;
+          performed_by?: string;
+          reason?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "calendar_event_audit_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "calendar_events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calendar_event_audit_performed_by_fkey";
+            columns: ["performed_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      calendar_event_types: {
+        Row: {
+          color: string;
+          created_at: string;
+          default_duration_minutes: number | null;
+          icon: string | null;
+          id: string;
+          is_active: boolean;
+          name: string;
+          slug: string;
+          sort_order: number;
+          updated_at: string;
+        };
+        Insert: {
+          color: string;
+          created_at?: string;
+          default_duration_minutes?: number | null;
+          icon?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          slug: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Update: {
+          color?: string;
+          created_at?: string;
+          default_duration_minutes?: number | null;
+          icon?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          slug?: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      calendar_events: {
+        Row: {
+          address: string | null;
+          cancellation_reason: string | null;
+          cancelled_at: string | null;
+          conflict_force_reason: string | null;
+          conflict_forced: boolean;
+          created_at: string;
+          created_by: string;
+          customer_id: string | null;
+          ends_at: string;
+          event_type_id: string;
+          id: string;
+          modality: string;
+          notes: string | null;
+          preparation_minutes: number;
+          product_id: string | null;
+          responsible_user_id: string;
+          sale_id: string | null;
+          starts_at: string;
+          status: string;
+          timezone: string;
+          title: string;
+          travel_minutes: number;
+          updated_at: string;
+        };
+        Insert: {
+          address?: string | null;
+          cancellation_reason?: string | null;
+          cancelled_at?: string | null;
+          conflict_force_reason?: string | null;
+          conflict_forced?: boolean;
+          created_at?: string;
+          created_by: string;
+          customer_id?: string | null;
+          ends_at: string;
+          event_type_id: string;
+          id?: string;
+          modality?: string;
+          notes?: string | null;
+          preparation_minutes?: number;
+          product_id?: string | null;
+          responsible_user_id: string;
+          sale_id?: string | null;
+          starts_at: string;
+          status?: string;
+          timezone?: string;
+          title: string;
+          travel_minutes?: number;
+          updated_at?: string;
+        };
+        Update: {
+          address?: string | null;
+          cancellation_reason?: string | null;
+          cancelled_at?: string | null;
+          conflict_force_reason?: string | null;
+          conflict_forced?: boolean;
+          created_at?: string;
+          created_by?: string;
+          customer_id?: string | null;
+          ends_at?: string;
+          event_type_id?: string;
+          id?: string;
+          modality?: string;
+          notes?: string | null;
+          preparation_minutes?: number;
+          product_id?: string | null;
+          responsible_user_id?: string;
+          sale_id?: string | null;
+          starts_at?: string;
+          status?: string;
+          timezone?: string;
+          title?: string;
+          travel_minutes?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calendar_events_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calendar_events_event_type_id_fkey";
+            columns: ["event_type_id"];
+            isOneToOne: false;
+            referencedRelation: "calendar_event_types";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calendar_events_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calendar_events_responsible_user_id_fkey";
+            columns: ["responsible_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calendar_events_sale_id_fkey";
+            columns: ["sale_id"];
+            isOneToOne: false;
+            referencedRelation: "sales";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       categories: {
         Row: {
           created_at: string;
           description: string | null;
-          home_description: string | null;
-          home_image_url: string | null;
           id: string;
           is_active: boolean;
           name: string;
-          show_on_home: boolean;
           slug: string;
           sort_order: number;
         };
         Insert: {
           created_at?: string;
           description?: string | null;
-          home_description?: string | null;
-          home_image_url?: string | null;
           id?: string;
           is_active?: boolean;
           name: string;
-          show_on_home?: boolean;
           slug: string;
           sort_order?: number;
         };
         Update: {
           created_at?: string;
           description?: string | null;
-          home_description?: string | null;
-          home_image_url?: string | null;
           id?: string;
           is_active?: boolean;
           name?: string;
-          show_on_home?: boolean;
           slug?: string;
           sort_order?: number;
         };
@@ -476,8 +675,8 @@ export type Database = {
       };
       material_presentations: {
         Row: {
+          cost: number | null;
           created_at: string;
-          cost: number;
           id: string;
           label: string | null;
           price: number;
@@ -487,8 +686,8 @@ export type Database = {
           units_in_presentation: number;
         };
         Insert: {
+          cost?: number | null;
           created_at?: string;
-          cost?: number;
           id?: string;
           label?: string | null;
           price: number;
@@ -498,8 +697,8 @@ export type Database = {
           units_in_presentation?: number;
         };
         Update: {
+          cost?: number | null;
           created_at?: string;
-          cost?: number;
           id?: string;
           label?: string | null;
           price?: number;
@@ -739,6 +938,7 @@ export type Database = {
       };
       receipts: {
         Row: {
+          created_by: string | null;
           id: string;
           issued_at: string;
           number: string;
@@ -746,6 +946,7 @@ export type Database = {
           sale_id: string;
         };
         Insert: {
+          created_by?: string | null;
           id?: string;
           issued_at?: string;
           number: string;
@@ -753,6 +954,7 @@ export type Database = {
           sale_id: string;
         };
         Update: {
+          created_by?: string | null;
           id?: string;
           issued_at?: string;
           number?: string;
@@ -839,6 +1041,27 @@ export type Database = {
           },
         ];
       };
+      staff_module_permissions: {
+        Row: {
+          enabled: boolean;
+          module: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          enabled?: boolean;
+          module: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          enabled?: boolean;
+          module?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       sale_payments: {
         Row: {
           amount: number;
@@ -888,9 +1111,11 @@ export type Database = {
           customer_id: string | null;
           delivery_status: Database["public"]["Enums"]["delivery_status"];
           discount: number;
+          estimated_completion_at: string | null;
           id: string;
           notes: string | null;
           payment_status: Database["public"]["Enums"]["payment_status"];
+          quote_number: number;
           status: Database["public"]["Enums"]["sale_status"];
           subtotal: number;
           total: number;
@@ -904,9 +1129,11 @@ export type Database = {
           customer_id?: string | null;
           delivery_status?: Database["public"]["Enums"]["delivery_status"];
           discount?: number;
+          estimated_completion_at?: string | null;
           id?: string;
           notes?: string | null;
           payment_status?: Database["public"]["Enums"]["payment_status"];
+          quote_number?: number;
           status?: Database["public"]["Enums"]["sale_status"];
           subtotal?: number;
           total?: number;
@@ -920,9 +1147,11 @@ export type Database = {
           customer_id?: string | null;
           delivery_status?: Database["public"]["Enums"]["delivery_status"];
           discount?: number;
+          estimated_completion_at?: string | null;
           id?: string;
           notes?: string | null;
           payment_status?: Database["public"]["Enums"]["payment_status"];
+          quote_number?: number;
           status?: Database["public"]["Enums"]["sale_status"];
           subtotal?: number;
           total?: number;
@@ -949,20 +1178,20 @@ export type Database = {
       user_roles: {
         Row: {
           created_at: string;
-          id: string;
-          role: Database["public"]["Enums"]["app_role"];
+          id: string | null;
+          role: string;
           user_id: string;
         };
         Insert: {
           created_at?: string;
-          id?: string;
-          role: Database["public"]["Enums"]["app_role"];
+          id?: string | null;
+          role: string;
           user_id: string;
         };
         Update: {
           created_at?: string;
-          id?: string;
-          role?: Database["public"]["Enums"]["app_role"];
+          id?: string | null;
+          role?: string;
           user_id?: string;
         };
         Relationships: [];
@@ -1119,18 +1348,38 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      apply_inventory_movement: {
-        Args: {
-          _movement_type: Database["public"]["Enums"]["movement_type"];
-          _notes?: string;
-          _presentation_id?: string;
-          _product_id: string;
-          _quantity: number;
-          _reason?: string;
-          _warehouse_dest_id?: string;
-          _warehouse_id: string;
-        };
-        Returns: string;
+      apply_inventory_movement:
+        | {
+            Args: {
+              _movement_type: Database["public"]["Enums"]["movement_type"];
+              _notes?: string;
+              _product_id: string;
+              _quantity: number;
+              _reason?: string;
+              _warehouse_dest_id?: string;
+              _warehouse_id: string;
+            };
+            Returns: string;
+          }
+        | {
+            Args: {
+              _movement_type: Database["public"]["Enums"]["movement_type"];
+              _notes?: string;
+              _presentation_id?: string;
+              _product_id: string;
+              _quantity: number;
+              _reason?: string;
+              _warehouse_dest_id?: string;
+              _warehouse_id: string;
+            };
+            Returns: string;
+          };
+      calendar_sale_warnings: { Args: { _event: Json }; Returns: Json };
+      cancel_sale: {
+        Args: { _sale_id: string };
+        Returns: {
+          sale_id: string;
+        }[];
       };
       confirm_sale: {
         Args: { _sale_id: string };
@@ -1148,6 +1397,14 @@ export type Database = {
         Returns: boolean;
       };
       is_staff: { Args: { _user_id: string }; Returns: boolean };
+      save_calendar_event: {
+        Args: {
+          _event: Json;
+          _force_conflict?: boolean;
+          _force_reason?: string;
+        };
+        Returns: Json;
+      };
     };
     Enums: {
       app_role: "admin" | "ventas" | "almacen" | "cliente";
@@ -1168,10 +1425,14 @@ export type Database = {
       presentation_unit:
         | "unidad"
         | "metro"
-        | "centimetro"
         | "rollo"
         | "madeja"
         | "paquete"
+        | "docena"
+        | "ciento"
+        | "combo"
+        | "otro"
+        | "centimetro"
         | "bolsa"
         | "caja"
         | "cono"
@@ -1179,16 +1440,12 @@ export type Database = {
         | "ovillo"
         | "par"
         | "media_docena"
-        | "docena"
-        | "ciento"
         | "gramo"
         | "kilogramo"
         | "litro"
         | "mililitro"
         | "set"
-        | "kit"
-        | "combo"
-        | "otro";
+        | "kit";
       product_status: "disponible" | "por_encargo" | "agotado" | "reservado";
       product_type: "producto_terminado" | "material" | "kit" | "curso";
       sale_status: "borrador" | "confirmada" | "anulada";
@@ -1339,10 +1596,14 @@ export const Constants = {
       presentation_unit: [
         "unidad",
         "metro",
-        "centimetro",
         "rollo",
         "madeja",
         "paquete",
+        "docena",
+        "ciento",
+        "combo",
+        "otro",
+        "centimetro",
         "bolsa",
         "caja",
         "cono",
@@ -1350,16 +1611,12 @@ export const Constants = {
         "ovillo",
         "par",
         "media_docena",
-        "docena",
-        "ciento",
         "gramo",
         "kilogramo",
         "litro",
         "mililitro",
         "set",
         "kit",
-        "combo",
-        "otro",
       ],
       product_status: ["disponible", "por_encargo", "agotado", "reservado"],
       product_type: ["producto_terminado", "material", "kit", "curso"],

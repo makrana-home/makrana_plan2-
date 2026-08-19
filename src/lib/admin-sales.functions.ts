@@ -129,8 +129,8 @@ const saleSchema = z.object({
   manual_customer_name: z.string().trim().max(160).optional().nullable().or(z.literal("")),
   discount: z.coerce.number().nonnegative().default(0),
   notes: z.string().trim().max(1000).optional().nullable(),
-  delivery_status: z
-    .enum(["pendiente", "en_preparacion", "entregado", "enviado", "cancelado"]),
+  delivery_status: z.enum(["pendiente", "en_preparacion", "entregado", "enviado", "cancelado"]),
+  estimated_completion_at: z.string().datetime().optional().nullable(),
 });
 
 export const adminListSales = createServerFn({ method: "GET" })
@@ -140,11 +140,11 @@ export const adminListSales = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("sales")
       .select(
-        "id, status, payment_status, delivery_status, subtotal, discount, total, notes, created_at, confirmed_at, customer:customers(id, full_name), warehouse:warehouses(code, name), receipt:receipts(id, number)",
+        "id, quote_number, created_by, status, payment_status, delivery_status, subtotal, discount, total, notes, created_at, confirmed_at, customer:customers(id, full_name), warehouse:warehouses(code, name), receipt:receipts(id, number)",
       )
       .order("created_at", { ascending: false });
     if (error) throw error;
-    return data ?? [];
+    return enrichRecordsWithCreators(context, data ?? []);
   });
 
 export const adminGetSale = createServerFn({ method: "GET" })
@@ -155,12 +155,13 @@ export const adminGetSale = createServerFn({ method: "GET" })
     const { data: sale, error } = await context.supabase
       .from("sales")
       .select(
-        "*, customer:customers(*), warehouse:warehouses(*), items:sale_items(*, product:products(name, sku), presentation:material_presentations(id, unit, label, sku)), payments:sale_payments(*), receipt:receipts(*)",
+        "*, customer:customers(*), warehouse:warehouses(*), items:sale_items(*, product:products(name, sku), presentation:material_presentations(id, unit, label, sku)), payments:sale_payments(*), receipt:receipts(*), calendar_events(*, event_type:calendar_event_types(*), responsible:profiles!calendar_events_responsible_user_id_fkey(id,full_name,email))",
       )
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw error;
-    return sale;
+    if (!sale) return sale;
+    return (await enrichRecordsWithCreators(context, [sale]))[0];
   });
 
 export const adminCreateSale = createServerFn({ method: "POST" })
@@ -181,6 +182,8 @@ export const adminCreateSale = createServerFn({ method: "POST" })
         discount: data.discount ?? 0,
         notes,
         delivery_status: data.delivery_status,
+        estimated_completion_at: data.estimated_completion_at ?? null,
+        created_by: context.userId,
       })
       .select("id")
       .single();
@@ -206,6 +209,7 @@ export const adminUpdateSale = createServerFn({ method: "POST" })
         discount: data.discount ?? 0,
         notes,
         delivery_status: data.delivery_status,
+        estimated_completion_at: data.estimated_completion_at ?? null,
       })
       .eq("id", data.id);
     if (error) throw error;
@@ -349,11 +353,23 @@ export const adminListReceipts = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("receipts")
       .select(
-        "id, number, issued_at, sale:sales(id, total, customer:customers(full_name), warehouse:warehouses(name))",
+        "id, number, issued_at, created_by, sale:sales(id, quote_number, created_by, total, customer:customers(full_name), warehouse:warehouses(name))",
       )
       .order("issued_at", { ascending: false });
     if (error) throw error;
-    return data ?? [];
+    const rows = data ?? [];
+    const sales = rows.flatMap((receipt: any) => (receipt.sale ? [receipt.sale] : []));
+    const [enrichedReceipts, enrichedSales] = await Promise.all([
+      enrichRecordsWithCreators(context, rows),
+      enrichRecordsWithCreators(context, sales),
+    ]);
+    const creatorsBySale = new Map(enrichedSales.map((sale: any) => [sale.id, sale.creator]));
+    return enrichedReceipts.map((receipt: any) => ({
+      ...receipt,
+      sale: receipt.sale
+        ? { ...receipt.sale, creator: creatorsBySale.get(receipt.sale.id) ?? null }
+        : null,
+    }));
   });
 
 export const adminGetReceipt = createServerFn({ method: "GET" })
@@ -369,5 +385,30 @@ export const adminGetReceipt = createServerFn({ method: "GET" })
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw error;
-    return r;
+    if (!r?.sale) return r;
+    const [[receipt], [sale]] = await Promise.all([
+      enrichRecordsWithCreators(context, [r]),
+      enrichRecordsWithCreators(context, [r.sale]),
+    ]);
+    return { ...receipt, sale };
   });
+
+async function enrichRecordsWithCreators(context: any, records: any[]) {
+  const creatorIds = [
+    ...new Set(records.map((record) => record.created_by).filter((id): id is string => Boolean(id))),
+  ];
+  if (creatorIds.length === 0) {
+    return records.map((record) => ({ ...record, creator: null }));
+  }
+
+  const { data: profiles, error } = await context.supabase
+    .from("profiles")
+    .select("id, full_name, email")
+    .in("id", creatorIds);
+  if (error) throw error;
+  const profilesById = new Map((profiles ?? []).map((profile: any) => [profile.id, profile]));
+  return records.map((record) => ({
+    ...record,
+    creator: profilesById.get(record.created_by) ?? null,
+  }));
+}

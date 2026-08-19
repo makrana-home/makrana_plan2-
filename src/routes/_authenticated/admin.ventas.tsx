@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -23,8 +23,18 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Trash2, CheckCircle2, XCircle, FileText, Pencil, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Plus,
+  Trash2,
+  CheckCircle2,
+  XCircle,
+  FileText,
+  Pencil,
+  Eye,
+  CalendarDays,
+  Clock3,
+} from "lucide-react";
 import {
   PageHeader,
   NewButton,
@@ -53,6 +63,8 @@ import { ReceiptPreviewDialog, type ReceiptVariant } from "@/components/admin/re
 import { buildQuotationReceipt } from "@/lib/quotation-receipts";
 import { formatUnits } from "@/lib/format-units";
 import { getPresentationUnitLabel } from "@/lib/presentation-units";
+import { formatCalendarDate, limaLocalToUtc } from "@/lib/calendar-utils";
+import { adminQuickScheduleSaleEvent } from "@/lib/admin-calendar.functions";
 import {
   getChannelFromSaleNotes,
   getCleanSaleNotes,
@@ -183,6 +195,11 @@ function SalesPage() {
     refresh();
     listWh().then(setWh);
     listCustomers().then(setCustomers); /* eslint-disable-line */
+    const linkedSale = new URLSearchParams(window.location.search).get("sale");
+    if (linkedSale) {
+      setOpenId(linkedSale);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
   }, []);
 
   async function onCreate(e: React.FormEvent) {
@@ -383,6 +400,7 @@ function SalesPage() {
             <TableRow>
               <TableHead>Fecha</TableHead>
               <TableHead>Cliente</TableHead>
+              <TableHead>Vendedor</TableHead>
               <TableHead>Almacén</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Pago</TableHead>
@@ -396,7 +414,7 @@ function SalesPage() {
           <TableBody>
             {filteredRows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
                   No hay documentos en este filtro.
                 </TableCell>
               </TableRow>
@@ -410,6 +428,9 @@ function SalesPage() {
                   {getSaleCustomerDisplayName(r, "") || (
                     <span className="text-muted-foreground">— sin cliente —</span>
                   )}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {r.creator?.full_name || r.creator?.email || "No registrado"}
                 </TableCell>
                 <TableCell className="text-xs">{r.warehouse?.name}</TableCell>
                 <TableCell>
@@ -639,9 +660,7 @@ function SalesPage() {
               minLength={2}
               maxLength={160}
               value={customerForm.full_name}
-              onChange={(e) =>
-                setCustomerForm((form) => ({ ...form, full_name: e.target.value }))
-              }
+              onChange={(e) => setCustomerForm((form) => ({ ...form, full_name: e.target.value }))}
               placeholder="Nombre del cliente"
             />
           </div>
@@ -659,9 +678,7 @@ function SalesPage() {
             <Input
               id="sale_customer_document"
               value={customerForm.document}
-              onChange={(e) =>
-                setCustomerForm((form) => ({ ...form, document: e.target.value }))
-              }
+              onChange={(e) => setCustomerForm((form) => ({ ...form, document: e.target.value }))}
               placeholder="Documento"
             />
           </div>
@@ -732,6 +749,9 @@ function SaleMobileCard({
           <p className="mt-1 truncate text-xs text-muted-foreground">
             {sale.warehouse?.name ?? "Sin almacen"}
           </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Creado por: {sale.creator?.full_name || sale.creator?.email || "No registrado"}
+          </p>
         </div>
         <div className="shrink-0 text-right">
           <p className="text-lg font-semibold tabular-nums">{moneyPEN(sale.total)}</p>
@@ -777,14 +797,16 @@ function SaleMobileCard({
         >
           <Eye className="h-4 w-4" /> Interno
         </Button>
-        {!receipt?.id && <Button
-          type="button"
-          variant="outline"
-          className={`h-11 ${quotationButtonClass}`}
-          onClick={() => onViewQuotation(sale.id)}
-        >
-          <FileText className="h-4 w-4" /> Cotización
-        </Button>}
+        {!receipt?.id && (
+          <Button
+            type="button"
+            variant="outline"
+            className={`h-11 ${quotationButtonClass}`}
+            onClick={() => onViewQuotation(sale.id)}
+          >
+            <FileText className="h-4 w-4" /> Cotización
+          </Button>
+        )}
         {["borrador", "confirmada"].includes(sale.status) && (
           <Button
             type="button"
@@ -924,7 +946,9 @@ function PaymentStatusBadge({ status }: { status?: string | null }) {
   if (status === "parcial") {
     return <Badge className="border-amber-200 bg-amber-50 text-amber-800">Parcial</Badge>;
   }
-  return <Badge className="border-sand bg-cream text-muted-foreground">{status || "Sin pago"}</Badge>;
+  return (
+    <Badge className="border-sand bg-cream text-muted-foreground">{status || "Sin pago"}</Badge>
+  );
 }
 
 function DeliveryStatusBadge({ status }: { status?: string | null }) {
@@ -944,8 +968,7 @@ function getDeliverySelectClass(status?: string | null) {
   const normalized = status === "cancelado" ? "entregado" : status;
   if (normalized === "entregado") return "border-emerald-300 bg-emerald-50 text-emerald-900";
   if (normalized === "enviado") return "border-blue-300 bg-blue-50 text-blue-900";
-  if (normalized === "en_preparacion")
-    return "border-violet-300 bg-violet-50 text-violet-900";
+  if (normalized === "en_preparacion") return "border-violet-300 bg-violet-50 text-violet-900";
   return "border-rose-300 bg-rose-50 text-rose-900";
 }
 
@@ -1034,6 +1057,7 @@ function SaleDrawer({
           discount: Number(sale.discount),
           notes: sale.notes,
           delivery_status: sale.delivery_status,
+          estimated_completion_at: sale.estimated_completion_at || null,
         },
       });
       toast.success("Actualizado");
@@ -1156,14 +1180,14 @@ function SaleDrawer({
   }
 
   return (
-    <Sheet open={!!saleId} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent className="h-dvh w-full max-w-full overflow-y-auto overflow-x-hidden px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-w-3xl sm:px-6">
+    <Dialog open={!!saleId} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-5xl overflow-y-auto overflow-x-hidden rounded-2xl px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-h-[calc(100dvh-3rem)] sm:w-[calc(100vw-3rem)] sm:px-6 lg:px-8">
         {sale && (
           <>
-            <SheetHeader>
-              <SheetTitle className="pr-8 text-left font-display text-xl sm:text-2xl">
-                Venta {getSaleReceipt(sale)?.number ?? sale.id.slice(0, 8)}
-              </SheetTitle>
+            <DialogHeader>
+              <DialogTitle className="pr-8 text-left font-display text-xl sm:text-2xl">
+                Pedido {sale.quote_number ?? getSaleReceipt(sale)?.number ?? sale.id.slice(0, 8)}
+              </DialogTitle>
               <div className="flex flex-wrap gap-2 text-xs">
                 <Badge variant={sale.status === "confirmada" ? "default" : "outline"}>
                   {sale.status}
@@ -1176,7 +1200,7 @@ function SaleDrawer({
                 )}
                 {getSaleReceipt(sale) && <Badge>Comprobante {getSaleReceipt(sale).number}</Badge>}
               </div>
-            </SheetHeader>
+            </DialogHeader>
 
             <div className="grid sm:grid-cols-2 gap-4 mt-6">
               <div>
@@ -1301,6 +1325,12 @@ function SaleDrawer({
               Guardar cambios
             </Button>
 
+            {(item.is_manual_item ||
+              (sale.items ?? []).some(
+                (saleItem: any) =>
+                  saleItem.is_manual_item || saleItem.provisional_source === PROVISIONAL_SOURCE,
+              )) && <SaleAgenda sale={sale} onScheduled={refresh} />}
+
             <div className="mt-8">
               <h3 className="font-display text-lg mb-2">Ítems</h3>
               <div className="space-y-2 md:hidden">
@@ -1420,7 +1450,7 @@ function SaleDrawer({
                 <>
                   <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-sand/60 bg-cream/50 px-3 py-2">
                     <Label htmlFor="manual-sale-item" className="text-sm font-semibold">
-                      Articulo manual
+                      Pedido personalizado
                     </Label>
                     <Switch
                       id="manual-sale-item"
@@ -1446,46 +1476,50 @@ function SaleDrawer({
                         />
                       </div>
                     )}
-                    <div className={item.is_manual_item ? "hidden" : "sm:col-span-4"}>
-                      <Label className="text-xs">
-                        Buscar pieza, material o presentación por SKU o nombre
-                      </Label>
-                      <Input
-                        value={item.product_search}
-                        onChange={(e) =>
-                          setItem((s: any) => ({ ...s, product_search: e.target.value }))
-                        }
-                        placeholder="Ej. 0001 o camino de mesa"
-                      />
-                    </div>
-                    <div className={item.is_manual_item ? "hidden" : "sm:col-span-4"}>
-                      <Label className="text-xs">Pieza, material o presentación</Label>
-                      <Select
-                        value={item.product_option}
-                        onValueChange={(v) => selectSaleItemOption(v)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-[300px]">
-                          {filteredProducts.map((p) => (
-                            <SelectItem key={p.value} value={p.value} textValue={p.label}>
-                              <span className="flex flex-col gap-0.5">
-                                <span>{p.label}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {p.sku || "Sin SKU"} · {moneyPEN(p.price)}
-                                </span>
-                              </span>
-                            </SelectItem>
-                          ))}
-                          {filteredProducts.length === 0 && (
-                            <div className="px-3 py-2 text-sm text-muted-foreground">
-                              Sin piezas, materiales o presentaciones para esa búsqueda.
-                            </div>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {!item.is_manual_item && (
+                      <>
+                        <div className="sm:col-span-4">
+                          <Label className="text-xs">
+                            Buscar pieza, material o presentación por SKU o nombre
+                          </Label>
+                          <Input
+                            value={item.product_search}
+                            onChange={(e) =>
+                              setItem((s: any) => ({ ...s, product_search: e.target.value }))
+                            }
+                            placeholder="Ej. 0001 o camino de mesa"
+                          />
+                        </div>
+                        <div className="sm:col-span-4">
+                          <Label className="text-xs">Pieza, material o presentación</Label>
+                          <Select
+                            value={item.product_option}
+                            onValueChange={(v) => selectSaleItemOption(v)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[300px]">
+                              {filteredProducts.map((p) => (
+                                <SelectItem key={p.value} value={p.value} textValue={p.label}>
+                                  <span className="flex flex-col gap-0.5">
+                                    <span>{p.label}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {p.sku || "Sin SKU"} · {moneyPEN(p.price)}
+                                    </span>
+                                  </span>
+                                </SelectItem>
+                              ))}
+                              {filteredProducts.length === 0 && (
+                                <div className="px-3 py-2 text-sm text-muted-foreground">
+                                  Sin piezas, materiales o presentaciones para esa búsqueda.
+                                </div>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </>
+                    )}
                     <div className="sm:col-span-2">
                       <Label className="text-xs">Cant.</Label>
                       <Input
@@ -1648,7 +1682,165 @@ function SaleDrawer({
             </div>
           </>
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SaleAgenda({ sale, onScheduled }: { sale: any; onScheduled: () => Promise<void> }) {
+  const quickSchedule = useServerFn(adminQuickScheduleSaleEvent);
+  const [dates, setDates] = useState({ "presentacion-avance": "", entrega: "" });
+  const [savingType, setSavingType] = useState<string | null>(null);
+  const [conflictType, setConflictType] = useState<string | null>(null);
+  const events = [...(sale.calendar_events ?? [])].sort(
+    (a: any, b: any) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
+  );
+  const actions = [
+    ["Reunión", "reunion-cliente"],
+    ["Avance", "presentacion-avance"],
+    ["Visita", "revision-aprobacion"],
+    ["Entrega", "entrega"],
+    ["Instalación", "instalacion"],
+  ];
+  async function schedule(type: "presentacion-avance" | "entrega") {
+    if (!dates[type]) return toast.error("Selecciona la fecha y hora.");
+    setSavingType(type);
+    setConflictType(null);
+    try {
+      const result = await quickSchedule({
+        data: { saleId: sale.id, typeSlug: type, startsAt: limaLocalToUtc(dates[type]) },
+      });
+      if (!result.saved) {
+        setConflictType(type);
+        return toast.warning("Ese horario coincide o está cerca de otro evento.");
+      }
+      toast.success(type === "entrega" ? "Entrega programada" : "Avance programado");
+      setDates((current) => ({ ...current, [type]: "" }));
+      await onScheduled();
+    } catch (error: any) {
+      toast.error(error.message ?? "No se pudo programar el evento.");
+    } finally {
+      setSavingType(null);
+    }
+  }
+  return (
+    <section className="mt-8 rounded-2xl border border-sand/70 bg-cream/30 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="flex items-center gap-2 font-display text-lg">
+            <CalendarDays className="h-5 w-5 text-accent" /> Agenda y fechas importantes
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Reuniones, avances, visitas, entregas e instalaciones del pedido.
+          </p>
+        </div>
+        <Button asChild size="sm" variant="outline">
+          <Link to="/admin/calendario" search={{ sale: sale.id } as any}>
+            Abrir calendario
+          </Link>
+        </Button>
+      </div>
+      <div className="mt-4 rounded-2xl border border-accent/25 bg-accent/5 p-3">
+        <div className="mb-3">
+          <p className="text-sm font-semibold text-foreground">Pieza personalizada</p>
+          <p className="text-xs text-muted-foreground">
+            Programa rápidamente las dos fechas principales de esta cotización.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(
+            [
+              ["presentacion-avance", "Programar avance"],
+              ["entrega", "Programar entrega"],
+            ] as const
+          ).map(([type, label]) => (
+            <div key={type} className="rounded-xl border border-sand/70 bg-warm-white p-3">
+              <Label htmlFor={`quick-${type}`}>{label}</Label>
+              <Input
+                id={`quick-${type}`}
+                type="datetime-local"
+                className="mt-2"
+                value={dates[type]}
+                onChange={(event) =>
+                  setDates((current) => ({ ...current, [type]: event.target.value }))
+                }
+              />
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={savingType === type}
+                  onClick={() => void schedule(type)}
+                >
+                  {savingType === type ? "Guardando…" : "Guardar fecha"}
+                </Button>
+                <Button asChild size="sm" variant="outline">
+                  <Link
+                    to="/admin/calendario"
+                    search={{ sale: sale.id, pick: type, returnTo: "ventas" } as any}
+                  >
+                    Ver calendario
+                  </Link>
+                </Button>
+              </div>
+              {conflictType === type && (
+                <p className="mt-2 text-xs font-medium text-amber-700">
+                  Hay un cruce o un evento cercano. Elige otra fecha en el calendario.
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {actions
+          .filter(([, type]) => !["presentacion-avance", "entrega"].includes(type))
+          .map(([label, type]) => (
+            <Button key={type} asChild size="sm" variant="outline">
+              <Link
+                to="/admin/calendario"
+                search={
+                  type === "revision-aprobacion"
+                    ? ({ sale: sale.id, pick: type, returnTo: "ventas" } as any)
+                    : ({ sale: sale.id, schedule: type } as any)
+                }
+              >
+                Programar {label.toLowerCase()}
+              </Link>
+            </Button>
+          ))}
+      </div>
+      <div className="mt-4 space-y-2">
+        {events.length ? (
+          events.map((event: any) => (
+            <Link
+              key={event.id}
+              to="/admin/calendario"
+              search={{ event: event.id } as any}
+              className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-sand/60 bg-warm-white px-3 py-2 hover:border-accent/40"
+            >
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold">{event.title}</div>
+                <div className="text-xs text-muted-foreground">
+                  {event.event_type?.name} ·{" "}
+                  {event.responsible?.full_name || event.responsible?.email || "Sin responsable"}
+                </div>
+              </div>
+              <div className="shrink-0 text-right text-xs">
+                <div>{formatCalendarDate(event.starts_at, { day: "2-digit", month: "short" })}</div>
+                <div className="text-muted-foreground">
+                  {formatCalendarDate(event.starts_at, { hour: "2-digit", minute: "2-digit" })}
+                </div>
+              </div>
+            </Link>
+          ))
+        ) : (
+          <div className="rounded-xl border border-dashed border-sand/70 p-5 text-center text-sm text-muted-foreground">
+            <Clock3 className="mx-auto mb-2 h-5 w-5" />
+            Aún no hay eventos para este pedido.
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

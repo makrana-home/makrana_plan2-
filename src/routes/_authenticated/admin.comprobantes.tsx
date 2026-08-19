@@ -50,6 +50,7 @@ function ReceiptsPage() {
               <TableHead>Número</TableHead>
               <TableHead>Fecha</TableHead>
               <TableHead>Cliente</TableHead>
+              <TableHead>Vendedor</TableHead>
               <TableHead>Almacén</TableHead>
               <TableHead className="text-right">Total</TableHead>
               <TableHead className="w-[260px] text-center">Ver</TableHead>
@@ -58,7 +59,7 @@ function ReceiptsPage() {
           <TableBody>
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                   Sin comprobantes emitidos aún.
                 </TableCell>
               </TableRow>
@@ -70,6 +71,11 @@ function ReceiptsPage() {
                   {formatDate(receipt.issued_at)}
                 </TableCell>
                 <TableCell>{receipt.sale?.customer?.full_name ?? "—"}</TableCell>
+                <TableCell className="text-xs">
+                  {receipt.creator?.full_name ||
+                    receipt.creator?.email ||
+                    "No registrado"}
+                </TableCell>
                 <TableCell className="text-xs">{receipt.sale?.warehouse?.name}</TableCell>
                 <TableCell className="text-right tabular-nums">
                   {moneyPEN(receipt.sale?.total)}
