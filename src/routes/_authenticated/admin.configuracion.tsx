@@ -23,11 +23,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { adminConfirmBulkImport, adminValidateBulkImport } from "@/lib/admin-bulk-import.functions";
-import { adminCreateStaffUser, adminListStaffUsers } from "@/lib/admin-users.functions";
+import {
+  adminCreateStaffUser,
+  adminListStaffUsers,
+  adminUpdateStaffUser,
+} from "@/lib/admin-users.functions";
 import {
   CheckCircle2,
   Download,
   FileSpreadsheet,
+  Pencil,
   ShieldCheck,
   Upload,
   UserPlus,
@@ -121,6 +126,7 @@ type StaffRole = keyof typeof staffProfiles;
 function UsersAccessPanel() {
   const listUsers = useServerFn(adminListStaffUsers);
   const createUser = useServerFn(adminCreateStaffUser);
+  const updateUser = useServerFn(adminUpdateStaffUser);
   const dialog = useDialog();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,12 +157,17 @@ function UsersAccessPanel() {
     event.preventDefault();
     setSaving(true);
     try {
-      await createUser({ data: form });
-      toast.success("Usuario creado correctamente");
+      if (dialog.data) {
+        await updateUser({ data: { ...form, id: dialog.data.id } });
+        toast.success("Usuario actualizado correctamente");
+      } else {
+        await createUser({ data: form });
+        toast.success("Usuario creado correctamente");
+      }
       dialog.close();
       await refresh();
     } catch (error: any) {
-      toast.error(error.message ?? "No se pudo crear el usuario.");
+      toast.error(error.message ?? "No se pudo guardar el usuario.");
     } finally {
       setSaving(false);
     }
@@ -197,19 +208,20 @@ function UsersAccessPanel() {
               <TableHead>Perfil</TableHead>
               <TableHead>Módulos</TableHead>
               <TableHead>Creado</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading && (
               <TableRow>
-                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                   Cargando usuarios...
                 </TableCell>
               </TableRow>
             )}
             {!loading && users.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                   Todavía no hay usuarios del equipo.
                 </TableCell>
               </TableRow>
@@ -244,6 +256,25 @@ function UsersAccessPanel() {
                     <TableCell className="text-xs text-muted-foreground">
                       {formatDate(user.created_at)}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="min-h-11 rounded-full"
+                        onClick={() => {
+                          setForm({
+                            full_name: user.full_name ?? "",
+                            email: user.email ?? "",
+                            password: "",
+                            role,
+                          });
+                          dialog.openWith(user);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" /> Editar
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -254,7 +285,7 @@ function UsersAccessPanel() {
       <FormDialog
         open={dialog.open}
         onOpenChange={dialog.setOpen}
-        title="Crear usuario"
+        title={dialog.data ? "Editar usuario" : "Crear usuario"}
         onSubmit={onSubmit}
         submitting={saving}
       >
@@ -287,17 +318,21 @@ function UsersAccessPanel() {
               />
             </div>
             <div>
-              <Label htmlFor="staff_password">Contraseña *</Label>
+              <Label htmlFor="staff_password">
+                {dialog.data ? "Nueva contraseña" : "Contraseña *"}
+              </Label>
               <Input
                 id="staff_password"
                 type="password"
-                required
+                required={!dialog.data}
                 minLength={8}
                 value={form.password}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, password: event.target.value }))
                 }
-                placeholder="Mínimo 8 caracteres"
+                placeholder={
+                  dialog.data ? "Déjala vacía para mantener la actual" : "Mínimo 8 caracteres"
+                }
               />
             </div>
             <div className="sm:col-span-2">

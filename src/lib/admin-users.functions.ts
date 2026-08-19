@@ -91,3 +91,75 @@ export const adminCreateStaffUser = createServerFn({ method: "POST" })
 
     return { id: created.user.id };
   });
+
+export const adminUpdateStaffUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        full_name: z.string().trim().min(2).max(160),
+        email: z.string().trim().email().max(160),
+        password: z.string().max(72).optional(),
+        role: staffRoleSchema,
+      })
+      .refine((data) => !data.password || data.password.length >= 8, {
+        message: "La nueva contraseña debe tener al menos 8 caracteres.",
+        path: ["password"],
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: currentRoles, error: currentRolesError } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.id);
+    if (currentRolesError) throw currentRolesError;
+
+    const isCurrentAdmin = (currentRoles ?? []).some((row) => row.role === "admin");
+    if (isCurrentAdmin && data.role !== "admin") {
+      const { count, error: adminCountError } = await supabaseAdmin
+        .from("user_roles")
+        .select("user_id", { count: "exact", head: true })
+        .eq("role", "admin");
+      if (adminCountError) throw adminCountError;
+      if ((count ?? 0) <= 1) throw new Error("Debe existir al menos un administrador.");
+    }
+
+    const authChanges: {
+      email: string;
+      password?: string;
+      user_metadata: { full_name: string };
+    } = {
+      email: data.email,
+      user_metadata: { full_name: data.full_name },
+    };
+    if (data.password) authChanges.password = data.password;
+
+    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+      data.id,
+      authChanges,
+    );
+    if (authError) throw authError;
+
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .upsert({ id: data.id, full_name: data.full_name });
+    if (profileError) throw profileError;
+
+    const { error: deleteRolesError } = await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", data.id);
+    if (deleteRolesError) throw deleteRolesError;
+
+    const { error: roleError } = await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: data.id, role: data.role });
+    if (roleError) throw roleError;
+
+    return { id: data.id };
+  });
