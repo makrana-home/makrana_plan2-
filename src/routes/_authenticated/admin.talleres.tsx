@@ -407,7 +407,7 @@ function WorkshopImageDropzone({ form, setForm }: { form: any; setForm: (fn: any
             className="h-20 w-28 rounded-xl object-cover"
           />
         ) : (
-          <div className="flex h-20 w-28 items-center justify-center rounded-xl bg-warm-white text-accent/70">
+          <div className="flex h-20 w-28 items-center justify-center rounded-xl bg-warm-white text-brand-terracotta/70">
             <ImageIcon className="h-7 w-7" />
           </div>
         )}

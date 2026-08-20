@@ -67,7 +67,7 @@ function AdminDashboard() {
           <Card key={t.label}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">{t.label}</CardTitle>
-              <t.icon className="h-4 w-4 text-accent" />
+              <t.icon className="h-4 w-4 text-brand-terracotta" />
             </CardHeader>
             <CardContent>
               <div className="font-display text-3xl">{t.value}</div>

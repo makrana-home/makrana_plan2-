@@ -20,7 +20,7 @@ function About() {
   return (
     <section className="section-padded">
       <div className="container-makrana max-w-4xl">
-        <p className="text-xs uppercase tracking-widest text-accent">NUESTRA HISTORIA</p>
+        <p className="text-xs uppercase tracking-widest text-brand-terracotta">NUESTRA HISTORIA</p>
         <h1 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">
           Hecho con paciencia, pensado para tu hogar.
         </h1>

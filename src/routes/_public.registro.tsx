@@ -97,7 +97,7 @@ function Register() {
     <section className="section-padded bg-gradient-to-b from-warm-white via-cream/30 to-warm-white">
       <div className="container-makrana max-w-5xl">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs uppercase tracking-[0.24em] text-accent">Comunidad Makrana</p>
+          <p className="text-xs uppercase tracking-[0.24em] text-brand-terracotta">Comunidad Makrana</p>
           <h1 className="mt-3 font-display text-4xl leading-tight sm:text-5xl">
             Inspírate con Makrana
           </h1>
@@ -115,7 +115,7 @@ function Register() {
             <div className="grid gap-2">
               <Label htmlFor="full_name">Nombres y apellidos *</Label>
               <div className="relative">
-                <UserRound className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-accent" />
+                <UserRound className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-terracotta" />
                 <Input
                   id="full_name"
                   name="full_name"
@@ -129,7 +129,7 @@ function Register() {
             <div className="grid gap-2">
               <Label htmlFor="email">Correo</Label>
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-accent" />
+                <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-terracotta" />
                 <Input
                   id="email"
                   name="email"
@@ -143,7 +143,7 @@ function Register() {
             <div className="grid gap-2">
               <Label htmlFor="phone">Celular</Label>
               <div className="relative">
-                <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-accent" />
+                <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-terracotta" />
                 <Input
                   id="phone"
                   name="phone"
@@ -156,7 +156,7 @@ function Register() {
             <div className="grid gap-2">
               <Label htmlFor="location">Ubicación</Label>
               <div className="relative">
-                <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-accent" />
+                <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-terracotta" />
                 <Input
                   id="location"
                   name="location"
@@ -169,7 +169,7 @@ function Register() {
             <div className="grid gap-2 md:col-span-2">
               <Label htmlFor="source">¿Cómo nos conociste?</Label>
               <div className="relative">
-                <Heart className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-accent" />
+                <Heart className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-terracotta" />
                 <select
                   id="source"
                   name="source"
@@ -204,7 +204,7 @@ function Register() {
                       defaultChecked={index === 0}
                       className="peer sr-only"
                     />
-                    <span className="flex h-12 items-center justify-center gap-2 rounded-full border border-sand/80 bg-warm-white/80 px-4 text-sm font-medium shadow-sm transition peer-checked:border-accent peer-checked:bg-accent/10 peer-checked:text-accent hover:border-accent/70">
+                    <span className="flex h-12 items-center justify-center gap-2 rounded-full border border-sand/80 bg-warm-white/80 px-4 text-sm font-medium shadow-sm transition peer-checked:border-accent peer-checked:bg-accent/10 peer-checked:text-brand-terracotta hover:border-accent/70">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full border border-current">
                         <Icon className="h-3.5 w-3.5" />
                       </span>
@@ -219,7 +219,7 @@ function Register() {
           <div className="grid gap-2">
             <Label htmlFor="message">Mensaje (opcional)</Label>
             <div className="relative">
-              <MessageSquareText className="pointer-events-none absolute left-4 top-4 h-4 w-4 text-accent" />
+              <MessageSquareText className="pointer-events-none absolute left-4 top-4 h-4 w-4 text-brand-terracotta" />
               <Textarea
                 id="message"
                 name="message"

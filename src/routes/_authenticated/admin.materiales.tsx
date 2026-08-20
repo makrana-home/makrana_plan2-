@@ -887,7 +887,7 @@ function ProductThumb({ product }: { product: any }) {
     );
   }
   return (
-    <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-cream text-accent/60">
+    <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-cream text-brand-terracotta/60">
       <ImageIcon className="h-5 w-5" />
     </span>
   );

@@ -775,7 +775,7 @@ function ProductThumb({ product }: { product: any }) {
     );
   }
   return (
-    <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-cream text-accent/60">
+    <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-cream text-brand-terracotta/60">
       <ImageIcon className="h-5 w-5" />
     </span>
   );
@@ -1023,7 +1023,7 @@ export function ProductDetailDialog({
                   className="aspect-square w-full rounded-2xl object-cover shadow-sm"
                 />
               ) : (
-                <div className="flex aspect-square w-full items-center justify-center rounded-2xl bg-warm-white text-accent/60">
+                <div className="flex aspect-square w-full items-center justify-center rounded-2xl bg-warm-white text-brand-terracotta/60">
                   <ImageIcon className="h-10 w-10" />
                 </div>
               )}
@@ -1031,7 +1031,7 @@ export function ProductDetailDialog({
 
             <div className="space-y-5">
               <div>
-                <div className="text-xs uppercase tracking-[0.18em] text-accent">
+                <div className="text-xs uppercase tracking-[0.18em] text-brand-terracotta">
                   {product.type === "material" ? "Material" : "Pieza"}
                 </div>
                 <h2 className="mt-1 font-display text-3xl">{product.name}</h2>
@@ -1186,7 +1186,7 @@ function InfoSection({
 }) {
   return (
     <section className={`rounded-2xl border border-sand/70 bg-warm-white p-4 ${className}`}>
-      <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">{title}</h3>
+      <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-terracotta">{title}</h3>
       <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
         {text}
       </p>
@@ -1714,7 +1714,7 @@ function ProductImageDropzone({
             className="h-14 w-14 rounded-lg object-cover shadow-sm"
           />
         ) : (
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-warm-white text-accent shadow-sm">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-warm-white text-brand-terracotta shadow-sm">
             <ImageIcon className="h-5 w-5" />
           </span>
         )}
@@ -1724,7 +1724,7 @@ function ProductImageDropzone({
           </span>
           <span className="block text-xs text-muted-foreground">JPG o PNG. Máximo 6 MB.</span>
         </span>
-        <span className="col-span-2 inline-flex w-fit items-center gap-1 rounded-full border border-sand bg-warm-white px-3 py-1 text-xs text-accent sm:col-span-1">
+        <span className="col-span-2 inline-flex w-fit items-center gap-1 rounded-full border border-sand bg-warm-white px-3 py-1 text-xs text-brand-terracotta sm:col-span-1">
           <Upload className="h-3.5 w-3.5" /> Agregar imagen
         </span>
       </label>

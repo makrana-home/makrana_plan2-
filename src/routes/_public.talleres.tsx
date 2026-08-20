@@ -67,7 +67,7 @@ function Workshops() {
   return (
     <section className="section-padded">
       <div className="container-makrana">
-        <p className="text-xs uppercase tracking-widest text-accent">Aprende</p>
+        <p className="text-xs uppercase tracking-widest text-brand-terracotta">Aprende</p>
         <h1 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">Talleres</h1>
         <p className="mt-3 max-w-prose text-muted-foreground">
           Vive el macramé en persona o desde casa: experiencias para todos los niveles.

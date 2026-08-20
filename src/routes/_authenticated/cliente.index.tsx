@@ -29,7 +29,7 @@ function ClientDashboard() {
           </CardHeader>
           <CardContent>
             <div className="font-display text-3xl">{d?.sales?.length ?? 0}</div>
-            <Link to="/cliente/pedidos" className="text-xs text-accent underline mt-1 inline-block">
+            <Link to="/cliente/pedidos" className="text-xs text-brand-terracotta underline mt-1 inline-block">
               Ver todos →
             </Link>
           </CardContent>
@@ -44,7 +44,7 @@ function ClientDashboard() {
             </div>
             <Link
               to="/cliente/comprobantes"
-              className="text-xs text-accent underline mt-1 inline-block"
+              className="text-xs text-brand-terracotta underline mt-1 inline-block"
             >
               Descargar →
             </Link>
@@ -58,7 +58,7 @@ function ClientDashboard() {
             <div className="font-display text-3xl">{d?.enrollments?.length ?? 0}</div>
             <Link
               to="/cliente/talleres"
-              className="text-xs text-accent underline mt-1 inline-block"
+              className="text-xs text-brand-terracotta underline mt-1 inline-block"
             >
               Ver detalle →
             </Link>
@@ -95,7 +95,7 @@ function ClientDashboard() {
           {(d?.sales ?? []).length === 0 && (
             <p className="text-sm text-muted-foreground">
               Aún no tienes pedidos.{" "}
-              <Link to="/catalogo" className="text-accent underline">
+              <Link to="/catalogo" className="text-brand-terracotta underline">
                 Explora el catálogo
               </Link>
               .

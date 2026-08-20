@@ -52,13 +52,15 @@ function ClientShell() {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full max-w-full overflow-x-clip bg-background">
-        <Sidebar>
-          <SidebarHeader>
-            <Link to="/" className="px-2 py-3 inline-flex">
-              <BrandLogo imageClassName="w-32" />
+        <Sidebar className="border-r border-[#d58f6b] bg-[#edbfa5]">
+          <SidebarHeader className="border-b border-[#80342c]/15 bg-transparent px-4 py-5">
+            <Link to="/" className="inline-flex w-full items-center justify-center">
+              <span className="inline-flex items-center justify-center">
+                <BrandLogo variant="horizontal-white" imageClassName="w-40" />
+              </span>
             </Link>
           </SidebarHeader>
-          <SidebarContent>
+          <SidebarContent className="bg-transparent">
             <SidebarGroup>
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -67,6 +69,7 @@ function ClientShell() {
                       <SidebarMenuButton
                         asChild
                         isActive={(i as any).exact ? pathname === i.to : pathname.startsWith(i.to)}
+                        className="text-white/90 data-[active=true]:bg-[#80342c] data-[active=true]:text-white hover:bg-white/20 hover:text-white"
                       >
                         <Link to={i.to}>
                           <i.icon className="h-4 w-4" />

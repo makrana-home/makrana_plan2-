@@ -46,10 +46,10 @@ function NewsDetail() {
   return (
     <article className="section-padded">
       <div className="container-makrana max-w-3xl">
-        <Link to="/novedades" className="text-sm text-accent">
+        <Link to="/novedades" className="text-sm text-brand-terracotta">
           ← Volver a novedades
         </Link>
-        <p className="text-xs uppercase tracking-widest text-accent mt-6">
+        <p className="text-xs uppercase tracking-widest text-brand-terracotta mt-6">
           {post.category.replaceAll("_", " ")}
         </p>
         <h1 className="mt-2 font-display text-3xl leading-tight sm:text-5xl">{post.title}</h1>

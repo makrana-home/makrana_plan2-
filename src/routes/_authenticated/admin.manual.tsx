@@ -247,7 +247,7 @@ function ManualPage() {
               <TableRow key={row.id}>
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-2">
-                    <BookOpenText className="h-4 w-4 text-accent" />
+                    <BookOpenText className="h-4 w-4 text-brand-terracotta" />
                     <span>{row.name}</span>
                     {row.type === "kit" && (
                       <Badge variant="outline" className="ml-1">
@@ -755,7 +755,7 @@ function ManualImagesField({
                     className="h-[72px] w-[72px] rounded-lg object-cover"
                   />
                 ) : (
-                  <span className="flex h-[72px] w-[72px] items-center justify-center rounded-lg bg-cream text-accent/60">
+                  <span className="flex h-[72px] w-[72px] items-center justify-center rounded-lg bg-cream text-brand-terracotta/60">
                     <ImageIcon className="h-5 w-5" />
                   </span>
                 )}

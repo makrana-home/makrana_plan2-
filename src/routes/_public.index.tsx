@@ -223,7 +223,7 @@ function Home_() {
         <div className="container-makrana relative z-10 flex min-h-[100svh] items-center">
           <div className="w-full max-w-2xl pb-8 pt-20 text-left sm:pt-24 md:-translate-y-6 lg:max-w-[42rem]">
             <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-white sm:text-xs">
-              Arte textil contemporáneo
+              Arte textil
             </p>
             <h1 className="mt-4 max-w-[15ch] font-display text-[clamp(2.25rem,5vw,4rem)] leading-[1.04] text-white">
               Piezas de macramé que transforman espacios
@@ -326,7 +326,7 @@ function Home_() {
                     </p>
                   </div>
                   <ArrowRight
-                    className="h-4 w-4 shrink-0 text-accent transition-transform group-hover:translate-x-1"
+                    className="h-4 w-4 shrink-0 text-brand-terracotta transition-transform group-hover:translate-x-1"
                     aria-hidden="true"
                   />
                 </div>
@@ -351,21 +351,21 @@ function Home_() {
               />
             </div>
             <div className="max-w-xl">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.26em] text-warm-white/75">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.26em] text-white/75">
                 Diseño · Artesanía · Significado
               </div>
-              <h2 className="mt-4 font-display text-3xl leading-[1.08] text-warm-white sm:text-4xl md:text-5xl">
+              <h2 className="mt-4 font-display text-3xl leading-[1.08] text-white sm:text-4xl md:text-5xl">
                 Arte tejido para
                 <br className="hidden sm:block" /> habitar con calma
               </h2>
-              <p className="mt-5 text-sm leading-relaxed text-warm-white/80 sm:text-base">
+              <p className="mt-5 text-sm leading-relaxed text-white/80 sm:text-base">
                 En Makrana, cada pieza nace del encuentro entre la tradición textil peruana y el
                 diseño contemporáneo. Trabajamos con fibras naturales y técnicas ancestrales para
                 crear obras que transforman espacios y acompañan historias.
               </p>
               <Link
                 to="/sobre-makrana"
-                className="group mt-8 inline-flex items-center gap-2 text-sm font-semibold text-warm-white transition-opacity hover:opacity-75"
+                className="group mt-8 inline-flex items-center gap-2 text-sm font-semibold text-white transition-opacity hover:opacity-75"
               >
                 Conoce nuestro proceso
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -379,7 +379,7 @@ function Home_() {
         <section className="border-y border-sand/60 bg-sand/45">
         <div className="container-makrana py-24 md:py-28">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.22em] text-accent">Novedades</div>
+            <div className="text-[11px] uppercase tracking-[0.22em] text-brand-terracotta">Novedades</div>
             <h2 className="mt-2 font-display text-3xl leading-tight sm:text-4xl">
               Lo que está pasando en el taller
             </h2>
@@ -396,7 +396,7 @@ function Home_() {
                     <EditorialImage src={n.cover_image_url} alt={n.title} index={index} />
                     <div className="flex items-start justify-between gap-4 pt-3">
                       <div>
-                        <span className="text-[10px] uppercase tracking-[0.16em] text-accent">
+                        <span className="text-[10px] uppercase tracking-[0.16em] text-brand-terracotta">
                           {n.category.replaceAll("_", " ")}
                         </span>
                         <h3 className="mt-1 font-display text-lg leading-snug">{n.title}</h3>
@@ -410,7 +410,7 @@ function Home_() {
               : emptyNews.map((n, index) => (
                   <article key={n.title} className={editorialColumn(index)}>
                     <EditorialImage src={null} alt="" index={index} />
-                    <span className="mt-3 block text-[10px] uppercase tracking-[0.16em] text-accent">
+                    <span className="mt-3 block text-[10px] uppercase tracking-[0.16em] text-brand-terracotta">
                       {n.tag}
                     </span>
                     <h3 className="mt-1 font-display text-lg leading-snug">{n.title}</h3>
@@ -432,7 +432,7 @@ function Home_() {
             </div>
             <Link
               to="/catalogo"
-              className="group inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-accent"
+              className="group inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-brand-terracotta"
             >
               Ver catálogo completo
               <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
@@ -473,7 +473,7 @@ function Home_() {
       )}
 
       {homeSections.customProjects && (
-        <section className="bg-primary py-8 text-primary-foreground sm:py-10 md:py-14">
+        <section className="bg-[#80342c] py-8 text-warm-white sm:py-10 md:py-14">
           <div className="container-makrana grid gap-8 lg:grid-cols-[1.05fr_1fr] lg:items-center">
             <div className="aspect-[16/10] overflow-hidden rounded-2xl bg-clay/25">
               <img
@@ -537,7 +537,7 @@ function Home_() {
             {homeSections.workshops && (
               <article className="grid gap-7 sm:grid-cols-[1fr_1.1fr] sm:items-center">
                 <div>
-                  <div className="text-[10px] uppercase tracking-[0.25em] text-accent">
+                  <div className="text-[10px] uppercase tracking-[0.25em] text-brand-terracotta">
                     Talleres presenciales
                   </div>
                   <h2 className="mt-3 font-display text-4xl leading-[1.08] sm:text-5xl">
@@ -571,7 +571,7 @@ function Home_() {
 
             {homeSections.testimonials && (
               <article className="flex flex-col justify-center border-t border-sand/70 pt-10 lg:border-l lg:border-t-0 lg:pl-12 lg:pt-0">
-                <div className="text-[10px] uppercase tracking-[0.25em] text-accent">
+                <div className="text-[10px] uppercase tracking-[0.25em] text-brand-terracotta">
                   Lo que dicen nuestros clientes
                 </div>
                 <div className="mt-7 overflow-hidden">
@@ -585,7 +585,7 @@ function Home_() {
                         className="relative min-w-full shrink-0 pl-10"
                       >
                         <span
-                          className="absolute left-0 top-[-0.35rem] font-display text-6xl leading-none text-accent/70"
+                          className="absolute left-0 top-[-0.35rem] font-display text-6xl leading-none text-brand-terracotta/70"
                           aria-hidden="true"
                         >
                           “
@@ -660,7 +660,7 @@ function ImagePlaceholder() {
   return (
     <svg
       viewBox="0 0 120 120"
-      className="h-24 w-24 text-accent/35"
+      className="h-24 w-24 text-brand-terracotta/35"
       fill="none"
       aria-hidden="true"
     >

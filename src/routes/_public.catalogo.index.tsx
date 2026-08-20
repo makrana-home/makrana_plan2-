@@ -110,14 +110,14 @@ function Catalogo() {
   return (
     <section className="bg-cream/45 px-4 py-14 sm:px-5 sm:py-20">
       <div className="mx-auto max-w-7xl">
-        <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-accent">Catálogo</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-brand-terracotta">Catálogo</p>
         <h1 className="mt-2 max-w-2xl font-display text-4xl font-light leading-tight text-foreground sm:text-5xl">
           Catálogo
         </h1>
 
         <div className="mt-12 max-w-2xl">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-terracotta">
               Explora por categoría
             </p>
             <h2 className="mt-2 font-display text-3xl leading-tight sm:text-4xl">
@@ -165,7 +165,7 @@ function Catalogo() {
                       {category.count === 1 ? "1 pieza" : `${category.count} piezas`}
                     </span>
                   </span>
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-cream text-accent transition group-hover:bg-accent group-hover:text-warm-white">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-cream text-brand-terracotta transition group-hover:bg-accent group-hover:text-warm-white">
                     <ArrowUpRight className="size-4" aria-hidden="true" />
                   </span>
                 </span>
@@ -177,7 +177,7 @@ function Catalogo() {
         {upcomingCategories.length > 0 && (
           <div className="mt-6 rounded-2xl border border-dashed border-sand bg-warm-white/55 px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-6 sm:px-5">
             <div className="flex items-center gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cream text-accent">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cream text-brand-terracotta">
                 <Sparkles className="size-4" aria-hidden="true" />
               </span>
               <div>
@@ -201,7 +201,7 @@ function Catalogo() {
         )}
 
         <div id="catalog-products" className="mt-16 scroll-mt-24 border-t border-sand/70 pt-10">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-terracotta">
             Catálogo general
           </p>
           <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -213,7 +213,7 @@ function Catalogo() {
             <button
               type="button"
               onClick={() => selectCategory(null)}
-              className="min-h-11 self-start rounded-full border border-sand bg-warm-white px-4 text-xs font-semibold transition hover:border-accent/50 hover:text-accent"
+              className="min-h-11 self-start rounded-full border border-sand bg-warm-white px-4 text-xs font-semibold transition hover:border-accent/50 hover:text-brand-terracotta"
             >
               Ver catálogo completo
             </button>
@@ -280,6 +280,6 @@ function filterClass(active: boolean) {
     "rounded-full border border-sand px-4 py-2 text-xs font-semibold transition-colors",
     active
       ? "bg-accent text-warm-white shadow-sm"
-      : "bg-warm-white/75 text-foreground hover:border-accent/50 hover:text-accent",
+      : "bg-warm-white/75 text-foreground hover:border-accent/50 hover:text-brand-terracotta",
   );
 }

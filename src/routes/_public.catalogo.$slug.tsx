@@ -81,7 +81,7 @@ function ProductDetail() {
       <div className="container-makrana grid lg:grid-cols-2 gap-12">
         <ProductGallery images={images} productName={p.name} />
         <div>
-          <Link to="/catalogo" className="text-sm text-accent">
+          <Link to="/catalogo" className="text-sm text-brand-terracotta">
             ← Volver al catálogo
           </Link>
           <p className="text-xs uppercase tracking-widest text-muted-foreground mt-4">
@@ -127,7 +127,7 @@ function ProductDetail() {
 
           {p.presentations && p.presentations.length > 0 && (
             <div className="mt-6">
-              <p className="text-xs uppercase tracking-widest text-accent mb-2">Presentaciones</p>
+              <p className="text-xs uppercase tracking-widest text-brand-terracotta mb-2">Presentaciones</p>
               <ul className="divide-y divide-sand/60 rounded-lg border border-sand/60 overflow-hidden">
                 {p.presentations.map((pr: any) => (
                   <li

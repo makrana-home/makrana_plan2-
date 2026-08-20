@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -219,7 +219,7 @@ function CustomerRegistrationCard({
         <div className="grid gap-2">
           <Label htmlFor="admin_customer_full_name">Nombres y apellidos *</Label>
           <div className="relative">
-            <UserRound className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-accent" />
+            <UserRound className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-terracotta" />
             <Input
               id="admin_customer_full_name"
               required
@@ -234,7 +234,7 @@ function CustomerRegistrationCard({
         <div className="grid gap-2">
           <Label htmlFor="admin_customer_email">Correo</Label>
           <div className="relative">
-            <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-accent" />
+            <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-terracotta" />
             <Input
               id="admin_customer_email"
               type="email"
@@ -249,7 +249,7 @@ function CustomerRegistrationCard({
         <div className="grid gap-2">
           <Label htmlFor="admin_customer_phone">Celular</Label>
           <div className="relative">
-            <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-accent" />
+            <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-terracotta" />
             <Input
               id="admin_customer_phone"
               maxLength={40}
@@ -263,7 +263,7 @@ function CustomerRegistrationCard({
         <div className="grid gap-2">
           <Label htmlFor="admin_customer_location">Distrito</Label>
           <div className="relative">
-            <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-accent" />
+            <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-terracotta" />
             <Input
               id="admin_customer_location"
               maxLength={160}
@@ -277,7 +277,7 @@ function CustomerRegistrationCard({
         <div className="grid gap-2 md:col-span-2">
           <Label htmlFor="admin_customer_source">¿Cómo nos conociste?</Label>
           <div className="relative">
-            <Heart className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-accent" />
+            <Heart className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-terracotta" />
             <select
               id="admin_customer_source"
               value={form.source ?? ""}
@@ -310,7 +310,7 @@ function CustomerRegistrationCard({
                 className={[
                   "flex h-12 items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium shadow-sm transition",
                   selected
-                    ? "border-accent bg-accent/10 text-accent"
+                    ? "border-accent bg-accent/10 text-brand-terracotta"
                     : "border-sand/80 bg-warm-white/80 hover:border-accent/70",
                 ].join(" ")}
               >
@@ -327,7 +327,7 @@ function CustomerRegistrationCard({
       <div className="grid gap-2">
         <Label htmlFor="admin_customer_notes">Mensaje (opcional)</Label>
         <div className="relative">
-          <MessageSquareText className="pointer-events-none absolute left-4 top-4 h-4 w-4 text-accent" />
+          <MessageSquareText className="pointer-events-none absolute left-4 top-4 h-4 w-4 text-brand-terracotta" />
           <Textarea
             id="admin_customer_notes"
             rows={4}

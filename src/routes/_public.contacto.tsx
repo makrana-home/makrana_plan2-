@@ -18,7 +18,7 @@ function Contact() {
   return (
     <section className="section-padded">
       <div className="container-makrana max-w-3xl">
-        <p className="text-xs uppercase tracking-widest text-accent">Conversemos</p>
+        <p className="text-xs uppercase tracking-widest text-brand-terracotta">Conversemos</p>
         <h1 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">Contacto</h1>
         <p className="mt-3 text-muted-foreground">
           Cuéntanos qué buscas y conversemos. Estamos en Lima, Perú.
@@ -31,17 +31,17 @@ function Contact() {
             rel="noreferrer"
             className="makrana-card p-6 text-center"
           >
-            <Phone className="mx-auto text-accent" />
+            <Phone className="mx-auto text-brand-terracotta" />
             <p className="mt-3 font-display text-lg">WhatsApp</p>
             <p className="text-sm text-muted-foreground">+51 986608552</p>
           </a>
           <a href="mailto:makrnahome@gmail.com" className="makrana-card p-6 text-center">
-            <Mail className="mx-auto text-accent" />
+            <Mail className="mx-auto text-brand-terracotta" />
             <p className="mt-3 font-display text-lg">Correo</p>
             <p className="text-sm text-muted-foreground">makrnahome@gmail.com</p>
           </a>
           <div className="makrana-card p-6 text-center">
-            <MapPin className="mx-auto text-accent" />
+            <MapPin className="mx-auto text-brand-terracotta" />
             <p className="mt-3 font-display text-lg">Ubicación</p>
             <p className="text-sm text-muted-foreground">Lima, Perú</p>
           </div>

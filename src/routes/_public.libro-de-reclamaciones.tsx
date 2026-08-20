@@ -51,8 +51,8 @@ function LibroDeReclamaciones() {
     <section className="bg-warm-white py-12 sm:py-16 md:py-20">
       <div className="container-makrana max-w-5xl">
         <header className="text-center">
-          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-accent"><BookOpen className="h-7 w-7" /></span>
-          <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.24em] text-accent">Atención al consumidor</p>
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-brand-terracotta"><BookOpen className="h-7 w-7" /></span>
+          <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.24em] text-brand-terracotta">Atención al consumidor</p>
           <h1 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">Libro de Reclamaciones</h1>
         </header>
 

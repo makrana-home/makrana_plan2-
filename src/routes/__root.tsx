@@ -17,7 +17,7 @@ function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <p className="text-sm uppercase tracking-[0.2em] text-accent">Makrana Home Art</p>
+        <p className="text-sm uppercase tracking-[0.2em] text-brand-terracotta">Makrana Home Art</p>
         <h1 className="font-display text-6xl mt-4 text-foreground">404</h1>
         <h2 className="mt-2 text-lg text-foreground">No encontramos esta página</h2>
         <p className="mt-3 text-sm text-muted-foreground">
@@ -94,6 +94,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/png", href: "/favicon.png" },
+      { rel: "apple-touch-icon", href: "/favicon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {

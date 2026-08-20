@@ -83,7 +83,7 @@ export function SiteHeader() {
   return (
     <>
       <aside
-        className="fixed inset-x-0 top-0 z-50 flex h-7 items-center justify-center bg-accent px-4 text-center text-[10px] font-medium tracking-[0.025em] text-warm-white sm:text-[11px]"
+        className="fixed inset-x-0 top-0 z-50 flex h-7 items-center justify-center bg-[#edbfa5] px-4 text-center text-[10px] font-medium tracking-[0.025em] text-warm-white sm:text-[11px]"
         aria-label="Información de Makrana"
       >
         <span>Arte textil hecho a mano en Perú</span>
@@ -94,17 +94,23 @@ export function SiteHeader() {
       </aside>
       <header
         className={cn(
-          "fixed top-7 z-40 w-full border-b border-sand/60 backdrop-blur-md transition-all duration-300",
-          isHome ? "bg-warm-white/80" : "bg-warm-white/95",
+          "fixed top-7 z-40 w-full border-b border-sand/60 bg-warm-white/95 backdrop-blur-md transition-all duration-300",
           hideOnHero
             ? "invisible pointer-events-none -translate-y-full opacity-0"
             : "visible translate-y-0 opacity-100",
         )}
+        style={{
+          backgroundImage:
+            "linear-gradient(90deg, rgba(237, 191, 165, 0.98) 0%, rgba(237, 191, 165, 0.68) 12%, rgba(237, 191, 165, 0) 27%)",
+        }}
       >
         <div className="container-makrana flex min-h-20 max-w-full items-center gap-3 py-3 lg:min-h-24 lg:gap-4">
-          <Link to="/" className="flex shrink-0 items-center">
+          <Link
+            to="/"
+            className="flex shrink-0 items-center"
+          >
             <BrandLogo
-              variant="horizontal"
+              variant="horizontal-white"
               imageClassName="h-auto w-36 object-contain sm:w-40 lg:w-44 xl:w-40 2xl:w-48"
             />
           </Link>
@@ -116,8 +122,8 @@ export function SiteHeader() {
                 className={cn(
                   "rounded-full px-2.5 py-2 text-[13px] font-semibold transition-colors 2xl:px-4 2xl:text-[15px]",
                   isActive(l.to)
-                    ? "bg-accent text-warm-white shadow-sm shadow-accent/15"
-                    : "text-foreground/85 hover:bg-cream hover:text-accent",
+                    ? "bg-accent text-accent-foreground shadow-sm shadow-accent/15"
+                    : "text-foreground/85 hover:bg-cream hover:text-brand-terracotta",
                 )}
               >
                 {l.label}
@@ -165,8 +171,8 @@ export function SiteHeader() {
                 className={cn(
                   "rounded-2xl px-4 py-3 text-sm font-semibold transition-colors",
                   isActive(l.to)
-                    ? "bg-accent text-warm-white"
-                    : "text-foreground/80 hover:bg-cream hover:text-accent",
+                    ? "bg-accent text-accent-foreground"
+                    : "text-foreground/80 hover:bg-cream hover:text-brand-terracotta",
                 )}
                 onClick={() => setOpen(false)}
               >
@@ -196,84 +202,86 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-sand/60 bg-cream">
+    <footer className="border-t border-[#d58f6b] bg-[#edbfa5] text-white">
       <div className="container-makrana grid gap-6 py-6 md:grid-cols-4 md:py-7">
         <div>
-          <BrandLogo imageClassName="w-28 sm:w-32" />
-          <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+          <span className="inline-flex px-1 py-1">
+            <BrandLogo variant="horizontal-white" imageClassName="w-28 sm:w-32" />
+          </span>
+          <p className="mt-3 text-[11px] leading-relaxed text-white/80">
             En Makrana, cada pieza es tejida a mano en Perú con dedicación y cuidado, para llevar la
             calidez, la textura y la esencia de la artesanía a tu hogar.
           </p>
         </div>
         <div>
-          <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-foreground/70">
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-white">
             Explorar
           </h4>
           <ul className="space-y-1.5 text-xs">
             <li>
-              <Link to="/catalogo" className="hover:text-accent">
+              <Link to="/catalogo" className="transition-colors hover:text-white/70">
                 Catálogo
               </Link>
             </li>
             <li>
-              <Link to="/talleres" className="hover:text-accent">
+              <Link to="/talleres" className="transition-colors hover:text-white/70">
                 Talleres
               </Link>
             </li>
             <li>
-              <Link to="/novedades" className="hover:text-accent">
+              <Link to="/novedades" className="transition-colors hover:text-white/70">
                 Novedades
               </Link>
             </li>
           </ul>
         </div>
         <div>
-          <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-foreground/70">
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-white">
             Makrana
           </h4>
           <ul className="space-y-1.5 text-xs">
             <li>
-              <Link to="/sobre-makrana" className="hover:text-accent">
+              <Link to="/sobre-makrana" className="transition-colors hover:text-white/70">
                 Nuestra historia
               </Link>
             </li>
             <li>
-              <Link to="/registro" className="hover:text-accent">
+              <Link to="/registro" className="transition-colors hover:text-white/70">
                 Recibir novedades
               </Link>
             </li>
             <li>
-              <Link to="/contacto" className="hover:text-accent">
+              <Link to="/contacto" className="transition-colors hover:text-white/70">
                 Contacto
               </Link>
             </li>
           </ul>
           <Link
             to="/libro-de-reclamaciones"
-            className="mt-4 inline-flex w-full max-w-52 items-center gap-3 rounded-md border border-foreground/55 bg-warm-white/45 px-4 py-3 text-left text-sm font-medium leading-tight text-foreground transition hover:border-accent hover:bg-warm-white hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            className="mt-4 inline-flex w-full max-w-52 items-center gap-3 rounded-xl border border-[#80342c]/30 bg-white/35 px-4 py-3 text-left text-sm font-medium leading-tight text-[#542f24] transition hover:border-[#80342c] hover:bg-white/60 hover:text-[#80342c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#80342c] focus-visible:ring-offset-2"
           >
             <BookOpen className="h-8 w-8 shrink-0" strokeWidth={1.6} aria-hidden="true" />
             <span>Libro de<br />Reclamaciones</span>
           </Link>
         </div>
         <div>
-          <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-foreground/70">
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-white">
             Contacto
           </h4>
-          <ul className="space-y-1.5 text-xs text-muted-foreground">
+          <ul className="space-y-1.5 text-xs text-white/80">
             <li>WhatsApp: +51 986608552</li>
             <li>makrnahome@gmail.com</li>
             <li>Lima, Perú</li>
           </ul>
           <div className="mt-3">
-            <h4 className="text-xs font-medium uppercase tracking-wider text-foreground/70">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-white">
               Síguenos
             </h4>
             <div className="mt-2 flex flex-wrap gap-2">
               {socialLinks.map((social) => {
                 const Icon = social.icon;
                 const className =
-                  "inline-flex h-8 w-8 items-center justify-center rounded-full border border-sand bg-warm-white text-accent shadow-sm transition";
+                  "inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#80342c]/20 bg-white/45 text-[#80342c] shadow-sm transition";
                 return (
                   <a
                     key={social.label}
@@ -281,7 +289,7 @@ export function SiteFooter() {
                     target="_blank"
                     rel="noreferrer"
                     aria-label={social.label}
-                    className={`${className} hover:-translate-y-0.5 hover:border-accent hover:bg-accent hover:text-warm-white`}
+                    className={`${className} hover:-translate-y-0.5 hover:border-[#80342c] hover:bg-[#80342c] hover:text-white`}
                   >
                     <Icon className="h-4 w-4" />
                   </a>
@@ -291,8 +299,8 @@ export function SiteFooter() {
           </div>
         </div>
       </div>
-      <div className="border-t border-sand/60">
-        <div className="container-makrana flex flex-wrap justify-between gap-2 py-2.5 text-[11px] text-muted-foreground">
+      <div className="border-t border-[#80342c]/15">
+        <div className="container-makrana flex flex-wrap justify-between gap-2 py-2.5 text-[11px] text-white/70">
           <span>© {new Date().getFullYear()} Makrana Home Art.</span>
         </div>
       </div>

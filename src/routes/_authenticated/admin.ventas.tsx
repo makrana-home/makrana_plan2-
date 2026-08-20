@@ -539,7 +539,7 @@ function SalesPage() {
                           "mt-3 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold",
                           selected
                             ? "bg-warm-white/20 text-warm-white"
-                            : "bg-accent/10 text-accent",
+                            : "bg-accent/10 text-brand-terracotta",
                         ].join(" ")}
                       >
                         Canal Feria
@@ -583,7 +583,7 @@ function SalesPage() {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-2 text-accent hover:bg-accent/10 hover:text-accent"
+                  className="h-7 px-2 text-brand-terracotta hover:bg-accent/10 hover:text-brand-terracotta"
                   onClick={() => {
                     setCustomerForm({ full_name: "", phone: "", email: "", document: "" });
                     customerDlg.openWith(null);
@@ -1728,7 +1728,7 @@ function SaleAgenda({ sale, onScheduled }: { sale: any; onScheduled: () => Promi
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="flex items-center gap-2 font-display text-lg">
-            <CalendarDays className="h-5 w-5 text-accent" /> Agenda y fechas importantes
+            <CalendarDays className="h-5 w-5 text-brand-terracotta" /> Agenda y fechas importantes
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
             Reuniones, avances, visitas, entregas e instalaciones del pedido.

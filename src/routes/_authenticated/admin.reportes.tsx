@@ -154,7 +154,7 @@ function ReportsPage() {
 
       <div className="mb-6 grid gap-4 rounded-3xl border border-sand/80 bg-warm-white/80 p-5 shadow-sm md:grid-cols-[minmax(220px,280px)_minmax(220px,280px)_auto]">
         <div>
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-accent">
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-brand-terracotta">
             Tipo de reporte
           </label>
           <Select value={reportType} onValueChange={(value) => setReportType(value as ReportType)}>
@@ -172,7 +172,7 @@ function ReportsPage() {
           </Select>
         </div>
         <div>
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-accent">
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-brand-terracotta">
             Periodo
           </label>
           <Select value={period} onValueChange={(value) => setPeriod(value as ReportPeriod)}>
@@ -272,7 +272,7 @@ function ReportsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="font-display flex items-center gap-2">
-              <Award className="h-5 w-5 text-accent" /> Top 10 piezas
+              <Award className="h-5 w-5 text-brand-terracotta" /> Top 10 piezas
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -347,7 +347,7 @@ function ReportsPage() {
             </Table>
             <Link
               to="/admin/movimientos"
-              className="text-xs text-accent underline mt-3 inline-block"
+              className="text-xs text-brand-terracotta underline mt-3 inline-block"
             >
               Registrar movimientos →
             </Link>
@@ -357,7 +357,7 @@ function ReportsPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="font-display flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-accent" /> Pagos del filtro por método
+              <CreditCard className="h-5 w-5 text-brand-terracotta" /> Pagos del filtro por método
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -503,7 +503,7 @@ function KPI({ icon: Icon, label, value, sub }: any) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-        <Icon className="h-4 w-4 text-accent" />
+        <Icon className="h-4 w-4 text-brand-terracotta" />
       </CardHeader>
       <CardContent>
         <div className="font-display text-2xl">{value}</div>

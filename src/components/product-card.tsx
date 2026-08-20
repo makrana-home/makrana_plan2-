@@ -101,7 +101,7 @@ export function ProductCard({
           {showPrice && product.show_price === true && (
             <span
               className={cn(
-                "font-extrabold leading-tight text-accent",
+                "font-extrabold leading-tight text-brand-terracotta",
                 hasPresentations ? "max-w-40 text-xs" : "text-sm",
               )}
             >
@@ -116,7 +116,7 @@ export function ProductCard({
             <Link
               to="/catalogo/$slug"
               params={{ slug: product.slug }}
-              className="text-sm font-bold text-accent transition-colors hover:text-accent/80"
+              className="text-sm font-bold text-brand-terracotta transition-colors hover:text-brand-terracotta/80"
             >
               {actionLabel}
             </Link>

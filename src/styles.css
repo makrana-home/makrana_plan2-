@@ -47,6 +47,7 @@
   --color-sand: var(--sand);
   --color-clay: var(--clay);
   --color-terracotta: var(--terracotta);
+  --color-brand-terracotta: #80342c;
   --color-copper: var(--copper);
   --color-warm-white: var(--warm-white);
 
@@ -74,7 +75,7 @@
   --cream: oklch(0.965 0.018 78); /* superficies suaves */
   --sand: oklch(0.905 0.035 75); /* bordes, divisores cálidos */
   --clay: oklch(0.78 0.06 60); /* arena oscura */
-  --terracotta: #80342c; /* acento principal */
+  --terracotta: #edbfa5; /* durazno de marca */
   --copper: oklch(0.7 0.12 55); /* acento metálico cobre/dorado */
 
   --background: var(--warm-white);
@@ -102,7 +103,7 @@
 
   --border: oklch(0.9 0.02 75);
   --input: oklch(0.92 0.018 75);
-  --ring: var(--terracotta);
+  --ring: #a85542;
 
   --chart-1: var(--terracotta);
   --chart-2: var(--copper);
@@ -110,14 +111,14 @@
   --chart-4: oklch(0.7 0.05 40);
   --chart-5: oklch(0.55 0.04 55);
 
-  --sidebar: oklch(0.97 0.015 78);
-  --sidebar-foreground: var(--foreground);
-  --sidebar-primary: var(--terracotta);
+  --sidebar: #edbfa5;
+  --sidebar-foreground: var(--warm-white);
+  --sidebar-primary: #80342c;
   --sidebar-primary-foreground: var(--warm-white);
-  --sidebar-accent: var(--sand);
-  --sidebar-accent-foreground: var(--foreground);
-  --sidebar-border: oklch(0.9 0.02 75);
-  --sidebar-ring: var(--terracotta);
+  --sidebar-accent: #f3ccb6;
+  --sidebar-accent-foreground: var(--warm-white);
+  --sidebar-border: #d58f6b;
+  --sidebar-ring: #80342c;
 }
 
 .dark {

@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { FormDialog, PageHeader, formatDate, moneyPEN, useDialog } from "@/components/admin-ui";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -186,7 +186,7 @@ function UsersAccessPanel() {
     <section className="rounded-xl border border-sand/60 bg-warm-white p-6 sm:col-span-2">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-accent">
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-brand-terracotta">
             <Users className="h-3.5 w-3.5" />
             Usuarios
           </div>
@@ -386,7 +386,7 @@ function UsersAccessPanel() {
 
           <div className="rounded-2xl border border-sand/70 bg-cream/40 p-4">
             <div className="flex items-center gap-2 font-semibold">
-              <ShieldCheck className="h-4 w-4 text-accent" />
+              <ShieldCheck className="h-4 w-4 text-brand-terracotta" />
               Módulos de {selectedProfile.label}
             </div>
             <p className="mt-1 text-sm text-muted-foreground">{selectedProfile.description}</p>
@@ -703,7 +703,7 @@ function BulkImportPanel() {
     <section className="border border-sand/60 rounded-xl bg-warm-white p-6 sm:col-span-2">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-accent">
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-brand-terracotta">
             <FileSpreadsheet className="h-3.5 w-3.5" />
             Importar datos
           </div>
@@ -740,7 +740,7 @@ function BulkImportPanel() {
               htmlFor="bulk_import_file"
               className="mt-2 flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-sand bg-cream/35 px-4 py-5 text-center transition hover:border-accent hover:bg-cream"
             >
-              <Upload className="h-5 w-5 text-accent" />
+              <Upload className="h-5 w-5 text-brand-terracotta" />
               <span className="text-sm font-medium">
                 {fileName || "Selecciona un archivo .xls o .csv"}
               </span>

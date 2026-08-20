@@ -77,7 +77,7 @@ export function AuthPage() {
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
       <div className="hidden lg:flex flex-col justify-between bg-terracotta text-warm-white p-12">
         <Link to="/" className="w-fit">
-          <BrandLogo imageClassName="w-48 brightness-0 invert" />
+          <BrandLogo variant="horizontal-white" imageClassName="w-48" />
         </Link>
         <div>
           <h1 className="font-display text-5xl leading-tight">
@@ -91,7 +91,7 @@ export function AuthPage() {
       </div>
       <div className="flex items-center justify-center px-5 py-10 sm:p-8">
         <div className="w-full max-w-md">
-          <Link to="/" className="text-sm text-accent">
+          <Link to="/" className="text-sm text-brand-terracotta">
             ← Volver al inicio
           </Link>
           <h2 className="font-display text-3xl mt-4">

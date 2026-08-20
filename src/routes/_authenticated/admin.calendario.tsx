@@ -476,7 +476,7 @@ function StatsGrid({ stats }: { stats: ReturnType<typeof calculateStats> }) {
         <div key={label} className="rounded-2xl border border-sand/70 bg-warm-white p-4 shadow-sm">
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold text-muted-foreground">{label}</span>
-            <Icon className="h-4 w-4 text-accent" />
+            <Icon className="h-4 w-4 text-brand-terracotta" />
           </div>
           <div className="mt-2 font-display text-2xl">{value}</div>
         </div>

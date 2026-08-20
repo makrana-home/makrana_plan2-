@@ -189,7 +189,7 @@ function AdminShell() {
         <SidebarMenuButton
           asChild
           isActive={i.exact ? pathname === i.to : pathname.startsWith(i.to)}
-          className="h-11 rounded-full px-4 text-[15px] font-semibold text-foreground/80 data-[active=true]:bg-accent data-[active=true]:text-warm-white data-[active=true]:shadow-lg data-[active=true]:shadow-accent/15 hover:bg-sand/50 hover:text-foreground"
+          className="h-11 rounded-full px-4 text-[15px] font-semibold text-white/90 data-[active=true]:bg-[#80342c] data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:shadow-[#80342c]/20 hover:bg-white/20 hover:text-white"
         >
           <Link to={i.to}>
             <i.icon className="h-4 w-4" />
@@ -216,7 +216,7 @@ function AdminShell() {
           <CollapsibleTrigger asChild>
             <SidebarMenuButton
               isActive={isGroupActive(group, pathname)}
-              className="h-11 rounded-full px-4 text-[15px] font-semibold text-foreground/80 data-[active=true]:bg-accent/10 data-[active=true]:text-accent hover:bg-sand/50 hover:text-foreground"
+              className="h-11 rounded-full px-4 text-[15px] font-semibold text-white/90 data-[active=true]:bg-white/20 data-[active=true]:text-white hover:bg-white/20 hover:text-white"
             >
               <GroupIcon className="h-4 w-4" />
               <span>{group.label}</span>
@@ -224,13 +224,13 @@ function AdminShell() {
             </SidebarMenuButton>
           </CollapsibleTrigger>
           <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-            <SidebarMenuSub className="my-1 ml-5 gap-1 border-l-sand/80">
+            <SidebarMenuSub className="my-1 ml-5 gap-1 border-l-[#80342c]/20">
               {visibleItems.map((i) => (
                 <SidebarMenuSubItem key={i.to}>
                   <SidebarMenuSubButton
                     asChild
                     isActive={pathname.startsWith(i.to)}
-                    className="h-9 rounded-full px-3 text-[14px] font-semibold text-foreground/75 data-[active=true]:bg-accent data-[active=true]:text-warm-white data-[active=true]:shadow-lg data-[active=true]:shadow-accent/15 hover:bg-sand/50 hover:text-foreground"
+                    className="h-9 rounded-full px-3 text-[14px] font-semibold text-white/80 data-[active=true]:bg-[#80342c] data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:shadow-[#80342c]/20 hover:bg-white/20 hover:text-white"
                   >
                     <Link to={i.to}>
                       <i.icon className="h-4 w-4" />
@@ -249,18 +249,15 @@ function AdminShell() {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full max-w-full overflow-x-clip bg-cream text-foreground">
-        <Sidebar className="border-r border-sand/70 bg-cream">
-          <SidebarHeader className="border-b border-sand/70 px-4 py-4">
-            <Link to="/" className="flex items-center">
-              <span className="min-w-0">
-                <BrandLogo variant="horizontal" imageClassName="w-36" />
-                <span className="block text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">
-                  Panel interno
-                </span>
+        <Sidebar className="border-r border-[#d58f6b] bg-[#edbfa5] text-white">
+          <SidebarHeader className="border-b border-[#80342c]/15 bg-transparent px-4 py-5">
+            <Link to="/" className="flex w-full items-center justify-center">
+              <span className="inline-flex items-center justify-center">
+                <BrandLogo variant="horizontal-white" imageClassName="w-40" />
               </span>
             </Link>
           </SidebarHeader>
-          <SidebarContent className="px-3 py-5">
+          <SidebarContent className="bg-transparent px-3 py-5">
             <SidebarGroup>
               <SidebarGroupContent>
                 <SidebarMenu className="gap-2">
@@ -283,7 +280,7 @@ function AdminShell() {
                         <SidebarMenuButton
                           asChild
                           isActive={pathname.startsWith(i.to)}
-                          className="h-11 rounded-full px-4 text-[15px] font-semibold text-foreground/80 data-[active=true]:bg-accent data-[active=true]:text-warm-white data-[active=true]:shadow-lg data-[active=true]:shadow-accent/15 hover:bg-sand/50 hover:text-foreground"
+                          className="h-11 rounded-full px-4 text-[15px] font-semibold text-white/90 data-[active=true]:bg-[#80342c] data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:shadow-[#80342c]/20 hover:bg-white/20 hover:text-white"
                         >
                           <Link to={i.to}>
                             <i.icon className="h-4 w-4" />

@@ -113,7 +113,7 @@ function WebsitePage() {
       <section className="rounded-3xl border border-sand/60 bg-warm-white p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-accent">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-brand-terracotta">
               <Eye className="h-3.5 w-3.5" />
               Página pública
             </div>
@@ -198,7 +198,7 @@ function ComplaintBookAdmin() {
   return (
     <section className="rounded-3xl border border-sand/60 bg-warm-white p-6 sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div><div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-accent"><BookOpen className="h-3.5 w-3.5" />Registro legal</div><h2 className="font-display text-xl">Libro de Reclamaciones</h2><p className="mt-2 text-sm text-muted-foreground">Solicitudes enviadas desde el formulario público.</p></div>
+        <div><div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-brand-terracotta"><BookOpen className="h-3.5 w-3.5" />Registro legal</div><h2 className="font-display text-xl">Libro de Reclamaciones</h2><p className="mt-2 text-sm text-muted-foreground">Solicitudes enviadas desde el formulario público.</p></div>
         <Button type="button" variant="outline" className="rounded-full" onClick={load} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</Button>
       </div>
 
@@ -208,7 +208,7 @@ function ComplaintBookAdmin() {
             <details key={entry.id} className="group rounded-2xl border border-sand/70 bg-cream/25 open:bg-cream/45">
               <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 p-4">
                 <div><div className="flex items-center gap-2"><strong className="text-sm">{entry.claim_number}</strong><StatusBadge status={entry.status} /></div><p className="mt-1 text-xs text-muted-foreground">{entry.first_name} {entry.first_surname} {entry.second_surname} · {new Date(entry.created_at).toLocaleString("es-PE")}</p></div>
-                <span className="text-xs font-semibold text-accent">Ver detalle</span>
+                <span className="text-xs font-semibold text-brand-terracotta">Ver detalle</span>
               </summary>
               <div className="border-t border-sand/70 p-4 sm:p-5">
                 <div className="grid gap-4 text-xs sm:grid-cols-2 lg:grid-cols-3">

@@ -24,7 +24,7 @@ function NewsIndex() {
   return (
     <section className="section-padded">
       <div className="container-makrana">
-        <p className="text-xs uppercase tracking-widest text-accent">Del taller</p>
+        <p className="text-xs uppercase tracking-widest text-brand-terracotta">Del taller</p>
         <h1 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">Novedades</h1>
         <p className="mt-3 text-muted-foreground max-w-prose">
           Eventos, ferias, talleres y nuevas colecciones de Makrana Home Art.
@@ -48,7 +48,7 @@ function NewsIndex() {
                 )}
               </div>
               <div className="p-5">
-                <span className="text-xs uppercase tracking-wider text-accent">
+                <span className="text-xs uppercase tracking-wider text-brand-terracotta">
                   {n.category.replaceAll("_", " ")}
                 </span>
                 <h2 className="font-display text-xl mt-2">{n.title}</h2>
