@@ -69,8 +69,7 @@ export async function sendWhatsAppBusinessDocument({
   });
 
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`WhatsApp Business API error ${response.status}: ${body}`);
+    throw new Error(`WhatsApp Business API error ${response.status}.`);
   }
 
   const body = (await response.json()) as { messages?: Array<{ id?: string }> };

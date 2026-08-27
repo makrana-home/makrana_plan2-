@@ -109,7 +109,7 @@ export function ProductCard({
                 ? "En distintas presentaciones"
                 : product.status === "por_encargo"
                   ? "Cotizar"
-                : `S/ ${Number(product.price).toFixed(0)}`}
+                  : `S/ ${Number(product.price).toFixed(0)}`}
             </span>
           )}
           {(!showPrice || product.show_price !== true) && actionLabel && (

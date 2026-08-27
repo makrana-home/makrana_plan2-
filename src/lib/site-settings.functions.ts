@@ -69,7 +69,7 @@ export const adminGetHomeSections = createServerFn({ method: "GET" })
 
 export const adminUpdateHomeSections = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => visibilitySchema.parse(data))
+  .validator((data) => visibilitySchema.parse(data))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { error } = await context.supabase.from("categories").upsert(

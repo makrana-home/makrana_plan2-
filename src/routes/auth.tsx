@@ -94,9 +94,7 @@ export function AuthPage() {
           <Link to="/" className="text-sm text-brand-terracotta">
             ← Volver al inicio
           </Link>
-          <h2 className="font-display text-3xl mt-4">
-            Plataforma Makrana Home Art
-          </h2>
+          <h2 className="font-display text-3xl mt-4">Plataforma Makrana Home Art</h2>
           <p className="text-sm text-muted-foreground mt-1">
             Acceso privado para el equipo de Makrana.
           </p>

@@ -1,7 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  normalizeEditorialText,
+  normalizeEditorialTitle,
+  normalizeLiteralText,
+  normalizeMeasurementText,
+  nullableEditorialText,
+} from "@/lib/content-normalization";
 import { getUnitsInPresentation, PRESENTATION_UNIT_VALUES } from "@/lib/presentation-units";
+import { validateInventoryMovement } from "@/lib/business-rules";
 
 // ---------- helpers ----------
 async function assertStaff(ctx: { supabase: any; userId: string }) {
@@ -45,7 +53,7 @@ const productSchema = z.object({
 
 export const adminListProducts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (d: { type?: "producto_terminado" | "material" | "kit" | "curso" } | undefined) => d ?? {},
   )
   .handler(async ({ data, context }) => {
@@ -64,7 +72,7 @@ export const adminListProducts = createServerFn({ method: "GET" })
 
 export const adminGetProduct = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const { data: row, error } = await context.supabase
@@ -78,10 +86,21 @@ export const adminGetProduct = createServerFn({ method: "GET" })
 
 export const adminUpsertProduct = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => productSchema.parse(d))
+  .validator((d) => productSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
-    const payload: any = { ...data };
+    const payload: any = {
+      ...data,
+      name: normalizeEditorialTitle(data.name),
+      short_description: nullableEditorialText(data.short_description),
+      description: nullableEditorialText(data.description),
+      measurements: normalizeMeasurementText(data.measurements) || null,
+      color: normalizeLiteralText(data.color) || null,
+      material: normalizeLiteralText(data.material) || null,
+      artisan: normalizeLiteralText(data.artisan) || null,
+      supplier: normalizeLiteralText(data.supplier) || null,
+      internal_notes: nullableEditorialText(data.internal_notes),
+    };
     if (payload.main_image_url === "") payload.main_image_url = null;
     const { data: row, error } = await context.supabase
       .from("products")
@@ -94,7 +113,7 @@ export const adminUpsertProduct = createServerFn({ method: "POST" })
 
 export const adminDeleteProduct = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const { error } = await context.supabase.from("products").delete().eq("id", data.id);
@@ -137,7 +156,7 @@ function isUnsupportedPresentationUnit(error: any) {
 
 export const adminUpsertPresentation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => presentationSchema.parse(d))
+  .validator((d) => presentationSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const payload = {
@@ -182,7 +201,7 @@ async function upsertPresentationPayload(supabase: any, payload: Record<string, 
 
 export const adminDeletePresentation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const { error } = await context.supabase
@@ -224,16 +243,16 @@ const editableCategorySchema = z.object({
 
 export const adminUpdateCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => editableCategorySchema.parse(d))
+  .validator((d) => editableCategorySchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const payload = {
-      name: data.name,
+      name: normalizeEditorialTitle(data.name),
       sort_order: data.sort_order,
       is_active: data.is_active,
       description: writeCategoryHomeDescription(
         "scope:piece",
-        data.home_description || "",
+        normalizeEditorialText(data.home_description) || "",
         data.home_image_url || "",
         data.show_on_home,
       ),
@@ -282,12 +301,7 @@ export const adminEnsureHomeCategories = createServerFn({ method: "POST" })
         const { error } = await context.supabase
           .from("categories")
           .update({
-            description: writeCategoryHomeDescription(
-              "scope:piece",
-              homeDescription,
-              "",
-              true,
-            ),
+            description: writeCategoryHomeDescription("scope:piece", homeDescription, "", true),
             is_active: true,
           })
           .eq("id", existing.id);
@@ -327,7 +341,7 @@ function writeCategoryHomeDescription(
 
 export const adminCreateCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => categorySchema.parse(d))
+  .validator((d) => categorySchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const slug = data.name
@@ -342,7 +356,7 @@ export const adminCreateCategory = createServerFn({ method: "POST" })
       .from("categories")
       .upsert(
         {
-          name: data.name,
+          name: normalizeEditorialTitle(data.name),
           slug,
           description: data.scope ? `scope:${data.scope}` : null,
           is_active: true,
@@ -384,10 +398,15 @@ export const adminListWarehouses = createServerFn({ method: "GET" })
 
 export const adminUpsertWarehouse = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => warehouseSchema.parse(d))
+  .validator((d) => warehouseSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
-    const payload = { ...data, code: data.code.toUpperCase() };
+    const payload = {
+      ...data,
+      code: data.code.toUpperCase(),
+      name: normalizeLiteralText(data.name),
+      address: normalizeLiteralText(data.address) || null,
+    };
     const { data: row, error } = await context.supabase
       .from("warehouses")
       .upsert(payload, { onConflict: "id" })
@@ -399,7 +418,7 @@ export const adminUpsertWarehouse = createServerFn({ method: "POST" })
 
 export const adminDeleteWarehouse = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const { error } = await context.supabase
@@ -443,7 +462,7 @@ function normalizePresentationRows(rows: any[] | null) {
 
 export const adminListStock = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { warehouseId?: string } | undefined) => d ?? {})
+  .validator((d: { warehouseId?: string } | undefined) => d ?? {})
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     let q = context.supabase
@@ -451,7 +470,9 @@ export const adminListStock = createServerFn({ method: "GET" })
       .select(stockSelectWithPresentation)
       .order("updated_at", { ascending: false });
     if (data.warehouseId) q = q.eq("warehouse_id", data.warehouseId);
-    let { data: rows, error } = await q;
+    const initial = await q;
+    let rows: any = initial.data;
+    let error: any = initial.error;
     if (isMissingPresentationInventoryRelation(error)) {
       let legacyQ = context.supabase
         .from("inventory_stock")
@@ -480,14 +501,16 @@ const movementSchema = z.object({
 
 export const adminListMovements = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { limit?: number } | undefined) => d ?? {})
+  .validator((d: { limit?: number } | undefined) => d ?? {})
   .handler(async ({ data, context }) => {
     await assertStaff(context);
-    let { data: rows, error } = await context.supabase
+    const initial = await context.supabase
       .from("inventory_movements")
       .select(movementSelectWithPresentation)
       .order("created_at", { ascending: false })
       .limit(data.limit ?? 100);
+    let rows: any = initial.data;
+    let error: any = initial.error;
     if (isMissingPresentationInventoryRelation(error)) {
       const retry = await context.supabase
         .from("inventory_movements")
@@ -503,9 +526,10 @@ export const adminListMovements = createServerFn({ method: "GET" })
 
 export const adminApplyMovement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => movementSchema.parse(d))
+  .validator((d) => movementSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
+    validateInventoryMovement(data);
     const movementPayload: Record<string, any> = {
       _product_id: data.product_id,
       _movement_type: data.movement_type,
@@ -516,7 +540,7 @@ export const adminApplyMovement = createServerFn({ method: "POST" })
       _notes: data.notes ?? undefined,
     };
     if (data.presentation_id) movementPayload._presentation_id = data.presentation_id;
-    const { data: id, error } = await context.supabase.rpc(
+    const { data: id, error } = await (context.supabase as any).rpc(
       "apply_inventory_movement",
       movementPayload,
     );

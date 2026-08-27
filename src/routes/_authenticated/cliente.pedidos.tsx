@@ -66,7 +66,10 @@ function Pedidos() {
                 <TableCell className="text-right tabular-nums">{moneyPEN(s.total)}</TableCell>
                 <TableCell>
                   {s.receipt?.[0] ? (
-                    <Link to="/cliente/comprobantes" className="text-brand-terracotta underline text-xs">
+                    <Link
+                      to="/cliente/comprobantes"
+                      className="text-brand-terracotta underline text-xs"
+                    >
                       {s.receipt[0].number}
                     </Link>
                   ) : (

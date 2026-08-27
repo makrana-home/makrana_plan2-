@@ -18,7 +18,11 @@ export function BrandLogo({
 }: BrandLogoProps) {
   const isHorizontal = variant !== "stacked";
   const isWhiteHorizontal = variant === "horizontal-white";
-  const imageSource = isWhiteHorizontal ? whiteHorizontalLogo : isHorizontal ? horizontalLogo : logo;
+  const imageSource = isWhiteHorizontal
+    ? whiteHorizontalLogo
+    : isHorizontal
+      ? horizontalLogo
+      : logo;
 
   return (
     <span className={cn("inline-flex items-center", className)}>

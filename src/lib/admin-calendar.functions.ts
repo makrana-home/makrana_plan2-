@@ -31,7 +31,7 @@ async function assertStaff(context: { supabase: any; userId: string }) {
 
 export const adminListCalendarData = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
+  .validator((input) =>
     z.object({ from: z.string().datetime(), to: z.string().datetime() }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -107,7 +107,7 @@ export const adminListCalendarData = createServerFn({ method: "GET" })
 
 export const adminSaveCalendarEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
+  .validator((input) =>
     z
       .object({
         event: eventSchema,
@@ -132,7 +132,7 @@ export const adminSaveCalendarEvent = createServerFn({ method: "POST" })
 
 export const adminQuickScheduleSaleEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
+  .validator((input) =>
     z
       .object({
         saleId: z.string().uuid(),
@@ -194,7 +194,7 @@ export const adminQuickScheduleSaleEvent = createServerFn({ method: "POST" })
 
 export const adminGetCalendarAudit = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ eventId: z.string().uuid() }).parse(input))
+  .validator((input) => z.object({ eventId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const { data: rows, error } = await context.supabase

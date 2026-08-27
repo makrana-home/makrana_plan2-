@@ -2,11 +2,13 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
 import { getProductBySlug, listProducts } from "@/lib/public.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/product-card";
 import { getPresentationUnitLabel } from "@/lib/presentation-units";
+import { addToCart } from "@/lib/cart";
 
 const statusLabel: Record<string, string> = {
   disponible: "Disponible",
@@ -65,6 +67,9 @@ function ProductDetail() {
   const { slug } = Route.useParams();
   const { data: product } = useSuspenseQuery(productQ(slug));
   const { data: related } = useSuspenseQuery(relatedQ);
+  const [selectedPresentationId, setSelectedPresentationId] = useState<string | undefined>(
+    (product as any)?.presentations?.[0]?.id,
+  );
   if (!product) return null;
   const p: any = product;
   const hasPresentations = p.type === "material" && (p.presentations ?? []).length > 0;
@@ -127,12 +132,15 @@ function ProductDetail() {
 
           {p.presentations && p.presentations.length > 0 && (
             <div className="mt-6">
-              <p className="text-xs uppercase tracking-widest text-brand-terracotta mb-2">Presentaciones</p>
+              <p className="text-xs uppercase tracking-widest text-brand-terracotta mb-2">
+                Presentaciones
+              </p>
               <ul className="divide-y divide-sand/60 rounded-lg border border-sand/60 overflow-hidden">
                 {p.presentations.map((pr: any) => (
                   <li
                     key={pr.id}
-                    className="flex flex-wrap justify-between gap-x-4 gap-y-1 bg-cream/40 px-4 py-3 text-sm"
+                    className={`flex cursor-pointer flex-wrap justify-between gap-x-4 gap-y-1 px-4 py-3 text-sm ${selectedPresentationId === pr.id ? "bg-accent/15" : "bg-cream/40"}`}
+                    onClick={() => setSelectedPresentationId(pr.id)}
                   >
                     <span className="min-w-0">{getPresentationUnitLabel(pr.unit, pr.label)}</span>
                     {p.show_price === true && (
@@ -145,6 +153,25 @@ function ProductDetail() {
           )}
 
           <div className="mt-8 flex flex-wrap gap-3">
+            <Button
+              size="lg"
+              variant="hero"
+              className="w-full sm:w-auto"
+              disabled={p.status === "agotado" || (hasPresentations && !selectedPresentationId)}
+              onClick={() => {
+                addToCart({
+                  productId: p.id,
+                  presentationId: selectedPresentationId,
+                  name: p.name,
+                  imageUrl: p.main_image_url,
+                  type: p.type,
+                  quantity: 1,
+                });
+                toast.success("Agregado al carrito");
+              }}
+            >
+              Agregar al carrito
+            </Button>
             <Button asChild size="lg" variant="hero" className="w-full sm:w-auto">
               <a href={waLink(p.name)} target="_blank" rel="noreferrer">
                 Consultar por WhatsApp

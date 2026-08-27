@@ -164,7 +164,7 @@ function readCategoryHome(description: string | null) {
 }
 
 export const listProducts = createServerFn({ method: "GET" })
-  .inputValidator(
+  .validator(
     (d: { categorySlug?: string; featuredOnly?: boolean; limit?: number } | undefined) => d ?? {},
   )
   .handler(async ({ data }) => {
@@ -190,7 +190,7 @@ export const listProducts = createServerFn({ method: "GET" })
   });
 
 export const getProductBySlug = createServerFn({ method: "GET" })
-  .inputValidator((d) => z.object({ slug: z.string() }).parse(d))
+  .validator((d) => z.object({ slug: z.string() }).parse(d))
   .handler(async ({ data }) => {
     const sb = publicClient();
     const [{ data: product, error }, showPrice] = await Promise.all([
@@ -209,7 +209,7 @@ export const getProductBySlug = createServerFn({ method: "GET" })
   });
 
 export const listNews = createServerFn({ method: "GET" })
-  .inputValidator((d: { limit?: number; featuredOnly?: boolean } | undefined) => d ?? {})
+  .validator((d: { limit?: number; featuredOnly?: boolean } | undefined) => d ?? {})
   .handler(async ({ data }) => {
     const sb = publicClient();
     let q = sb
@@ -225,7 +225,7 @@ export const listNews = createServerFn({ method: "GET" })
   });
 
 export const getNewsBySlug = createServerFn({ method: "GET" })
-  .inputValidator((d) => z.object({ slug: z.string() }).parse(d))
+  .validator((d) => z.object({ slug: z.string() }).parse(d))
   .handler(async ({ data }) => {
     const sb = publicClient();
     const { data: post, error } = await sb
@@ -239,7 +239,7 @@ export const getNewsBySlug = createServerFn({ method: "GET" })
   });
 
 export const listWorkshops = createServerFn({ method: "GET" })
-  .inputValidator((d: { limit?: number } | undefined) => d ?? {})
+  .validator((d: { limit?: number } | undefined) => d ?? {})
   .handler(async ({ data }) => {
     const sb = publicClient();
     let q = sb
@@ -266,7 +266,7 @@ const leadSchema = z.object({
 });
 
 export const createLead = createServerFn({ method: "POST" })
-  .inputValidator((d) => leadSchema.parse(d))
+  .validator((d) => leadSchema.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const payload = {
