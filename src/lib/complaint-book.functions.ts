@@ -23,7 +23,9 @@ export const complaintBookSchema = z.object({
   order_number: z.string().trim().min(1).max(80),
   claim_date: z.string().date(),
   provider: optionalText(160),
-  claimed_amount: z.union([z.coerce.number().nonnegative().max(9999999999), z.literal("")]).optional(),
+  claimed_amount: z
+    .union([z.coerce.number().nonnegative().max(9999999999), z.literal("")])
+    .optional(),
   product_description: optionalText(2000),
   purchase_date: optionalDate,
   consumption_date: optionalDate,
@@ -37,7 +39,7 @@ export const complaintBookSchema = z.object({
 export type ComplaintBookInput = z.infer<typeof complaintBookSchema>;
 
 export const submitComplaintBookEntry = createServerFn({ method: "POST" })
-  .inputValidator((data) => complaintBookSchema.parse(data))
+  .validator((data) => complaintBookSchema.parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const claimNumber = `LR-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
@@ -46,13 +48,16 @@ export const submitComplaintBookEntry = createServerFn({ method: "POST" })
       claim_number: claimNumber,
       reference: data.reference || null,
       provider: data.provider || null,
-      claimed_amount: data.claimed_amount === "" || data.claimed_amount == null ? null : data.claimed_amount,
+      claimed_amount:
+        data.claimed_amount === "" || data.claimed_amount == null ? null : data.claimed_amount,
       product_description: data.product_description || null,
       purchase_date: data.purchase_date || null,
       consumption_date: data.consumption_date || null,
       expiration_date: data.expiration_date || null,
     };
-    const { error } = await supabaseAdmin.from("complaint_book_entries" as any).insert(payload as any);
+    const { error } = await supabaseAdmin
+      .from("complaint_book_entries" as any)
+      .insert(payload as any);
     if (error) throw error;
     return { ok: true, claimNumber };
   });
@@ -77,12 +82,14 @@ export const adminListComplaintBookEntries = createServerFn({ method: "GET" })
 
 export const adminUpdateComplaintBookEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) =>
-    z.object({
-      id: z.string().uuid(),
-      status: z.enum(["pendiente", "en_proceso", "atendido"]),
-      admin_notes: optionalText(3000),
-    }).parse(data),
+  .validator((data) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["pendiente", "en_proceso", "atendido"]),
+        admin_notes: optionalText(3000),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     await assertStaff(context);
@@ -93,4 +100,3 @@ export const adminUpdateComplaintBookEntry = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
-

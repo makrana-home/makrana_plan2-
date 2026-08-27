@@ -7,10 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/components/brand-logo";
 import { getHomeSectionVisibility } from "@/lib/public.functions";
-import {
-  homeSectionDefaults,
-  type HomeSectionVisibility,
-} from "@/lib/site-settings.functions";
+import { homeSectionDefaults, type HomeSectionVisibility } from "@/lib/site-settings.functions";
 
 const links = [
   { to: "/", label: "Inicio", section: null },
@@ -19,6 +16,7 @@ const links = [
   { to: "/talleres", label: "Talleres", section: "workshops" },
   { to: "/sobre-makrana", label: "Sobre Makrana", section: "welcome" },
   { to: "/contacto", label: "Contacto", section: null },
+  { to: "/carrito", label: "Carrito", section: null },
 ] as const;
 
 function linkIsVisible(
@@ -105,10 +103,7 @@ export function SiteHeader() {
         }}
       >
         <div className="container-makrana flex min-h-20 max-w-full items-center gap-3 py-3 lg:min-h-24 lg:gap-4">
-          <Link
-            to="/"
-            className="flex shrink-0 items-center"
-          >
+          <Link to="/" className="flex shrink-0 items-center">
             <BrandLogo
               variant="horizontal-white"
               imageClassName="h-auto w-36 object-contain sm:w-40 lg:w-44 xl:w-40 2xl:w-48"
@@ -261,7 +256,11 @@ export function SiteFooter() {
             className="mt-4 inline-flex w-full max-w-52 items-center gap-3 rounded-xl border border-[#80342c]/30 bg-white/35 px-4 py-3 text-left text-sm font-medium leading-tight text-[#542f24] transition hover:border-[#80342c] hover:bg-white/60 hover:text-[#80342c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#80342c] focus-visible:ring-offset-2"
           >
             <BookOpen className="h-8 w-8 shrink-0" strokeWidth={1.6} aria-hidden="true" />
-            <span>Libro de<br />Reclamaciones</span>
+            <span>
+              Libro de
+              <br />
+              Reclamaciones
+            </span>
           </Link>
         </div>
         <div>
@@ -274,9 +273,7 @@ export function SiteFooter() {
             <li>Lima, Perú</li>
           </ul>
           <div className="mt-3">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-white">
-              Síguenos
-            </h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-white">Síguenos</h4>
             <div className="mt-2 flex flex-wrap gap-2">
               {socialLinks.map((social) => {
                 const Icon = social.icon;

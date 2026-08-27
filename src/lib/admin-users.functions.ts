@@ -4,10 +4,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { defaultModulesByRole, staffModuleOptions } from "@/lib/staff-access";
 
 const staffRoleSchema = z.enum(["admin", "ventas", "almacen"]);
-const staffModuleSchema = z.enum(staffModuleOptions.map((module) => module.key) as [
-  string,
-  ...string[],
-]);
+const staffModuleSchema = z.enum(
+  staffModuleOptions.map((module) => module.key) as [string, ...string[]],
+);
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
   const { data, error } = await context.supabase.rpc("has_role", {
@@ -29,14 +28,13 @@ export const adminListStaffUsers = createServerFn({ method: "GET" })
       { data: permissions, error: permissionsError },
       { data: sales, error: salesError },
       { data: receipts, error: receiptsError },
-    ] =
-      await Promise.all([
-        supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 }),
-        supabaseAdmin.from("user_roles").select("user_id, role"),
-        supabaseAdmin.from("staff_module_permissions").select("user_id, module, enabled"),
-        supabaseAdmin.from("sales").select("created_by, total, status"),
-        supabaseAdmin.from("receipts").select("created_by"),
-      ]);
+    ] = await Promise.all([
+      supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 }),
+      supabaseAdmin.from("user_roles").select("user_id, role"),
+      supabaseAdmin.from("staff_module_permissions").select("user_id, module, enabled"),
+      supabaseAdmin.from("sales").select("created_by, total, status"),
+      supabaseAdmin.from("receipts").select("created_by"),
+    ]);
     if (authError) throw authError;
     if (rolesError) throw rolesError;
     if (permissionsError) throw permissionsError;
@@ -93,7 +91,7 @@ export const adminListStaffUsers = createServerFn({ method: "GET" })
 
 export const adminCreateStaffUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
+  .validator((input) =>
     z
       .object({
         full_name: z.string().trim().min(2).max(160),
@@ -143,7 +141,7 @@ export const adminCreateStaffUser = createServerFn({ method: "POST" })
 
 export const adminUpdateStaffUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
+  .validator((input) =>
     z
       .object({
         id: z.string().uuid(),

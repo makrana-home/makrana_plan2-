@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  normalizeEditorialTitle,
+  normalizeLiteralText,
+  nullableEditorialText,
+} from "@/lib/content-normalization";
 
 async function assertStaff(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("is_staff", { _user_id: ctx.userId });
@@ -47,10 +52,15 @@ export const adminListNews = createServerFn({ method: "GET" })
 
 export const adminUpsertNews = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => newsSchema.parse(d))
+  .validator((d) => newsSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
-    const payload: any = { ...data };
+    const payload: any = {
+      ...data,
+      title: normalizeEditorialTitle(data.title),
+      summary: nullableEditorialText(data.summary),
+      content: nullableEditorialText(data.content),
+    };
     payload.slug = await uniqueNewsSlug(context.supabase, data.slug, data.title, data.id);
     if (payload.cover_image_url === "") payload.cover_image_url = null;
     if (payload.status === "publicado" && !payload.published_at)
@@ -100,7 +110,7 @@ function safeSlug(value: string) {
 
 export const adminDeleteNews = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const { error } = await context.supabase.from("news_posts").delete().eq("id", data.id);
@@ -146,10 +156,16 @@ export const adminListWorkshops = createServerFn({ method: "GET" })
 
 export const adminUpsertWorkshop = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => workshopSchema.parse(d))
+  .validator((d) => workshopSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
-    const payload: any = { ...data };
+    const payload: any = {
+      ...data,
+      title: normalizeEditorialTitle(data.title),
+      description: nullableEditorialText(data.description),
+      location: normalizeLiteralText(data.location) || null,
+      materials_included: nullableEditorialText(data.materials_included),
+    };
     if (payload.cover_image_url === "") payload.cover_image_url = null;
     const { data: row, error } = await context.supabase
       .from("workshops")
@@ -162,7 +178,7 @@ export const adminUpsertWorkshop = createServerFn({ method: "POST" })
 
 export const adminDeleteWorkshop = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const { error } = await context.supabase.from("workshops").delete().eq("id", data.id);
@@ -172,7 +188,7 @@ export const adminDeleteWorkshop = createServerFn({ method: "POST" })
 
 export const adminListEnrollments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { workshopId?: string } | undefined) => d ?? {})
+  .validator((d: { workshopId?: string } | undefined) => d ?? {})
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     let q = context.supabase
@@ -189,7 +205,7 @@ export const adminListEnrollments = createServerFn({ method: "GET" })
 
 export const adminUpdateEnrollmentPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) =>
+  .validator((d) =>
     z
       .object({
         id: z.string().uuid(),
@@ -212,7 +228,7 @@ export const adminUpdateEnrollmentPayment = createServerFn({ method: "POST" })
 
 export const adminDeleteEnrollment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const { error } = await context.supabase
@@ -225,7 +241,7 @@ export const adminDeleteEnrollment = createServerFn({ method: "POST" })
 
 // Public enrollment
 export const enrollWorkshop = createServerFn({ method: "POST" })
-  .inputValidator((d) =>
+  .validator((d) =>
     z
       .object({
         workshop_id: z.string().uuid(),
@@ -284,12 +300,20 @@ export const adminListFairs = createServerFn({ method: "GET" })
 
 export const adminUpsertFair = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => fairSchema.parse(d))
+  .validator((d) => fairSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const { data: row, error } = await context.supabase
       .from("fairs")
-      .upsert(data, { onConflict: "id" })
+      .upsert(
+        {
+          ...data,
+          name: normalizeLiteralText(data.name),
+          location: normalizeLiteralText(data.location) || null,
+          notes: nullableEditorialText(data.notes),
+        },
+        { onConflict: "id" },
+      )
       .select("id")
       .single();
     if (error) throw error;
@@ -298,7 +322,7 @@ export const adminUpsertFair = createServerFn({ method: "POST" })
 
 export const adminDeleteFair = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const { error } = await context.supabase.from("fairs").delete().eq("id", data.id);
@@ -308,7 +332,7 @@ export const adminDeleteFair = createServerFn({ method: "POST" })
 
 export const adminUpsertFairItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) =>
+  .validator((d) =>
     z
       .object({
         id: z.string().uuid().optional(),
@@ -333,7 +357,7 @@ export const adminUpsertFairItem = createServerFn({ method: "POST" })
 
 export const adminDeleteFairItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const { error } = await context.supabase.from("fair_items").delete().eq("id", data.id);
@@ -470,7 +494,7 @@ export const clientGetProfile = createServerFn({ method: "GET" })
 
 export const clientUpdateProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) =>
+  .validator((d) =>
     z
       .object({
         full_name: z.string().trim().min(2).max(160),

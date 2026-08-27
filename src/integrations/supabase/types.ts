@@ -4,7 +4,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5";
+    PostgrestVersion: "14.17";
   };
   public: {
     Tables: {
@@ -246,6 +246,218 @@ export type Database = {
         };
         Relationships: [];
       };
+      commerce_audit_logs: {
+        Row: {
+          action: string;
+          actor_user_id: string | null;
+          after_data: Json | null;
+          aggregate_id: string | null;
+          aggregate_type: string;
+          before_data: Json | null;
+          created_at: string;
+          id: string;
+          ip_address: unknown;
+          reason: string | null;
+        };
+        Insert: {
+          action: string;
+          actor_user_id?: string | null;
+          after_data?: Json | null;
+          aggregate_id?: string | null;
+          aggregate_type: string;
+          before_data?: Json | null;
+          created_at?: string;
+          id?: string;
+          ip_address?: unknown;
+          reason?: string | null;
+        };
+        Update: {
+          action?: string;
+          actor_user_id?: string | null;
+          after_data?: Json | null;
+          aggregate_id?: string | null;
+          aggregate_type?: string;
+          before_data?: Json | null;
+          created_at?: string;
+          id?: string;
+          ip_address?: unknown;
+          reason?: string | null;
+        };
+        Relationships: [];
+      };
+      commerce_settings: {
+        Row: {
+          created_at: string;
+          default_web_warehouse_id: string | null;
+          id: boolean;
+          izipay_easypay_public_url: string | null;
+          lima_delivery_enabled: boolean;
+          order_expiration_minutes: number;
+          pending_payment_message: string;
+          pickup_enabled: boolean;
+          pickup_instructions: string | null;
+          reservation_minutes: number;
+          updated_at: string;
+          updated_by: string | null;
+          whatsapp_coordination_enabled: boolean;
+          whatsapp_coordination_message: string;
+          whatsapp_coordination_number: string | null;
+          whatsapp_service_hours: string | null;
+          whatsapp_service_instructions: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          default_web_warehouse_id?: string | null;
+          id?: boolean;
+          izipay_easypay_public_url?: string | null;
+          lima_delivery_enabled?: boolean;
+          order_expiration_minutes?: number;
+          pending_payment_message?: string;
+          pickup_enabled?: boolean;
+          pickup_instructions?: string | null;
+          reservation_minutes?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+          whatsapp_coordination_enabled?: boolean;
+          whatsapp_coordination_message?: string;
+          whatsapp_coordination_number?: string | null;
+          whatsapp_service_hours?: string | null;
+          whatsapp_service_instructions?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          default_web_warehouse_id?: string | null;
+          id?: boolean;
+          izipay_easypay_public_url?: string | null;
+          lima_delivery_enabled?: boolean;
+          order_expiration_minutes?: number;
+          pending_payment_message?: string;
+          pickup_enabled?: boolean;
+          pickup_instructions?: string | null;
+          reservation_minutes?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+          whatsapp_coordination_enabled?: boolean;
+          whatsapp_coordination_message?: string;
+          whatsapp_coordination_number?: string | null;
+          whatsapp_service_hours?: string | null;
+          whatsapp_service_instructions?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "commerce_settings_default_web_warehouse_id_fkey";
+            columns: ["default_web_warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      complaint_book_entries: {
+        Row: {
+          address: string;
+          admin_notes: string | null;
+          claim_date: string;
+          claim_detail: string;
+          claim_number: string;
+          claim_type: string;
+          claimed_amount: number | null;
+          consumption_date: string | null;
+          consumption_type: string;
+          contact_authorization: boolean;
+          created_at: string;
+          customer_request: string;
+          department: string;
+          district: string;
+          document_number: string;
+          document_type: string;
+          email: string;
+          expiration_date: string | null;
+          first_name: string;
+          first_surname: string;
+          id: string;
+          order_number: string;
+          phone: string;
+          product_description: string | null;
+          provider: string | null;
+          province: string;
+          purchase_date: string | null;
+          reference: string | null;
+          second_surname: string;
+          status: string;
+          sworn_declaration: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          address: string;
+          admin_notes?: string | null;
+          claim_date: string;
+          claim_detail: string;
+          claim_number: string;
+          claim_type: string;
+          claimed_amount?: number | null;
+          consumption_date?: string | null;
+          consumption_type: string;
+          contact_authorization?: boolean;
+          created_at?: string;
+          customer_request: string;
+          department: string;
+          district: string;
+          document_number: string;
+          document_type: string;
+          email: string;
+          expiration_date?: string | null;
+          first_name: string;
+          first_surname: string;
+          id?: string;
+          order_number: string;
+          phone: string;
+          product_description?: string | null;
+          provider?: string | null;
+          province: string;
+          purchase_date?: string | null;
+          reference?: string | null;
+          second_surname: string;
+          status?: string;
+          sworn_declaration?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          address?: string;
+          admin_notes?: string | null;
+          claim_date?: string;
+          claim_detail?: string;
+          claim_number?: string;
+          claim_type?: string;
+          claimed_amount?: number | null;
+          consumption_date?: string | null;
+          consumption_type?: string;
+          contact_authorization?: boolean;
+          created_at?: string;
+          customer_request?: string;
+          department?: string;
+          district?: string;
+          document_number?: string;
+          document_type?: string;
+          email?: string;
+          expiration_date?: string | null;
+          first_name?: string;
+          first_surname?: string;
+          id?: string;
+          order_number?: string;
+          phone?: string;
+          product_description?: string | null;
+          provider?: string | null;
+          province?: string;
+          purchase_date?: string | null;
+          reference?: string | null;
+          second_surname?: string;
+          status?: string;
+          sworn_declaration?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       customers: {
         Row: {
           created_at: string;
@@ -288,6 +500,151 @@ export type Database = {
           source?: string | null;
           updated_at?: string;
           user_id?: string | null;
+        };
+        Relationships: [];
+      };
+      delivery_methods: {
+        Row: {
+          code: string;
+          created_at: string;
+          fee: number;
+          id: string;
+          instructions: string | null;
+          is_active: boolean;
+          kind: Database["public"]["Enums"]["delivery_kind"];
+          name: string;
+          sort_order: number;
+          updated_at: string;
+          zone_id: string | null;
+        };
+        Insert: {
+          code: string;
+          created_at?: string;
+          fee?: number;
+          id?: string;
+          instructions?: string | null;
+          is_active?: boolean;
+          kind: Database["public"]["Enums"]["delivery_kind"];
+          name: string;
+          sort_order?: number;
+          updated_at?: string;
+          zone_id?: string | null;
+        };
+        Update: {
+          code?: string;
+          created_at?: string;
+          fee?: number;
+          id?: string;
+          instructions?: string | null;
+          is_active?: boolean;
+          kind?: Database["public"]["Enums"]["delivery_kind"];
+          name?: string;
+          sort_order?: number;
+          updated_at?: string;
+          zone_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "delivery_methods_zone_id_fkey";
+            columns: ["zone_id"];
+            isOneToOne: false;
+            referencedRelation: "delivery_zones";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      delivery_zone_districts: {
+        Row: {
+          created_at: string;
+          delivery_zone_id: string;
+          department: string;
+          district: string;
+          id: string;
+          is_active: boolean;
+          normalized_district: string | null;
+          province: string;
+          ubigeo: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          delivery_zone_id: string;
+          department?: string;
+          district: string;
+          id?: string;
+          is_active?: boolean;
+          normalized_district?: string | null;
+          province?: string;
+          ubigeo?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          delivery_zone_id?: string;
+          department?: string;
+          district?: string;
+          id?: string;
+          is_active?: boolean;
+          normalized_district?: string | null;
+          province?: string;
+          ubigeo?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "delivery_zone_districts_delivery_zone_id_fkey";
+            columns: ["delivery_zone_id"];
+            isOneToOne: false;
+            referencedRelation: "delivery_zones";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      delivery_zones: {
+        Row: {
+          base_fee: number;
+          code: string;
+          created_at: string;
+          districts: string[];
+          estimated_time: string | null;
+          id: string;
+          is_active: boolean;
+          name: string;
+          notes: string | null;
+          requires_coordination: boolean;
+          scope: string;
+          sort_order: number;
+          updated_at: string;
+        };
+        Insert: {
+          base_fee?: number;
+          code: string;
+          created_at?: string;
+          districts?: string[];
+          estimated_time?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          notes?: string | null;
+          requires_coordination?: boolean;
+          scope?: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Update: {
+          base_fee?: number;
+          code?: string;
+          created_at?: string;
+          districts?: string[];
+          estimated_time?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          notes?: string | null;
+          requires_coordination?: boolean;
+          scope?: string;
+          sort_order?: number;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -444,6 +801,87 @@ export type Database = {
           },
           {
             foreignKeyName: "inventory_movements_warehouse_id_fkey";
+            columns: ["warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      inventory_reservations: {
+        Row: {
+          consumed_at: string | null;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          order_id: string;
+          order_item_id: string;
+          presentation_id: string | null;
+          product_id: string;
+          quantity: number;
+          released_at: string | null;
+          status: Database["public"]["Enums"]["inventory_reservation_status"];
+          warehouse_id: string;
+        };
+        Insert: {
+          consumed_at?: string | null;
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          order_id: string;
+          order_item_id: string;
+          presentation_id?: string | null;
+          product_id: string;
+          quantity: number;
+          released_at?: string | null;
+          status?: Database["public"]["Enums"]["inventory_reservation_status"];
+          warehouse_id: string;
+        };
+        Update: {
+          consumed_at?: string | null;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          order_id?: string;
+          order_item_id?: string;
+          presentation_id?: string | null;
+          product_id?: string;
+          quantity?: number;
+          released_at?: string | null;
+          status?: Database["public"]["Enums"]["inventory_reservation_status"];
+          warehouse_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "inventory_reservations_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "inventory_reservations_order_item_id_fkey";
+            columns: ["order_item_id"];
+            isOneToOne: false;
+            referencedRelation: "order_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "inventory_reservations_presentation_id_fkey";
+            columns: ["presentation_id"];
+            isOneToOne: false;
+            referencedRelation: "material_presentations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "inventory_reservations_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "inventory_reservations_warehouse_id_fkey";
             columns: ["warehouse_id"];
             isOneToOne: false;
             referencedRelation: "warehouses";
@@ -782,6 +1220,516 @@ export type Database = {
           },
         ];
       };
+      order_addresses: {
+        Row: {
+          additional_instructions: string | null;
+          address_line: string;
+          created_at: string;
+          department: string;
+          district: string;
+          document_number: string | null;
+          id: string;
+          kind: string;
+          order_id: string;
+          phone: string | null;
+          province: string;
+          recipient_name: string;
+          reference: string | null;
+        };
+        Insert: {
+          additional_instructions?: string | null;
+          address_line: string;
+          created_at?: string;
+          department: string;
+          district: string;
+          document_number?: string | null;
+          id?: string;
+          kind: string;
+          order_id: string;
+          phone?: string | null;
+          province: string;
+          recipient_name: string;
+          reference?: string | null;
+        };
+        Update: {
+          additional_instructions?: string | null;
+          address_line?: string;
+          created_at?: string;
+          department?: string;
+          district?: string;
+          document_number?: string | null;
+          id?: string;
+          kind?: string;
+          order_id?: string;
+          phone?: string | null;
+          province?: string;
+          recipient_name?: string;
+          reference?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "order_addresses_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      order_items: {
+        Row: {
+          created_at: string;
+          discount: number;
+          id: string;
+          item_type: Database["public"]["Enums"]["order_item_type"];
+          kit_mode: string | null;
+          line_number: number;
+          name_snapshot: string;
+          order_id: string;
+          presentation_id: string | null;
+          product_id: string | null;
+          quantity: number;
+          related_course_item_id: string | null;
+          requires_inventory: boolean;
+          sku_snapshot: string | null;
+          subtotal: number;
+          tax_amount: number;
+          unit_price: number;
+          variant: Json;
+          workshop_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          discount?: number;
+          id?: string;
+          item_type: Database["public"]["Enums"]["order_item_type"];
+          kit_mode?: string | null;
+          line_number: number;
+          name_snapshot: string;
+          order_id: string;
+          presentation_id?: string | null;
+          product_id?: string | null;
+          quantity: number;
+          related_course_item_id?: string | null;
+          requires_inventory?: boolean;
+          sku_snapshot?: string | null;
+          subtotal: number;
+          tax_amount?: number;
+          unit_price: number;
+          variant?: Json;
+          workshop_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          discount?: number;
+          id?: string;
+          item_type?: Database["public"]["Enums"]["order_item_type"];
+          kit_mode?: string | null;
+          line_number?: number;
+          name_snapshot?: string;
+          order_id?: string;
+          presentation_id?: string | null;
+          product_id?: string | null;
+          quantity?: number;
+          related_course_item_id?: string | null;
+          requires_inventory?: boolean;
+          sku_snapshot?: string | null;
+          subtotal?: number;
+          tax_amount?: number;
+          unit_price?: number;
+          variant?: Json;
+          workshop_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_items_presentation_id_fkey";
+            columns: ["presentation_id"];
+            isOneToOne: false;
+            referencedRelation: "material_presentations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_items_related_course_item_id_fkey";
+            columns: ["related_course_item_id"];
+            isOneToOne: false;
+            referencedRelation: "order_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_items_workshop_id_fkey";
+            columns: ["workshop_id"];
+            isOneToOne: false;
+            referencedRelation: "workshops";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      orders: {
+        Row: {
+          access_token_hash: string;
+          billing_fiscal_address: string | null;
+          billing_legal_name: string | null;
+          billing_ruc: string | null;
+          cart_fingerprint: string;
+          checkout_key: string;
+          code: string;
+          created_at: string;
+          currency: string;
+          customer_id: string | null;
+          delivery_contacted_at: string | null;
+          delivery_coordination_status:
+            | Database["public"]["Enums"]["delivery_coordination_status"]
+            | null;
+          delivery_district_snapshot: string | null;
+          delivery_fee_cents: number;
+          delivery_method_id: string | null;
+          delivery_method_snapshot: string;
+          delivery_notes: string | null;
+          delivery_responsible: string | null;
+          delivery_scheduled_at: string | null;
+          delivery_time_window: string | null;
+          delivery_zone_district_id: string | null;
+          delivery_zone_id: string | null;
+          delivery_zone_name_snapshot: string | null;
+          discount_total: number;
+          document_number: string | null;
+          document_type: string | null;
+          email: string;
+          expires_at: string;
+          first_name: string;
+          id: string;
+          last_name: string;
+          phone: string;
+          privacy_accepted_at: string;
+          receipt_type: Database["public"]["Enums"]["receipt_type"];
+          reservation_minutes: number;
+          shipping_total: number;
+          status: Database["public"]["Enums"]["order_status"];
+          subtotal: number;
+          tax_total: number;
+          terms_accepted_at: string;
+          total: number;
+          updated_at: string;
+          user_id: string | null;
+          warehouse_id: string | null;
+        };
+        Insert: {
+          access_token_hash: string;
+          billing_fiscal_address?: string | null;
+          billing_legal_name?: string | null;
+          billing_ruc?: string | null;
+          cart_fingerprint: string;
+          checkout_key: string;
+          code: string;
+          created_at?: string;
+          currency?: string;
+          customer_id?: string | null;
+          delivery_contacted_at?: string | null;
+          delivery_coordination_status?:
+            | Database["public"]["Enums"]["delivery_coordination_status"]
+            | null;
+          delivery_district_snapshot?: string | null;
+          delivery_fee_cents?: number;
+          delivery_method_id?: string | null;
+          delivery_method_snapshot: string;
+          delivery_notes?: string | null;
+          delivery_responsible?: string | null;
+          delivery_scheduled_at?: string | null;
+          delivery_time_window?: string | null;
+          delivery_zone_district_id?: string | null;
+          delivery_zone_id?: string | null;
+          delivery_zone_name_snapshot?: string | null;
+          discount_total?: number;
+          document_number?: string | null;
+          document_type?: string | null;
+          email: string;
+          expires_at: string;
+          first_name: string;
+          id?: string;
+          last_name: string;
+          phone: string;
+          privacy_accepted_at: string;
+          receipt_type?: Database["public"]["Enums"]["receipt_type"];
+          reservation_minutes: number;
+          shipping_total?: number;
+          status?: Database["public"]["Enums"]["order_status"];
+          subtotal: number;
+          tax_total?: number;
+          terms_accepted_at: string;
+          total: number;
+          updated_at?: string;
+          user_id?: string | null;
+          warehouse_id?: string | null;
+        };
+        Update: {
+          access_token_hash?: string;
+          billing_fiscal_address?: string | null;
+          billing_legal_name?: string | null;
+          billing_ruc?: string | null;
+          cart_fingerprint?: string;
+          checkout_key?: string;
+          code?: string;
+          created_at?: string;
+          currency?: string;
+          customer_id?: string | null;
+          delivery_contacted_at?: string | null;
+          delivery_coordination_status?:
+            | Database["public"]["Enums"]["delivery_coordination_status"]
+            | null;
+          delivery_district_snapshot?: string | null;
+          delivery_fee_cents?: number;
+          delivery_method_id?: string | null;
+          delivery_method_snapshot?: string;
+          delivery_notes?: string | null;
+          delivery_responsible?: string | null;
+          delivery_scheduled_at?: string | null;
+          delivery_time_window?: string | null;
+          delivery_zone_district_id?: string | null;
+          delivery_zone_id?: string | null;
+          delivery_zone_name_snapshot?: string | null;
+          discount_total?: number;
+          document_number?: string | null;
+          document_type?: string | null;
+          email?: string;
+          expires_at?: string;
+          first_name?: string;
+          id?: string;
+          last_name?: string;
+          phone?: string;
+          privacy_accepted_at?: string;
+          receipt_type?: Database["public"]["Enums"]["receipt_type"];
+          reservation_minutes?: number;
+          shipping_total?: number;
+          status?: Database["public"]["Enums"]["order_status"];
+          subtotal?: number;
+          tax_total?: number;
+          terms_accepted_at?: string;
+          total?: number;
+          updated_at?: string;
+          user_id?: string | null;
+          warehouse_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "orders_delivery_method_id_fkey";
+            columns: ["delivery_method_id"];
+            isOneToOne: false;
+            referencedRelation: "delivery_methods";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "orders_delivery_zone_district_id_fkey";
+            columns: ["delivery_zone_district_id"];
+            isOneToOne: false;
+            referencedRelation: "delivery_zone_districts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "orders_delivery_zone_id_fkey";
+            columns: ["delivery_zone_id"];
+            isOneToOne: false;
+            referencedRelation: "delivery_zones";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "orders_warehouse_id_fkey";
+            columns: ["warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      payment_attempts: {
+        Row: {
+          attempt_number: number;
+          created_at: string;
+          expires_at: string | null;
+          external_url: string | null;
+          id: string;
+          idempotency_key: string;
+          payment_id: string;
+          sanitized_error: string | null;
+          status: Database["public"]["Enums"]["payment_attempt_status"];
+          updated_at: string;
+        };
+        Insert: {
+          attempt_number: number;
+          created_at?: string;
+          expires_at?: string | null;
+          external_url?: string | null;
+          id?: string;
+          idempotency_key: string;
+          payment_id: string;
+          sanitized_error?: string | null;
+          status?: Database["public"]["Enums"]["payment_attempt_status"];
+          updated_at?: string;
+        };
+        Update: {
+          attempt_number?: number;
+          created_at?: string;
+          expires_at?: string | null;
+          external_url?: string | null;
+          id?: string;
+          idempotency_key?: string;
+          payment_id?: string;
+          sanitized_error?: string | null;
+          status?: Database["public"]["Enums"]["payment_attempt_status"];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payment_attempts_payment_id_fkey";
+            columns: ["payment_id"];
+            isOneToOne: false;
+            referencedRelation: "payments";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      payment_events: {
+        Row: {
+          created_at: string;
+          event_type: string;
+          id: string;
+          is_valid: boolean;
+          payment_attempt_id: string | null;
+          payment_id: string;
+          processed_at: string | null;
+          processing_error: string | null;
+          provider: string;
+          provider_event_id: string;
+          sanitized_payload: Json;
+        };
+        Insert: {
+          created_at?: string;
+          event_type: string;
+          id?: string;
+          is_valid?: boolean;
+          payment_attempt_id?: string | null;
+          payment_id: string;
+          processed_at?: string | null;
+          processing_error?: string | null;
+          provider: string;
+          provider_event_id: string;
+          sanitized_payload?: Json;
+        };
+        Update: {
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          is_valid?: boolean;
+          payment_attempt_id?: string | null;
+          payment_id?: string;
+          processed_at?: string | null;
+          processing_error?: string | null;
+          provider?: string;
+          provider_event_id?: string;
+          sanitized_payload?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payment_events_payment_attempt_id_fkey";
+            columns: ["payment_attempt_id"];
+            isOneToOne: false;
+            referencedRelation: "payment_attempts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payment_events_payment_id_fkey";
+            columns: ["payment_id"];
+            isOneToOne: false;
+            referencedRelation: "payments";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      payments: {
+        Row: {
+          amount: number;
+          confirmed_at: string | null;
+          created_at: string;
+          currency: string;
+          evidence_path: string | null;
+          id: string;
+          order_id: string;
+          provider: string;
+          provider_payment_id: string | null;
+          reference: string | null;
+          rejection_reason: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          sanitized_metadata: Json;
+          status: Database["public"]["Enums"]["commerce_payment_status"];
+          updated_at: string;
+        };
+        Insert: {
+          amount: number;
+          confirmed_at?: string | null;
+          created_at?: string;
+          currency?: string;
+          evidence_path?: string | null;
+          id?: string;
+          order_id: string;
+          provider?: string;
+          provider_payment_id?: string | null;
+          reference?: string | null;
+          rejection_reason?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          sanitized_metadata?: Json;
+          status?: Database["public"]["Enums"]["commerce_payment_status"];
+          updated_at?: string;
+        };
+        Update: {
+          amount?: number;
+          confirmed_at?: string | null;
+          created_at?: string;
+          currency?: string;
+          evidence_path?: string | null;
+          id?: string;
+          order_id?: string;
+          provider?: string;
+          provider_payment_id?: string | null;
+          reference?: string | null;
+          rejection_reason?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          sanitized_metadata?: Json;
+          status?: Database["public"]["Enums"]["commerce_payment_status"];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payments_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       product_images: {
         Row: {
           alt: string | null;
@@ -936,6 +1884,134 @@ export type Database = {
         };
         Relationships: [];
       };
+      purchase_items: {
+        Row: {
+          category: string | null;
+          created_at: string;
+          description: string;
+          id: string;
+          igv_amount: number;
+          purchase_id: string;
+          quantity: number;
+          total_amount: number;
+          unit_value: number;
+        };
+        Insert: {
+          category?: string | null;
+          created_at?: string;
+          description: string;
+          id?: string;
+          igv_amount?: number;
+          purchase_id: string;
+          quantity?: number;
+          total_amount: number;
+          unit_value: number;
+        };
+        Update: {
+          category?: string | null;
+          created_at?: string;
+          description?: string;
+          id?: string;
+          igv_amount?: number;
+          purchase_id?: string;
+          quantity?: number;
+          total_amount?: number;
+          unit_value?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "purchase_items_purchase_id_fkey";
+            columns: ["purchase_id"];
+            isOneToOne: false;
+            referencedRelation: "purchases";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      purchases: {
+        Row: {
+          car: string | null;
+          category: string | null;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          document_type: string;
+          due_date: string | null;
+          id: string;
+          igv_amount: number;
+          issue_date: string;
+          number: string;
+          payment_status: string;
+          pdf_path: string | null;
+          reconciliation_status: string;
+          series: string;
+          source: string;
+          status: string;
+          supplier_name: string;
+          supplier_ruc: string;
+          tax_period: string;
+          taxable_amount: number;
+          total_amount: number;
+          updated_at: string;
+          updated_by: string | null;
+          xml_path: string | null;
+        };
+        Insert: {
+          car?: string | null;
+          category?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          document_type: string;
+          due_date?: string | null;
+          id?: string;
+          igv_amount?: number;
+          issue_date: string;
+          number: string;
+          payment_status?: string;
+          pdf_path?: string | null;
+          reconciliation_status?: string;
+          series: string;
+          source?: string;
+          status?: string;
+          supplier_name: string;
+          supplier_ruc: string;
+          tax_period: string;
+          taxable_amount?: number;
+          total_amount: number;
+          updated_at?: string;
+          updated_by?: string | null;
+          xml_path?: string | null;
+        };
+        Update: {
+          car?: string | null;
+          category?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          document_type?: string;
+          due_date?: string | null;
+          id?: string;
+          igv_amount?: number;
+          issue_date?: string;
+          number?: string;
+          payment_status?: string;
+          pdf_path?: string | null;
+          reconciliation_status?: string;
+          series?: string;
+          source?: string;
+          status?: string;
+          supplier_name?: string;
+          supplier_ruc?: string;
+          tax_period?: string;
+          taxable_amount?: number;
+          total_amount?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+          xml_path?: string | null;
+        };
+        Relationships: [];
+      };
       receipts: {
         Row: {
           created_by: string | null;
@@ -967,6 +2043,60 @@ export type Database = {
             columns: ["sale_id"];
             isOneToOne: true;
             referencedRelation: "sales";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      sale_document_conversions: {
+        Row: {
+          actor_reference: string;
+          actor_type: string;
+          converted_at: string;
+          converted_by: string | null;
+          id: string;
+          price_snapshot: number;
+          sale_id: string;
+          source_document: string;
+          target_document: string;
+          warehouse_id: string | null;
+        };
+        Insert: {
+          actor_reference: string;
+          actor_type: string;
+          converted_at?: string;
+          converted_by?: string | null;
+          id?: string;
+          price_snapshot: number;
+          sale_id: string;
+          source_document: string;
+          target_document: string;
+          warehouse_id?: string | null;
+        };
+        Update: {
+          actor_reference?: string;
+          actor_type?: string;
+          converted_at?: string;
+          converted_by?: string | null;
+          id?: string;
+          price_snapshot?: number;
+          sale_id?: string;
+          source_document?: string;
+          target_document?: string;
+          warehouse_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sale_document_conversions_sale_id_fkey";
+            columns: ["sale_id"];
+            isOneToOne: false;
+            referencedRelation: "sales";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sale_document_conversions_warehouse_id_fkey";
+            columns: ["warehouse_id"];
+            isOneToOne: false;
+            referencedRelation: "warehouses";
             referencedColumns: ["id"];
           },
         ];
@@ -1041,27 +2171,6 @@ export type Database = {
           },
         ];
       };
-      staff_module_permissions: {
-        Row: {
-          enabled: boolean;
-          module: string;
-          updated_at: string;
-          user_id: string;
-        };
-        Insert: {
-          enabled?: boolean;
-          module: string;
-          updated_at?: string;
-          user_id: string;
-        };
-        Update: {
-          enabled?: boolean;
-          module?: string;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Relationships: [];
-      };
       sale_payments: {
         Row: {
           amount: number;
@@ -1114,13 +2223,14 @@ export type Database = {
           estimated_completion_at: string | null;
           id: string;
           notes: string | null;
+          order_id: string | null;
           payment_status: Database["public"]["Enums"]["payment_status"];
           quote_number: number;
           status: Database["public"]["Enums"]["sale_status"];
           subtotal: number;
           total: number;
           updated_at: string;
-          warehouse_id: string;
+          warehouse_id: string | null;
         };
         Insert: {
           confirmed_at?: string | null;
@@ -1132,13 +2242,14 @@ export type Database = {
           estimated_completion_at?: string | null;
           id?: string;
           notes?: string | null;
+          order_id?: string | null;
           payment_status?: Database["public"]["Enums"]["payment_status"];
           quote_number?: number;
           status?: Database["public"]["Enums"]["sale_status"];
           subtotal?: number;
           total?: number;
           updated_at?: string;
-          warehouse_id: string;
+          warehouse_id?: string | null;
         };
         Update: {
           confirmed_at?: string | null;
@@ -1150,13 +2261,14 @@ export type Database = {
           estimated_completion_at?: string | null;
           id?: string;
           notes?: string | null;
+          order_id?: string | null;
           payment_status?: Database["public"]["Enums"]["payment_status"];
           quote_number?: number;
           status?: Database["public"]["Enums"]["sale_status"];
           subtotal?: number;
           total?: number;
           updated_at?: string;
-          warehouse_id?: string;
+          warehouse_id?: string | null;
         };
         Relationships: [
           {
@@ -1167,6 +2279,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "sales_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "sales_warehouse_id_fkey";
             columns: ["warehouse_id"];
             isOneToOne: false;
@@ -1174,6 +2293,841 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      sire_inconsistencies: {
+        Row: {
+          created_at: string;
+          details: Json;
+          id: string;
+          inconsistency_type: string;
+          internal_record_id: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          sire_period_id: string;
+          status: string;
+          sunat_record_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          details?: Json;
+          id?: string;
+          inconsistency_type: string;
+          internal_record_id?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          sire_period_id: string;
+          status?: string;
+          sunat_record_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          details?: Json;
+          id?: string;
+          inconsistency_type?: string;
+          internal_record_id?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          sire_period_id?: string;
+          status?: string;
+          sunat_record_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sire_inconsistencies_internal_record_id_fkey";
+            columns: ["internal_record_id"];
+            isOneToOne: false;
+            referencedRelation: "sire_records";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sire_inconsistencies_sire_period_id_fkey";
+            columns: ["sire_period_id"];
+            isOneToOne: false;
+            referencedRelation: "sire_periods";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sire_inconsistencies_sunat_record_id_fkey";
+            columns: ["sunat_record_id"];
+            isOneToOne: false;
+            referencedRelation: "sire_records";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      sire_periods: {
+        Row: {
+          approved_at: string | null;
+          approved_by: string | null;
+          created_at: string;
+          file_hash: string | null;
+          file_path: string | null;
+          id: string;
+          last_synced_at: string | null;
+          makrana_total: number;
+          period: string;
+          proposal_status: string;
+          registry_type: string;
+          review_status: string;
+          submission_status: string;
+          sunat_total: number;
+          ticket: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          created_at?: string;
+          file_hash?: string | null;
+          file_path?: string | null;
+          id?: string;
+          last_synced_at?: string | null;
+          makrana_total?: number;
+          period: string;
+          proposal_status?: string;
+          registry_type: string;
+          review_status?: string;
+          submission_status?: string;
+          sunat_total?: number;
+          ticket?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          created_at?: string;
+          file_hash?: string | null;
+          file_path?: string | null;
+          id?: string;
+          last_synced_at?: string | null;
+          makrana_total?: number;
+          period?: string;
+          proposal_status?: string;
+          registry_type?: string;
+          review_status?: string;
+          submission_status?: string;
+          sunat_total?: number;
+          ticket?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      sire_records: {
+        Row: {
+          document_type: string;
+          external_key: string;
+          id: string;
+          igv_amount: number;
+          issue_date: string;
+          number: string;
+          raw_data: Json | null;
+          series: string;
+          sire_period_id: string;
+          source: string;
+          supplier_or_customer_document: string | null;
+          taxable_amount: number;
+          total_amount: number;
+        };
+        Insert: {
+          document_type: string;
+          external_key: string;
+          id?: string;
+          igv_amount?: number;
+          issue_date: string;
+          number: string;
+          raw_data?: Json | null;
+          series: string;
+          sire_period_id: string;
+          source: string;
+          supplier_or_customer_document?: string | null;
+          taxable_amount?: number;
+          total_amount?: number;
+        };
+        Update: {
+          document_type?: string;
+          external_key?: string;
+          id?: string;
+          igv_amount?: number;
+          issue_date?: string;
+          number?: string;
+          raw_data?: Json | null;
+          series?: string;
+          sire_period_id?: string;
+          source?: string;
+          supplier_or_customer_document?: string | null;
+          taxable_amount?: number;
+          total_amount?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sire_records_sire_period_id_fkey";
+            columns: ["sire_period_id"];
+            isOneToOne: false;
+            referencedRelation: "sire_periods";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      sire_sync_runs: {
+        Row: {
+          correlation_id: string;
+          error_message: string | null;
+          finished_at: string | null;
+          id: string;
+          initiated_by: string | null;
+          records_count: number;
+          sire_period_id: string;
+          started_at: string;
+          status: string;
+          ticket: string | null;
+        };
+        Insert: {
+          correlation_id?: string;
+          error_message?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          initiated_by?: string | null;
+          records_count?: number;
+          sire_period_id: string;
+          started_at?: string;
+          status: string;
+          ticket?: string | null;
+        };
+        Update: {
+          correlation_id?: string;
+          error_message?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          initiated_by?: string | null;
+          records_count?: number;
+          sire_period_id?: string;
+          started_at?: string;
+          status?: string;
+          ticket?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sire_sync_runs_sire_period_id_fkey";
+            columns: ["sire_period_id"];
+            isOneToOne: false;
+            referencedRelation: "sire_periods";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      staff_module_permissions: {
+        Row: {
+          enabled: boolean;
+          module: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          enabled?: boolean;
+          module: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          enabled?: boolean;
+          module?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      sunat_daily_summaries: {
+        Row: {
+          attempt_count: number;
+          cdr_path: string | null;
+          correlation_id: string;
+          created_at: string;
+          document_hash: string | null;
+          id: string;
+          issue_date: string;
+          signed_xml_path: string | null;
+          status: string;
+          summary_identifier: string;
+          tax_settings_id: string;
+          ticket: string | null;
+          updated_at: string;
+          xml_path: string | null;
+          zip_path: string | null;
+        };
+        Insert: {
+          attempt_count?: number;
+          cdr_path?: string | null;
+          correlation_id?: string;
+          created_at?: string;
+          document_hash?: string | null;
+          id?: string;
+          issue_date: string;
+          signed_xml_path?: string | null;
+          status?: string;
+          summary_identifier: string;
+          tax_settings_id: string;
+          ticket?: string | null;
+          updated_at?: string;
+          xml_path?: string | null;
+          zip_path?: string | null;
+        };
+        Update: {
+          attempt_count?: number;
+          cdr_path?: string | null;
+          correlation_id?: string;
+          created_at?: string;
+          document_hash?: string | null;
+          id?: string;
+          issue_date?: string;
+          signed_xml_path?: string | null;
+          status?: string;
+          summary_identifier?: string;
+          tax_settings_id?: string;
+          ticket?: string | null;
+          updated_at?: string;
+          xml_path?: string | null;
+          zip_path?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sunat_daily_summaries_tax_settings_id_fkey";
+            columns: ["tax_settings_id"];
+            isOneToOne: false;
+            referencedRelation: "tax_settings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      sunat_daily_summary_items: {
+        Row: {
+          action: string;
+          id: string;
+          status: string;
+          summary_id: string;
+          tax_document_id: string;
+        };
+        Insert: {
+          action: string;
+          id?: string;
+          status?: string;
+          summary_id: string;
+          tax_document_id: string;
+        };
+        Update: {
+          action?: string;
+          id?: string;
+          status?: string;
+          summary_id?: string;
+          tax_document_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sunat_daily_summary_items_summary_id_fkey";
+            columns: ["summary_id"];
+            isOneToOne: false;
+            referencedRelation: "sunat_daily_summaries";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sunat_daily_summary_items_tax_document_id_fkey";
+            columns: ["tax_document_id"];
+            isOneToOne: false;
+            referencedRelation: "tax_documents";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      sunat_transmission_attempts: {
+        Row: {
+          attempt_number: number;
+          attempted_at: string;
+          correlation_id: string;
+          duration_ms: number | null;
+          environment: string;
+          id: string;
+          idempotency_key: string;
+          message: string | null;
+          next_retry_at: string | null;
+          operation: string;
+          sanitized_response: Json | null;
+          status: string;
+          sunat_code: string | null;
+          tax_document_id: string | null;
+          transport_code: string | null;
+        };
+        Insert: {
+          attempt_number: number;
+          attempted_at?: string;
+          correlation_id?: string;
+          duration_ms?: number | null;
+          environment: string;
+          id?: string;
+          idempotency_key: string;
+          message?: string | null;
+          next_retry_at?: string | null;
+          operation: string;
+          sanitized_response?: Json | null;
+          status: string;
+          sunat_code?: string | null;
+          tax_document_id?: string | null;
+          transport_code?: string | null;
+        };
+        Update: {
+          attempt_number?: number;
+          attempted_at?: string;
+          correlation_id?: string;
+          duration_ms?: number | null;
+          environment?: string;
+          id?: string;
+          idempotency_key?: string;
+          message?: string | null;
+          next_retry_at?: string | null;
+          operation?: string;
+          sanitized_response?: Json | null;
+          status?: string;
+          sunat_code?: string | null;
+          tax_document_id?: string | null;
+          transport_code?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sunat_transmission_attempts_tax_document_id_fkey";
+            columns: ["tax_document_id"];
+            isOneToOne: false;
+            referencedRelation: "tax_documents";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tax_audit_log: {
+        Row: {
+          action: string;
+          actor_id: string | null;
+          correlation_id: string;
+          created_at: string;
+          entity_id: string | null;
+          entity_type: string;
+          id: string;
+          next_state: Json | null;
+          previous_state: Json | null;
+          reason: string | null;
+        };
+        Insert: {
+          action: string;
+          actor_id?: string | null;
+          correlation_id?: string;
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type: string;
+          id?: string;
+          next_state?: Json | null;
+          previous_state?: Json | null;
+          reason?: string | null;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string | null;
+          correlation_id?: string;
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type?: string;
+          id?: string;
+          next_state?: Json | null;
+          previous_state?: Json | null;
+          reason?: string | null;
+        };
+        Relationships: [];
+      };
+      tax_document_items: {
+        Row: {
+          created_at: string;
+          description: string;
+          discount_amount: number;
+          id: string;
+          igv_affectation_code: string;
+          igv_amount: number;
+          internal_code: string | null;
+          line_number: number;
+          product_id: string | null;
+          quantity: number;
+          sale_value: number;
+          sunat_code: string | null;
+          sunat_unit_code: string;
+          tax_document_id: string;
+          total_amount: number;
+          unit_price: number;
+          unit_value: number;
+        };
+        Insert: {
+          created_at?: string;
+          description: string;
+          discount_amount?: number;
+          id?: string;
+          igv_affectation_code?: string;
+          igv_amount: number;
+          internal_code?: string | null;
+          line_number: number;
+          product_id?: string | null;
+          quantity: number;
+          sale_value: number;
+          sunat_code?: string | null;
+          sunat_unit_code?: string;
+          tax_document_id: string;
+          total_amount: number;
+          unit_price: number;
+          unit_value: number;
+        };
+        Update: {
+          created_at?: string;
+          description?: string;
+          discount_amount?: number;
+          id?: string;
+          igv_affectation_code?: string;
+          igv_amount?: number;
+          internal_code?: string | null;
+          line_number?: number;
+          product_id?: string | null;
+          quantity?: number;
+          sale_value?: number;
+          sunat_code?: string | null;
+          sunat_unit_code?: string;
+          tax_document_id?: string;
+          total_amount?: number;
+          unit_price?: number;
+          unit_value?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tax_document_items_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tax_document_items_tax_document_id_fkey";
+            columns: ["tax_document_id"];
+            isOneToOne: false;
+            referencedRelation: "tax_documents";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tax_document_series: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          created_by: string | null;
+          document_type: string;
+          environment: string;
+          establishment_code: string;
+          id: string;
+          last_number: number;
+          series: string;
+          tax_settings_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          document_type: string;
+          environment?: string;
+          establishment_code?: string;
+          id?: string;
+          last_number?: number;
+          series: string;
+          tax_settings_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          document_type?: string;
+          environment?: string;
+          establishment_code?: string;
+          id?: string;
+          last_number?: number;
+          series?: string;
+          tax_settings_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tax_document_series_tax_settings_id_fkey";
+            columns: ["tax_settings_id"];
+            isOneToOne: false;
+            referencedRelation: "tax_settings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tax_documents: {
+        Row: {
+          accepted_at: string | null;
+          cdr_path: string | null;
+          created_at: string;
+          credit_note_reason_code: string | null;
+          credited_amount: number;
+          currency: string;
+          customer_document_number: string | null;
+          customer_document_type: string;
+          customer_id: string | null;
+          customer_name: string;
+          discount_amount: number;
+          document_hash: string | null;
+          document_type: string;
+          environment: string;
+          exempt_amount: number;
+          free_amount: number;
+          id: string;
+          idempotency_key: string;
+          igv_amount: number;
+          issue_date: string;
+          issue_time: string;
+          issued_by: string | null;
+          number: number;
+          operation_type: string;
+          payment_method: string | null;
+          pdf_path: string | null;
+          qr_payload: string | null;
+          related_document_id: string | null;
+          sale_id: string | null;
+          series: string;
+          signed_xml_path: string | null;
+          status: string;
+          subtotal: number;
+          sunat_code: string | null;
+          sunat_message: string | null;
+          sunat_status: string | null;
+          sunat_ticket: string | null;
+          tax_settings_id: string;
+          taxable_amount: number;
+          total_amount: number;
+          unaffected_amount: number;
+          updated_at: string;
+          voided_at: string | null;
+          xml_path: string | null;
+          zip_path: string | null;
+        };
+        Insert: {
+          accepted_at?: string | null;
+          cdr_path?: string | null;
+          created_at?: string;
+          credit_note_reason_code?: string | null;
+          credited_amount?: number;
+          currency?: string;
+          customer_document_number?: string | null;
+          customer_document_type: string;
+          customer_id?: string | null;
+          customer_name: string;
+          discount_amount?: number;
+          document_hash?: string | null;
+          document_type: string;
+          environment?: string;
+          exempt_amount?: number;
+          free_amount?: number;
+          id?: string;
+          idempotency_key: string;
+          igv_amount?: number;
+          issue_date: string;
+          issue_time: string;
+          issued_by?: string | null;
+          number: number;
+          operation_type?: string;
+          payment_method?: string | null;
+          pdf_path?: string | null;
+          qr_payload?: string | null;
+          related_document_id?: string | null;
+          sale_id?: string | null;
+          series: string;
+          signed_xml_path?: string | null;
+          status?: string;
+          subtotal?: number;
+          sunat_code?: string | null;
+          sunat_message?: string | null;
+          sunat_status?: string | null;
+          sunat_ticket?: string | null;
+          tax_settings_id: string;
+          taxable_amount?: number;
+          total_amount?: number;
+          unaffected_amount?: number;
+          updated_at?: string;
+          voided_at?: string | null;
+          xml_path?: string | null;
+          zip_path?: string | null;
+        };
+        Update: {
+          accepted_at?: string | null;
+          cdr_path?: string | null;
+          created_at?: string;
+          credit_note_reason_code?: string | null;
+          credited_amount?: number;
+          currency?: string;
+          customer_document_number?: string | null;
+          customer_document_type?: string;
+          customer_id?: string | null;
+          customer_name?: string;
+          discount_amount?: number;
+          document_hash?: string | null;
+          document_type?: string;
+          environment?: string;
+          exempt_amount?: number;
+          free_amount?: number;
+          id?: string;
+          idempotency_key?: string;
+          igv_amount?: number;
+          issue_date?: string;
+          issue_time?: string;
+          issued_by?: string | null;
+          number?: number;
+          operation_type?: string;
+          payment_method?: string | null;
+          pdf_path?: string | null;
+          qr_payload?: string | null;
+          related_document_id?: string | null;
+          sale_id?: string | null;
+          series?: string;
+          signed_xml_path?: string | null;
+          status?: string;
+          subtotal?: number;
+          sunat_code?: string | null;
+          sunat_message?: string | null;
+          sunat_status?: string | null;
+          sunat_ticket?: string | null;
+          tax_settings_id?: string;
+          taxable_amount?: number;
+          total_amount?: number;
+          unaffected_amount?: number;
+          updated_at?: string;
+          voided_at?: string | null;
+          xml_path?: string | null;
+          zip_path?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tax_documents_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tax_documents_related_document_id_fkey";
+            columns: ["related_document_id"];
+            isOneToOne: false;
+            referencedRelation: "tax_documents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tax_documents_sale_id_fkey";
+            columns: ["sale_id"];
+            isOneToOne: false;
+            referencedRelation: "sales";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tax_documents_tax_settings_id_fkey";
+            columns: ["tax_settings_id"];
+            isOneToOne: false;
+            referencedRelation: "tax_settings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tax_settings: {
+        Row: {
+          beta_authorized_at: string | null;
+          beta_authorized_by: string | null;
+          certificate_configured: boolean;
+          certificate_expires_at: string | null;
+          country_code: string;
+          created_at: string;
+          created_by: string | null;
+          currency_code: string;
+          department: string | null;
+          district: string | null;
+          electronic_issuer_enabled: boolean;
+          environment: string;
+          fiscal_address: string;
+          id: string;
+          igv_rate: number;
+          legal_name: string;
+          prices_include_igv: boolean | null;
+          province: string | null;
+          readiness_statuses: Json;
+          ruc: string;
+          sire_configured: boolean;
+          tax_email: string | null;
+          tax_regime: string | null;
+          trade_name: string | null;
+          ubigeo: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          xsd_tests_passed_at: string | null;
+        };
+        Insert: {
+          beta_authorized_at?: string | null;
+          beta_authorized_by?: string | null;
+          certificate_configured?: boolean;
+          certificate_expires_at?: string | null;
+          country_code?: string;
+          created_at?: string;
+          created_by?: string | null;
+          currency_code?: string;
+          department?: string | null;
+          district?: string | null;
+          electronic_issuer_enabled?: boolean;
+          environment?: string;
+          fiscal_address: string;
+          id?: string;
+          igv_rate?: number;
+          legal_name: string;
+          prices_include_igv?: boolean | null;
+          province?: string | null;
+          readiness_statuses?: Json;
+          ruc: string;
+          sire_configured?: boolean;
+          tax_email?: string | null;
+          tax_regime?: string | null;
+          trade_name?: string | null;
+          ubigeo?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          xsd_tests_passed_at?: string | null;
+        };
+        Update: {
+          beta_authorized_at?: string | null;
+          beta_authorized_by?: string | null;
+          certificate_configured?: boolean;
+          certificate_expires_at?: string | null;
+          country_code?: string;
+          created_at?: string;
+          created_by?: string | null;
+          currency_code?: string;
+          department?: string | null;
+          district?: string | null;
+          electronic_issuer_enabled?: boolean;
+          environment?: string;
+          fiscal_address?: string;
+          id?: string;
+          igv_rate?: number;
+          legal_name?: string;
+          prices_include_igv?: boolean | null;
+          province?: string | null;
+          readiness_statuses?: Json;
+          ruc?: string;
+          sire_configured?: boolean;
+          tax_email?: string | null;
+          tax_regime?: string | null;
+          trade_name?: string | null;
+          ubigeo?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          xsd_tests_passed_at?: string | null;
+        };
+        Relationships: [];
       };
       user_roles: {
         Row: {
@@ -1348,32 +3302,19 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      apply_inventory_movement:
-        | {
-            Args: {
-              _movement_type: Database["public"]["Enums"]["movement_type"];
-              _notes?: string;
-              _product_id: string;
-              _quantity: number;
-              _reason?: string;
-              _warehouse_dest_id?: string;
-              _warehouse_id: string;
-            };
-            Returns: string;
-          }
-        | {
-            Args: {
-              _movement_type: Database["public"]["Enums"]["movement_type"];
-              _notes?: string;
-              _presentation_id?: string;
-              _product_id: string;
-              _quantity: number;
-              _reason?: string;
-              _warehouse_dest_id?: string;
-              _warehouse_id: string;
-            };
-            Returns: string;
-          };
+      apply_inventory_movement: {
+        Args: {
+          _movement_type: Database["public"]["Enums"]["movement_type"];
+          _notes?: string;
+          _presentation_id?: string;
+          _product_id: string;
+          _quantity: number;
+          _reason?: string;
+          _warehouse_dest_id?: string;
+          _warehouse_id: string;
+        };
+        Returns: string;
+      };
       calendar_sale_warnings: { Args: { _event: Json }; Returns: Json };
       cancel_sale: {
         Args: { _sale_id: string };
@@ -1389,6 +3330,7 @@ export type Database = {
           sale_id: string;
         }[];
       };
+      create_checkout_order: { Args: { _payload: Json }; Returns: Json };
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"];
@@ -1397,6 +3339,42 @@ export type Database = {
         Returns: boolean;
       };
       is_staff: { Args: { _user_id: string }; Returns: boolean };
+      mutate_inventory_stock: {
+        Args: {
+          _presentation_id: string;
+          _product_id: string;
+          _quantity: number;
+          _replace?: boolean;
+          _warehouse_id: string;
+        };
+        Returns: undefined;
+      };
+      normalize_delivery_place: { Args: { value: string }; Returns: string };
+      release_expired_inventory_reservations: { Args: never; Returns: number };
+      replace_delivery_zone_districts: {
+        Args: { _districts: string[]; _zone_id: string };
+        Returns: undefined;
+      };
+      reserve_tax_document_number: {
+        Args: { _series_id: string };
+        Returns: {
+          document_type: string;
+          environment: string;
+          number: number;
+          series: string;
+          tax_settings_id: string;
+        }[];
+      };
+      review_manual_payment: {
+        Args: {
+          _approve: boolean;
+          _ip?: unknown;
+          _payment_id: string;
+          _reason: string;
+        };
+        Returns: Json;
+      };
+      sale_document_intent: { Args: { _notes: string }; Returns: string };
       save_calendar_event: {
         Args: {
           _event: Json;
@@ -1405,10 +3383,36 @@ export type Database = {
         };
         Returns: Json;
       };
+      tax_environment_ready: {
+        Args: { _settings_id: string; _target: string };
+        Returns: boolean;
+      };
     };
     Enums: {
       app_role: "admin" | "ventas" | "almacen" | "cliente";
+      commerce_payment_status:
+        | "created"
+        | "pending"
+        | "under_review"
+        | "approved"
+        | "rejected"
+        | "cancelled"
+        | "expired"
+        | "refunded"
+        | "partially_refunded"
+        | "unknown";
+      delivery_coordination_status:
+        | "pending_coordination"
+        | "contacted"
+        | "scheduled"
+        | "dispatched"
+        | "delivered"
+        | "pickup_ready"
+        | "picked_up"
+        | "cancelled";
+      delivery_kind: "pickup" | "lima_delivery";
       delivery_status: "pendiente" | "en_preparacion" | "entregado" | "enviado" | "cancelado";
+      inventory_reservation_status: "active" | "consumed" | "released" | "expired";
       movement_type: "entrada" | "salida" | "transferencia" | "ajuste" | "venta" | "devolucion";
       news_category:
         | "evento"
@@ -1420,6 +3424,30 @@ export type Database = {
         | "inspiracion"
         | "promocion";
       news_status: "borrador" | "publicado" | "oculto";
+      order_item_type: "product" | "material" | "kit" | "course" | "workshop";
+      order_status:
+        | "draft"
+        | "pending_payment"
+        | "payment_under_review"
+        | "paid"
+        | "processing"
+        | "ready_for_pickup"
+        | "shipped"
+        | "delivered"
+        | "cancelled"
+        | "expired"
+        | "refunded"
+        | "partially_refunded"
+        | "payment_failed";
+      payment_attempt_status:
+        | "created"
+        | "pending"
+        | "under_review"
+        | "approved"
+        | "rejected"
+        | "cancelled"
+        | "expired"
+        | "failed";
       payment_method: "efectivo" | "yape" | "plin" | "transferencia" | "tarjeta" | "mixto" | "otro";
       payment_status: "pendiente" | "parcial" | "pagado" | "anulado";
       presentation_unit:
@@ -1448,6 +3476,7 @@ export type Database = {
         | "kit";
       product_status: "disponible" | "por_encargo" | "agotado" | "reservado";
       product_type: "producto_terminado" | "material" | "kit" | "curso";
+      receipt_type: "receipt" | "invoice";
       sale_status: "borrador" | "confirmada" | "anulada";
       workshop_level: "basico" | "intermedio" | "avanzado";
       workshop_modality: "presencial" | "virtual" | "hibrido";
@@ -1578,7 +3607,31 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "ventas", "almacen", "cliente"],
+      commerce_payment_status: [
+        "created",
+        "pending",
+        "under_review",
+        "approved",
+        "rejected",
+        "cancelled",
+        "expired",
+        "refunded",
+        "partially_refunded",
+        "unknown",
+      ],
+      delivery_coordination_status: [
+        "pending_coordination",
+        "contacted",
+        "scheduled",
+        "dispatched",
+        "delivered",
+        "pickup_ready",
+        "picked_up",
+        "cancelled",
+      ],
+      delivery_kind: ["pickup", "lima_delivery"],
       delivery_status: ["pendiente", "en_preparacion", "entregado", "enviado", "cancelado"],
+      inventory_reservation_status: ["active", "consumed", "released", "expired"],
       movement_type: ["entrada", "salida", "transferencia", "ajuste", "venta", "devolucion"],
       news_category: [
         "evento",
@@ -1591,6 +3644,32 @@ export const Constants = {
         "promocion",
       ],
       news_status: ["borrador", "publicado", "oculto"],
+      order_item_type: ["product", "material", "kit", "course", "workshop"],
+      order_status: [
+        "draft",
+        "pending_payment",
+        "payment_under_review",
+        "paid",
+        "processing",
+        "ready_for_pickup",
+        "shipped",
+        "delivered",
+        "cancelled",
+        "expired",
+        "refunded",
+        "partially_refunded",
+        "payment_failed",
+      ],
+      payment_attempt_status: [
+        "created",
+        "pending",
+        "under_review",
+        "approved",
+        "rejected",
+        "cancelled",
+        "expired",
+        "failed",
+      ],
       payment_method: ["efectivo", "yape", "plin", "transferencia", "tarjeta", "mixto", "otro"],
       payment_status: ["pendiente", "parcial", "pagado", "anulado"],
       presentation_unit: [
@@ -1620,6 +3699,7 @@ export const Constants = {
       ],
       product_status: ["disponible", "por_encargo", "agotado", "reservado"],
       product_type: ["producto_terminado", "material", "kit", "curso"],
+      receipt_type: ["receipt", "invoice"],
       sale_status: ["borrador", "confirmada", "anulada"],
       workshop_level: ["basico", "intermedio", "avanzado"],
       workshop_modality: ["presencial", "virtual", "hibrido"],

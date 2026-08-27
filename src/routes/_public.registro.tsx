@@ -97,7 +97,9 @@ function Register() {
     <section className="section-padded bg-gradient-to-b from-warm-white via-cream/30 to-warm-white">
       <div className="container-makrana max-w-5xl">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs uppercase tracking-[0.24em] text-brand-terracotta">Comunidad Makrana</p>
+          <p className="text-xs uppercase tracking-[0.24em] text-brand-terracotta">
+            Comunidad Makrana
+          </p>
           <h1 className="mt-3 font-display text-4xl leading-tight sm:text-5xl">
             Inspírate con Makrana
           </h1>

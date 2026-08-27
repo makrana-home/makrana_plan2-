@@ -2,6 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { composeSaleNotes } from "@/lib/sale-notes";
+import type { SaleDocumentIntent } from "@/lib/sale-notes";
+import { getSaleDocumentIntent } from "@/lib/sale-notes";
+import { resolveOperationBeforeConfirmation } from "@/lib/business-rules";
+import { calculateSaleItemSubtotal } from "@/lib/business-rules";
 
 async function assertStaff(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("is_staff", { _user_id: ctx.userId });
@@ -43,7 +47,7 @@ export const adminListCustomers = createServerFn({ method: "GET" })
 
 export const adminUpsertCustomer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => customerSchema.parse(d))
+  .validator((d) => customerSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const payload: any = { ...data };
@@ -60,7 +64,7 @@ export const adminUpsertCustomer = createServerFn({ method: "POST" })
 
 export const adminDeleteCustomer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const { error } = await context.supabase.from("customers").delete().eq("id", data.id);
@@ -83,7 +87,7 @@ export const adminListLeads = createServerFn({ method: "GET" })
 
 export const adminConvertLead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const { data: lead, error } = await context.supabase
@@ -112,7 +116,7 @@ export const adminConvertLead = createServerFn({ method: "POST" })
 
 export const adminDeleteLead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const { error } = await context.supabase.from("leads").delete().eq("id", data.id);
@@ -131,6 +135,9 @@ const saleSchema = z.object({
   notes: z.string().trim().max(1000).optional().nullable(),
   delivery_status: z.enum(["pendiente", "en_preparacion", "entregado", "enviado", "cancelado"]),
   estimated_completion_at: z.string().datetime().optional().nullable(),
+  document_intent: z
+    .enum(["boleta", "factura", "nota_venta", "pedido_personalizado", "cotizacion"])
+    .default("cotizacion"),
 });
 
 export const adminListSales = createServerFn({ method: "GET" })
@@ -149,7 +156,7 @@ export const adminListSales = createServerFn({ method: "GET" })
 
 export const adminGetSale = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertSales(context);
     const { data: sale, error } = await context.supabase
@@ -166,13 +173,14 @@ export const adminGetSale = createServerFn({ method: "GET" })
 
 export const adminCreateSale = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => saleSchema.parse(d))
+  .validator((d) => saleSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertSales(context);
     const notes = composeSaleNotes({
       channel: data.channel,
       notes: data.notes,
       manualCustomerName: data.manual_customer_name,
+      documentIntent: data.document_intent as SaleDocumentIntent,
     });
     const { data: row, error } = await context.supabase
       .from("sales")
@@ -193,13 +201,14 @@ export const adminCreateSale = createServerFn({ method: "POST" })
 
 export const adminUpdateSale = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => saleSchema.extend({ id: z.string().uuid() }).parse(d))
+  .validator((d) => saleSchema.extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertSales(context);
     const notes = composeSaleNotes({
       channel: data.channel,
       notes: data.notes,
       manualCustomerName: data.manual_customer_name,
+      documentIntent: data.document_intent as SaleDocumentIntent,
     });
     const { error } = await context.supabase
       .from("sales")
@@ -253,10 +262,10 @@ const saleItemSchema = z
 
 export const adminAddSaleItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => saleItemSchema.parse(d))
+  .validator((d) => saleItemSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertSales(context);
-    const subtotal = Number((data.quantity * data.unit_price - (data.discount ?? 0)).toFixed(2));
+    const subtotal = calculateSaleItemSubtotal(data.quantity, data.unit_price, data.discount ?? 0);
     const payload: any = {
       sale_id: data.sale_id,
       quantity: data.quantity,
@@ -290,7 +299,7 @@ export const adminAddSaleItem = createServerFn({ method: "POST" })
 
 export const adminDeleteSaleItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertSales(context);
     const { error } = await context.supabase.from("sale_items").delete().eq("id", data.id);
@@ -307,7 +316,7 @@ const paymentSchema = z.object({
 });
 export const adminAddPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => paymentSchema.parse(d))
+  .validator((d) => paymentSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertSales(context);
     const { error } = await context.supabase.from("sale_payments").insert(data);
@@ -317,7 +326,7 @@ export const adminAddPayment = createServerFn({ method: "POST" })
 
 export const adminDeletePayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertSales(context);
     const { error } = await context.supabase.from("sale_payments").delete().eq("id", data.id);
@@ -327,9 +336,34 @@ export const adminDeletePayment = createServerFn({ method: "POST" })
 
 export const adminConfirmSale = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertSales(context);
+    const { data: sale, error: saleError } = await context.supabase
+      .from("sales")
+      .select(
+        "id,total,notes,customer:customers(full_name,document,location),payments:sale_payments(amount)",
+      )
+      .eq("id", data.id)
+      .single();
+    if (saleError) throw saleError;
+    const intent = getSaleDocumentIntent(sale.notes);
+    const paid = (sale.payments ?? []).reduce(
+      (sum: number, payment: any) => sum + Number(payment.amount ?? 0),
+      0,
+    );
+    const decision = resolveOperationBeforeConfirmation({
+      intent,
+      total: Number(sale.total),
+      paid,
+    });
+    if (decision.action !== "confirm_sale")
+      throw new Error(decision.message ?? "La operación debe continuar como borrador.");
+    if (intent === "factura") {
+      const document = String(sale.customer?.document ?? "").replace(/\D/g, "");
+      if (document.length !== 11 || !sale.customer?.full_name || !sale.customer?.location)
+        throw new Error("La factura exige RUC, razón social y domicilio fiscal del cliente.");
+    }
     const { data: out, error } = await context.supabase.rpc("confirm_sale", { _sale_id: data.id });
     if (error) throw error;
     return out;
@@ -337,7 +371,7 @@ export const adminConfirmSale = createServerFn({ method: "POST" })
 
 export const adminCancelSale = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertSales(context);
     const { error } = await context.supabase.rpc("cancel_sale", { _sale_id: data.id });
@@ -374,7 +408,7 @@ export const adminListReceipts = createServerFn({ method: "GET" })
 
 export const adminGetReceipt = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertSales(context);
     const { data: r, error } = await context.supabase
@@ -395,7 +429,9 @@ export const adminGetReceipt = createServerFn({ method: "GET" })
 
 async function enrichRecordsWithCreators(context: any, records: any[]) {
   const creatorIds = [
-    ...new Set(records.map((record) => record.created_by).filter((id): id is string => Boolean(id))),
+    ...new Set(
+      records.map((record) => record.created_by).filter((id): id is string => Boolean(id)),
+    ),
   ];
   if (creatorIds.length === 0) {
     return records.map((record) => ({ ...record, creator: null }));

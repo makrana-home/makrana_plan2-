@@ -14,10 +14,16 @@ dist-ssr
 .vinxi
 .tanstack/**
 .nitro
+.codex-run/
+supabase/.temp/
 .env
 .env.local
 .env.*.local
 *.local
+backups/
+private-backups/
+output/
+supabase/.branches/
 
 # Wrangler / Cloudflare
 .wrangler/

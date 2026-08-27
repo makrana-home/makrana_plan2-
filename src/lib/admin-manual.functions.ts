@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  normalizeEditorialTitle,
+  nullableEditorialText,
+  nullableMeasurementText,
+} from "@/lib/content-normalization";
 
 async function assertStaff(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("is_staff", { _user_id: ctx.userId });
@@ -91,7 +96,7 @@ export const adminListManualWorkspace = createServerFn({ method: "GET" })
 
 export const adminGetManualByPiece = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ piece_id: z.string().uuid() }).parse(d))
+  .validator((d) => z.object({ piece_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const sb = context.supabase;
@@ -143,7 +148,7 @@ export const adminGetManualByPiece = createServerFn({ method: "GET" })
 
 export const adminUpsertManual = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => manualSchema.parse(d))
+  .validator((d) => manualSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context);
     const sb = context.supabase;
@@ -160,11 +165,11 @@ export const adminUpsertManual = createServerFn({ method: "POST" })
 
     const payload: any = {
       piece_id: data.piece_id,
-      title: data.title,
-      description: nullableText(data.description),
-      measurements: nullableText(data.measurements),
+      title: normalizeEditorialTitle(data.title),
+      description: nullableEditorialText(data.description),
+      measurements: nullableMeasurementText(data.measurements),
       quantity: data.quantity,
-      notes: nullableText(data.notes),
+      notes: nullableEditorialText(data.notes),
     };
     if (data.id) payload.id = data.id;
 
@@ -192,7 +197,7 @@ export const adminUpsertManual = createServerFn({ method: "POST" })
         manual_id: manual.id,
         image_url: image.image_url,
         storage_path: nullableText(image.storage_path),
-        alt_text: nullableText(image.alt_text),
+        alt_text: nullableEditorialText(image.alt_text),
         order_index: image.order_index ?? 0,
       };
       if (image.id) imagePayload.id = image.id;
@@ -220,8 +225,8 @@ export const adminUpsertManual = createServerFn({ method: "POST" })
         material_id: material.material_id,
         material_presentation_id: material.material_presentation_id || null,
         quantity: material.quantity ?? 0,
-        unit: nullableText(material.unit),
-        notes: nullableText(material.notes),
+        unit: nullableMeasurementText(material.unit),
+        notes: nullableEditorialText(material.notes),
       };
       if (material.id) materialPayload.id = material.id;
       const { error: materialError } = await sb

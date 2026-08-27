@@ -8,11 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  defaultModulesByRole,
-  staffModuleOptions,
-  type StaffModuleKey,
-} from "@/lib/staff-access";
+import { defaultModulesByRole, staffModuleOptions, type StaffModuleKey } from "@/lib/staff-access";
 import {
   Select,
   SelectContent,
@@ -257,14 +253,17 @@ function UsersAccessPanel() {
                     </TableCell>
                     <TableCell>
                       <div className="flex max-w-xl flex-wrap gap-1.5">
-                        {(user.modules ?? defaultModulesByRole[role]).map((module: StaffModuleKey) => (
-                          <span
-                            key={module}
-                            className="rounded-full border border-sand/70 bg-warm-white px-2 py-1 text-xs text-muted-foreground"
-                          >
-                            {staffModuleOptions.find((option) => option.key === module)?.label ?? module}
-                          </span>
-                        ))}
+                        {(user.modules ?? defaultModulesByRole[role]).map(
+                          (module: StaffModuleKey) => (
+                            <span
+                              key={module}
+                              className="rounded-full border border-sand/70 bg-warm-white px-2 py-1 text-xs text-muted-foreground"
+                            >
+                              {staffModuleOptions.find((option) => option.key === module)?.label ??
+                                module}
+                            </span>
+                          ),
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-xs">

@@ -1,73 +1,52 @@
-# QA Checklist - Makrana Home Art
+# QA Checklist — Makrana Home Art
 
-Usar esta lista despues de configurar Supabase real, migraciones, buckets,
-usuario admin y roles.
+Estados permitidos: `PENDIENTE MANUAL`, `APROBADO`, `FALLIDO`, `BLOQUEADO` y `NO APLICA`.
+Una inspección de código no sustituye una prueba funcional.
 
-## Web publica
+| Área         | Verificación                               | Estado           | Fecha      | Entorno           | Evidencia                       | Observación                        | Responsable         |
+| ------------ | ------------------------------------------ | ---------------- | ---------- | ----------------- | ------------------------------- | ---------------------------------- | ------------------- |
+| Local        | Instalación reproducible con `npm ci`      | BLOQUEADO        | 2026-08-20 | Local             | Error `EPERM` de Windows        | Binario nativo en uso              | Desarrollo          |
+| Local        | Prueba editorial                           | APROBADO         | 2026-08-20 | Local             | `npm run test:content`: 6/6     | Sin fallos                         | Desarrollo          |
+| Local        | Pruebas editoriales y contractuales        | APROBADO         | 2026-08-20 | Local             | `npm run test:platform`: 26/26  | Sin fallos                         | Desarrollo          |
+| Local        | Pruebas tributarias con mocks              | APROBADO         | 2026-08-20 | Local             | `npm run test:tax`: 9/9         | No acredita SUNAT real             | Desarrollo          |
+| Local        | Comprobación TypeScript                    | APROBADO         | 2026-08-20 | Local             | `npx tsc --noEmit`              | Sin errores                        | Desarrollo          |
+| Local        | Compilación de producción                  | APROBADO         | 2026-08-20 | Local             | `npm run build`                 | Compila con advertencia de chunks  | Desarrollo          |
+| Local        | Lint completo                              | APROBADO         | 2026-08-20 | Local             | `npm run lint`                  | 0 errores; 57 advertencias         | Desarrollo          |
+| Pública      | Inicio carga sin errores                   | PENDIENTE MANUAL | —          | Producción        | —                               | Prueba manual                      | QA                  |
+| Pública      | Catálogo muestra solo productos visibles   | PENDIENTE MANUAL | —          | Producción        | —                               | Probar filtros y detalle           | QA                  |
+| Pública      | Novedades ocultan borradores               | PENDIENTE MANUAL | —          | Producción        | —                               | Probar listado y slug              | QA                  |
+| Pública      | Talleres respetan visibilidad              | PENDIENTE MANUAL | —          | Producción        | —                               | Probar inscripción                 | QA                  |
+| Pública      | Ferias permiten publicar/despublicar       | FALLIDO          | 2026-08-20 | Código/esquema    | Sin estado ni visibilidad       | Requiere decisión y migración      | Producto/Desarrollo |
+| Pública      | Contacto crea un lead                      | PENDIENTE MANUAL | —          | Producción        | —                               | Usar datos de prueba identificados | QA                  |
+| Acceso       | Administrador autorizado entra             | BLOQUEADO        | —          | Supabase real     | —                               | Requiere usuario de prueba         | Administrador       |
+| Acceso       | Cliente no entra al administrador          | BLOQUEADO        | —          | Supabase real     | —                               | Requiere usuario de prueba         | Administrador       |
+| Acceso       | Usuario sin rol queda denegado             | BLOQUEADO        | —          | Supabase real     | —                               | Requiere usuario de prueba         | Administrador       |
+| Acceso       | Usuario anónimo queda denegado             | PENDIENTE MANUAL | —          | Local/producción  | —                               | Probar rutas y funciones           | QA                  |
+| Admin        | Productos y materiales: CRUD y visibilidad | PENDIENTE MANUAL | —          | Staging           | —                               | No usar datos reales               | QA                  |
+| Admin        | Categorías, almacenes y manuales           | PENDIENTE MANUAL | —          | Staging           | —                               | Incluir archivos                   | QA                  |
+| Inventario   | Entrada aumenta stock                      | BLOQUEADO        | —          | Supabase aislado  | —                               | Requiere datos de prueba           | QA                  |
+| Inventario   | Salida descuenta y evita stock negativo    | BLOQUEADO        | —          | Supabase aislado  | —                               | Incluir concurrencia               | QA                  |
+| Ventas       | Crear borrador y validar ítems/totales     | BLOQUEADO        | —          | Supabase aislado  | —                               | No operar ventas reales            | QA                  |
+| Ventas       | Confirmar descuenta stock una sola vez     | BLOQUEADO        | —          | Supabase aislado  | —                               | Probar reintento                   | QA                  |
+| Ventas       | Cancelar revierte stock                    | BLOQUEADO        | —          | Supabase aislado  | —                               | Verificar transición               | QA                  |
+| Comprobantes | Numeración correlativa sin duplicados      | BLOQUEADO        | —          | Supabase aislado  | —                               | No equivale a validación SUNAT     | QA                  |
+| Comprobantes | Documento abre e imprime                   | PENDIENTE MANUAL | —          | Navegadores       | —                               | Escritorio y móvil                 | QA                  |
+| Contenido    | Normalización al guardar/publicar          | APROBADO         | 2026-08-20 | Unitario          | 6 casos aprobados               | Nombres propios quedan manuales    | Desarrollo          |
+| Seguridad    | Service role ausente del bundle            | APROBADO         | 2026-08-20 | Build             | 0 referencias en bundle público | La clave permanece server-side     | Seguridad           |
+| Seguridad    | RLS impide fuga entre clientes             | BLOQUEADO        | —          | Supabase aislado  | —                               | Requiere identidades separadas     | Seguridad           |
+| Storage      | Imágenes públicas previstas                | BLOQUEADO        | —          | Supabase real     | —                               | Revisar MIME y tamaño              | Seguridad           |
+| Storage      | Documentos privados protegidos             | BLOQUEADO        | —          | Supabase real     | —                               | Incluir archivos fiscales          | Seguridad           |
+| WhatsApp     | Configuración y envío simulado             | APROBADO         | 2026-08-20 | Mock local        | 3/3 casos aprobados             | No se enviaron mensajes reales     | Integraciones       |
+| Dominio      | DNS, HTTPS, canónico y HTTP→HTTPS          | APROBADO         | 2026-08-20 | Producción        | HTTP 301; HTTPS 200; www 301    | Sin cambios de DNS                 | Infraestructura     |
+| Render       | Health check raíz                          | APROBADO         | 2026-08-20 | Producción        | `/` respondió HTTP 200          | Servido por Render/Cloudflare      | Infraestructura     |
+| Render       | Funcionamiento después de reinicio         | PENDIENTE MANUAL | —          | Producción        | —                               | Requiere acceso al panel           | Infraestructura     |
+| Supabase     | Comparación de migraciones local/remota    | FALLIDO          | 2026-08-20 | Proyecto enlazado | 26 iguales; 1 solo local        | No aplicar sin revisión            | Administrador       |
+| UX           | Vista móvil y escritorio                   | PENDIENTE MANUAL | —          | Navegadores       | —                               | Recorrido completo                 | QA                  |
+| Errores      | 404 y errores no filtran detalles          | PENDIENTE MANUAL | —          | Staging           | —                               | Probar casos controlados           | Seguridad           |
 
-- [ ] Home carga sin errores.
-- [ ] Catalogo lista productos publicados.
-- [ ] Filtros de catalogo funcionan.
-- [ ] Detalle de producto muestra imagen, precio y descripcion.
-- [ ] Novedades lista publicaciones.
-- [ ] Detalle de novedad carga por slug.
-- [ ] Talleres lista talleres publicados.
-- [ ] Contacto permite enviar lead.
-- [ ] Registro permite crear cuenta cliente.
+## Evidencia mínima requerida
 
-## Admin
-
-- [ ] Login admin real con Supabase Auth.
-- [ ] Usuario sin rol admin no entra a `/admin`.
-- [ ] Productos: crear, editar, publicar/ocultar y eliminar.
-- [ ] Materiales: crear, editar y eliminar.
-- [ ] Presentaciones: unidad.
-- [ ] Presentaciones: docena.
-- [ ] Presentaciones: ciento/100.
-- [ ] Presentaciones: combo.
-- [ ] Almacenes: crear, editar y eliminar.
-- [ ] Movimientos: entrada aumenta stock.
-- [ ] Movimientos: salida descuenta stock.
-- [ ] Movimientos: no permite stock negativo.
-- [ ] Ventas: crear venta borrador.
-- [ ] Ventas: agregar productos/materiales.
-- [ ] Confirmacion de venta cambia estado.
-- [ ] Confirmacion descuenta stock.
-- [ ] Anulacion de venta cambia estado.
-- [ ] Anulacion revierte stock.
-- [ ] Comprobante abre con numero correlativo.
-- [ ] Comprobante imprime correctamente.
-- [ ] Clientes: crear, editar y consultar historial.
-- [ ] Leads: convertir lead a cliente.
-- [ ] Novedades: crear, editar, publicar y eliminar.
-- [ ] Talleres: crear, editar, publicar y gestionar inscritos.
-- [ ] Ferias: crear feria y asignar items.
-- [ ] Reportes: ventas, stock bajo, pagos y clientes cargan.
-
-## Cliente
-
-- [ ] Login cliente real.
-- [ ] Perfil muestra datos del usuario.
-- [ ] Perfil permite actualizar datos permitidos.
-- [ ] Compras/pedidos muestra ventas propias.
-- [ ] Comprobantes muestra comprobantes propios.
-- [ ] Talleres inscritos muestra inscripciones propias.
-- [ ] Cursos muestra estado actual sin romper navegacion.
-
-## Seguridad y permisos
-
-- [ ] `SUPABASE_SERVICE_ROLE_KEY` no aparece en el bundle del navegador.
-- [ ] RLS bloquea lectura de ventas de otros clientes.
-- [ ] RLS bloquea mutaciones admin para usuarios sin rol.
-- [ ] Buckets privados no permiten lectura publica.
-- [ ] Buckets publicos solo exponen imagenes esperadas.
-- [ ] `VITE_ENABLE_DEV_ADMIN=false` en staging/produccion.
-
-## Produccion
-
-- [ ] `npm run lint` pasa.
-- [ ] `npm run build` pasa.
-- [ ] Comando de start de Render funciona.
-- [ ] Variables de Render estan completas.
-- [ ] Dominio y HTTPS funcionan.
-- [ ] Pagina 404/errores no expone detalles internos.
+Para aprobar manualmente un punto, registrar fecha, entorno, identificador del caso o captura
+sin datos personales, resultado observado y responsable. Las pruebas de producción deben usar
+registros identificados como prueba y retirarse mediante el procedimiento autorizado, nunca
+con borrados masivos.
