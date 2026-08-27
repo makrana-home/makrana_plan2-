@@ -75,6 +75,7 @@ import {
   getSaleDocumentIntent,
 } from "@/lib/sale-notes";
 import { resolveOperationBeforeConfirmation } from "@/lib/business-rules";
+import { WebOrdersView } from "./admin.pedidos";
 
 export const Route = createFileRoute("/_authenticated/admin/ventas")({ component: SalesPage });
 
@@ -119,6 +120,25 @@ const documentIntentOptions = [
     help: "Propuesta que todavía no representa una venta ni descuenta stock.",
   },
 ] as const;
+
+type SalesFilter =
+  | "all"
+  | "web"
+  | "boleta"
+  | "factura"
+  | "nota_venta"
+  | "pedido_personalizado"
+  | "cotizacion";
+
+const salesFilters: { value: SalesFilter; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "web", label: "Ventas de la web" },
+  { value: "boleta", label: "Boletas electrónicas" },
+  { value: "factura", label: "Facturas electrónicas" },
+  { value: "nota_venta", label: "Notas de venta" },
+  { value: "pedido_personalizado", label: "Pedidos personalizados" },
+  { value: "cotizacion", label: "Cotizaciones" },
+];
 
 function blankSaleItem(keepManualMode = false) {
   return {
@@ -184,7 +204,7 @@ function SalesPage() {
   const upsertCustomer = useServerFn(adminUpsertCustomer);
 
   const [rows, setRows] = useState<any[]>([]);
-  const [documentFilter, setDocumentFilter] = useState<"all" | "quote" | "note">("all");
+  const [documentFilter, setDocumentFilter] = useState<SalesFilter>("all");
   const [wh, setWh] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -211,12 +231,11 @@ function SalesPage() {
   });
   const filteredRows = useMemo(
     () =>
-      rows.filter((sale) => {
-        const hasSaleNote = Boolean(getSaleReceipt(sale)?.id);
-        if (documentFilter === "note") return hasSaleNote;
-        if (documentFilter === "quote") return !hasSaleNote;
-        return true;
-      }),
+      rows.filter(
+        (sale) =>
+          documentFilter === "all" ||
+          (documentFilter !== "web" && getSaleDocumentIntent(sale.notes) === documentFilter),
+      ),
     [documentFilter, rows],
   );
 
@@ -370,46 +389,31 @@ function SalesPage() {
         }
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          size="sm"
-          variant={documentFilter === "all" ? "default" : "outline"}
-          onClick={() => setDocumentFilter("all")}
-        >
-          Todos ({rows.length})
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className={
-            documentFilter === "quote"
-              ? "border-amber-300 bg-amber-100 text-amber-900 hover:bg-amber-100"
-              : quotationButtonClass
-          }
-          onClick={() => setDocumentFilter("quote")}
-        >
-          <FileText className="h-3.5 w-3.5" />
-          Cotizaciones ({rows.filter((sale) => !getSaleReceipt(sale)?.id).length})
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className={
-            documentFilter === "note"
-              ? "border-emerald-300 bg-emerald-100 text-emerald-900 hover:bg-emerald-100"
-              : saleNoteButtonClass
-          }
-          onClick={() => setDocumentFilter("note")}
-        >
-          <Eye className="h-3.5 w-3.5" />
-          Notas de venta ({rows.filter((sale) => getSaleReceipt(sale)?.id).length})
-        </Button>
+      <div
+        className="mb-4 flex flex-wrap items-center gap-2"
+        role="tablist"
+        aria-label="Filtrar historial de ventas"
+      >
+        {salesFilters.map((filter) => (
+          <Button
+            key={filter.value}
+            type="button"
+            size="sm"
+            role="tab"
+            aria-selected={documentFilter === filter.value}
+            variant={documentFilter === filter.value ? "default" : "outline"}
+            onClick={() => setDocumentFilter(filter.value)}
+          >
+            {filter.label}
+            {filter.value !== "web" &&
+              ` (${filter.value === "all" ? rows.length : rows.filter((sale) => getSaleDocumentIntent(sale.notes) === filter.value).length})`}
+          </Button>
+        ))}
       </div>
 
-      <div className="grid gap-3 md:hidden">
+      {documentFilter === "web" && <WebOrdersView />}
+
+      <div className={`${documentFilter === "web" ? "hidden" : "grid"} gap-3 md:hidden`}>
         {filteredRows.length === 0 && (
           <div className="rounded-xl border border-sand/60 bg-warm-white px-4 py-8 text-center text-sm text-muted-foreground">
             No hay documentos en este filtro.
@@ -428,7 +432,9 @@ function SalesPage() {
         ))}
       </div>
 
-      <div className="hidden overflow-hidden rounded-xl border border-sand/60 bg-warm-white md:block">
+      <div
+        className={`${documentFilter === "web" ? "hidden" : "hidden md:block"} overflow-hidden rounded-xl border border-sand/60 bg-warm-white`}
+      >
         <Table className="min-w-[1120px]">
           <TableHeader>
             <TableRow>

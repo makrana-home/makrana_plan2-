@@ -64,7 +64,7 @@ function Page() {
         />
       </div>
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Shortcut to="/admin/comprobantes" icon={ReceiptText} label="Boletas y facturas" />
+        <Shortcut to="/admin/comprobantes" icon={ReceiptText} label="Comprobantes electrónicos" />
         <Shortcut to="/admin/compras" icon={FileText} label="Registro de compras SUNAT" />
         <Shortcut to="/admin/sire" icon={Landmark} label="Libros SUNAT" />
         <Shortcut

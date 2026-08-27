@@ -282,7 +282,7 @@ export const adminListOrders = createServerFn({ method: "GET" })
     const { data, error } = await db
       .from("orders")
       .select(
-        "id,code,first_name,last_name,email,status,total,currency,receipt_type,created_at,expires_at,payments(id,status,reference)",
+        "id,code,first_name,last_name,email,status,total,currency,receipt_type,created_at,expires_at,delivery_method_snapshot,delivery_coordination_status,items:order_items(id,name_snapshot,quantity,item_type,kit_mode,requires_inventory),payments(id,status,reference),sale:sales(id,status,payment_status,tax_document:tax_documents(id,status,document_type))",
       )
       .order("created_at", { ascending: false });
     if (error) throw error;

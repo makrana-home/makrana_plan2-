@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -161,12 +161,14 @@ function Page() {
         Ambiente de prueba: no se están enviando documentos reales a SUNAT.
       </div>
       <PageHeader
-        title="Boletas y facturas"
-        description="Boletas, facturas y notas de crédito vinculadas a ventas confirmadas y pagadas."
+        title="Comprobantes electrónicos"
+        description="Consulta boletas, facturas, archivos, respuestas y notas de crédito vinculadas a ventas confirmadas."
         actions={
-          <Button disabled={!settings} onClick={() => setOpen(true)}>
-            <FileCheck2 className="h-4 w-4" />
-            Generar boleta o factura
+          <Button asChild>
+            <Link to="/admin/ventas">
+              <FileCheck2 className="h-4 w-4" />
+              Ir a Nueva operación
+            </Link>
           </Button>
         }
       />
@@ -197,7 +199,10 @@ function Page() {
           </div>
         </div>
       </section>
-      <div className="overflow-hidden rounded-xl border border-sand bg-warm-white">
+      <div
+        id="notas-credito"
+        className="scroll-mt-6 overflow-hidden rounded-xl border border-sand bg-warm-white"
+      >
         <Table>
           <TableHeader>
             <TableRow>

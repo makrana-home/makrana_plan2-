@@ -60,13 +60,43 @@ test("navegación separa ventas, tributos e inventario con etiquetas comprensibl
     "Ventas",
     "Tributos",
     "Inventario y almacenes",
-    "Boletas y facturas",
+    "Nueva operación",
+    "Ventas de la web",
+    "Comprobantes electrónicos",
+    "Notas de crédito",
     "Libros SUNAT",
   ])
     assert.ok(menu.includes(label), label);
   assert.doesNotMatch(menu, /label:\s*"Datos y conexión SUNAT"/);
   assert.doesNotMatch(menu, /label:\s*"SIRE"/);
   assert.equal(moduleForAdminPath("/admin/comprobantes"), "tax");
+});
+
+test("la interfaz unifica ventas web y conserva un único origen para emitir comprobantes", async () => {
+  const sales = await read("src/routes/_authenticated/admin.ventas.tsx");
+  const orders = await read("src/routes/_authenticated/admin.pedidos.tsx");
+  const receipts = await read("src/routes/_authenticated/admin.comprobantes.tsx");
+  for (const label of [
+    "Todos",
+    "Ventas de la web",
+    "Boletas electrónicas",
+    "Facturas electrónicas",
+    "Notas de venta",
+    "Pedidos personalizados",
+    "Cotizaciones",
+  ])
+    assert.ok(sales.includes(label), label);
+  for (const label of [
+    "Tipo de compra",
+    "Productos",
+    "Documento solicitado",
+    "Entrega física",
+    "Acceso digital",
+  ])
+    assert.ok(orders.includes(label), label);
+  assert.match(receipts, /title="Comprobantes electrónicos"/);
+  assert.match(receipts, /<Link to="\/admin\/ventas">/);
+  assert.doesNotMatch(receipts, /onClick=\{\(\) => setOpen\(true\)\}/);
 });
 
 test("autenticación deriva el usuario de claims verificados y no de datos del cliente", async () => {

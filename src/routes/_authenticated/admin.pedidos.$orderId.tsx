@@ -35,6 +35,11 @@ function Page() {
   }
   if (!data) return <p>Cargando…</p>;
   const payment = data.payments?.[0];
+  const purchaseKind = getPurchaseKind(data.items ?? []);
+  const hasPhysical = (data.items ?? []).some((item: any) => item.requires_inventory);
+  const hasDigital = (data.items ?? []).some((item: any) =>
+    ["course", "workshop"].includes(item.item_type),
+  );
   return (
     <div>
       <PageHeader
@@ -46,6 +51,27 @@ function Page() {
           </Button>
         }
       />
+      <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Summary label="Tipo de compra" value={purchaseKind} />
+        <Summary
+          label="Documento solicitado"
+          value={data.receipt_type === "invoice" ? "Factura electrónica" : "Boleta electrónica"}
+        />
+        <Summary
+          label="Entrega física"
+          value={hasPhysical ? (data.delivery_method_snapshot ?? "Por coordinar") : "No aplica"}
+        />
+        <Summary
+          label="Acceso digital"
+          value={
+            hasDigital
+              ? data.sale?.status === "confirmada"
+                ? "Solicitud preparada"
+                : "Pendiente del pago"
+              : "No aplica"
+          }
+        />
+      </div>
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader>
@@ -58,6 +84,9 @@ function Page() {
               <div className="flex justify-between border-b pb-3" key={item.id}>
                 <span>
                   {item.quantity} × {item.name_snapshot}
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    {itemTypeLabel(item.item_type)}
+                  </span>
                 </span>
                 <span>{moneyPEN(item.subtotal)}</span>
               </div>
@@ -204,5 +233,39 @@ function Page() {
         </Card>
       </div>
     </div>
+  );
+}
+
+function Summary({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-sand bg-warm-white p-4">
+      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1 font-semibold">{value}</div>
+    </div>
+  );
+}
+
+function getPurchaseKind(items: any[]) {
+  const digital = items.some((item) => ["course", "workshop"].includes(item.item_type));
+  const physical = items.some((item) => item.requires_inventory);
+  if (digital && physical) return "Pedido mixto";
+  if (digital && items.some((item) => item.kit_mode || item.item_type === "kit"))
+    return "Curso con kit";
+  return digital ? "Curso digital" : "Producto físico";
+}
+
+function itemTypeLabel(type: string) {
+  return (
+    (
+      {
+        product: "Producto",
+        material: "Material",
+        kit: "Kit",
+        course: "Curso",
+        workshop: "Taller",
+      } as Record<string, string>
+    )[type] ?? type
   );
 }
