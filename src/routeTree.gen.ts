@@ -21,13 +21,18 @@ import { Route as PublicSobreMakranaRouteImport } from './routes/_public.sobre-m
 import { Route as PublicRegistroRouteImport } from './routes/_public.registro'
 import { Route as PublicLibroDeReclamacionesRouteImport } from './routes/_public.libro-de-reclamaciones'
 import { Route as PublicContactoRouteImport } from './routes/_public.contacto'
+import { Route as PublicCheckoutRouteImport } from './routes/_public.checkout'
+import { Route as PublicCarritoRouteImport } from './routes/_public.carrito'
 import { Route as AuthenticatedClienteRouteImport } from './routes/_authenticated/cliente'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as PublicNovedadesIndexRouteImport } from './routes/_public.novedades.index'
 import { Route as PublicCatalogoIndexRouteImport } from './routes/_public.catalogo.index'
 import { Route as AuthenticatedClienteIndexRouteImport } from './routes/_authenticated/cliente.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as PublicPedidoCodeRouteImport } from './routes/_public.pedido.$code'
+import { Route as PublicPagoRetornoRouteImport } from './routes/_public.pago.retorno'
 import { Route as PublicNovedadesSlugRouteImport } from './routes/_public.novedades.$slug'
+import { Route as PublicCheckoutPagoRouteImport } from './routes/_public.checkout.pago'
 import { Route as PublicCatalogoSlugRouteImport } from './routes/_public.catalogo.$slug'
 import { Route as AuthenticatedClienteTalleresRouteImport } from './routes/_authenticated/cliente.talleres'
 import { Route as AuthenticatedClientePerfilRouteImport } from './routes/_authenticated/cliente.perfil'
@@ -35,9 +40,13 @@ import { Route as AuthenticatedClientePedidosRouteImport } from './routes/_authe
 import { Route as AuthenticatedClienteCursosRouteImport } from './routes/_authenticated/cliente.cursos'
 import { Route as AuthenticatedClienteComprobantesRouteImport } from './routes/_authenticated/cliente.comprobantes'
 import { Route as AuthenticatedAdminVentasRouteImport } from './routes/_authenticated/admin.ventas'
+import { Route as AuthenticatedAdminTributosRouteImport } from './routes/_authenticated/admin.tributos'
 import { Route as AuthenticatedAdminTalleresRouteImport } from './routes/_authenticated/admin.talleres'
+import { Route as AuthenticatedAdminSireRouteImport } from './routes/_authenticated/admin.sire'
 import { Route as AuthenticatedAdminReportesRouteImport } from './routes/_authenticated/admin.reportes'
 import { Route as AuthenticatedAdminProductosRouteImport } from './routes/_authenticated/admin.productos'
+import { Route as AuthenticatedAdminPedidosRouteImport } from './routes/_authenticated/admin.pedidos'
+import { Route as AuthenticatedAdminPagosRouteImport } from './routes/_authenticated/admin.pagos'
 import { Route as AuthenticatedAdminPaginaWebRouteImport } from './routes/_authenticated/admin.pagina-web'
 import { Route as AuthenticatedAdminNovedadesRouteImport } from './routes/_authenticated/admin.novedades'
 import { Route as AuthenticatedAdminMovimientosRouteImport } from './routes/_authenticated/admin.movimientos'
@@ -47,9 +56,13 @@ import { Route as AuthenticatedAdminFeriasRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminCotizacionesRouteImport } from './routes/_authenticated/admin.cotizaciones'
 import { Route as AuthenticatedAdminConfiguracionRouteImport } from './routes/_authenticated/admin.configuracion'
 import { Route as AuthenticatedAdminComprobantesRouteImport } from './routes/_authenticated/admin.comprobantes'
+import { Route as AuthenticatedAdminComprasRouteImport } from './routes/_authenticated/admin.compras'
 import { Route as AuthenticatedAdminClientesRouteImport } from './routes/_authenticated/admin.clientes'
 import { Route as AuthenticatedAdminCalendarioRouteImport } from './routes/_authenticated/admin.calendario'
 import { Route as AuthenticatedAdminAlmacenesRouteImport } from './routes/_authenticated/admin.almacenes'
+import { Route as AuthenticatedAdminPedidosOrderIdRouteImport } from './routes/_authenticated/admin.pedidos.$orderId'
+import { Route as AuthenticatedAdminConfiguracionTributariaRouteImport } from './routes/_authenticated/admin.configuracion.tributaria'
+import { Route as AuthenticatedAdminConfiguracionComercioRouteImport } from './routes/_authenticated/admin.configuracion.comercio'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -110,6 +123,16 @@ const PublicContactoRoute = PublicContactoRouteImport.update({
   path: '/contacto',
   getParentRoute: () => PublicRoute,
 } as any)
+const PublicCheckoutRoute = PublicCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicCarritoRoute = PublicCarritoRouteImport.update({
+  id: '/carrito',
+  path: '/carrito',
+  getParentRoute: () => PublicRoute,
+} as any)
 const AuthenticatedClienteRoute = AuthenticatedClienteRouteImport.update({
   id: '/cliente',
   path: '/cliente',
@@ -141,10 +164,25 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const PublicPedidoCodeRoute = PublicPedidoCodeRouteImport.update({
+  id: '/pedido/$code',
+  path: '/pedido/$code',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicPagoRetornoRoute = PublicPagoRetornoRouteImport.update({
+  id: '/pago/retorno',
+  path: '/pago/retorno',
+  getParentRoute: () => PublicRoute,
+} as any)
 const PublicNovedadesSlugRoute = PublicNovedadesSlugRouteImport.update({
   id: '/novedades/$slug',
   path: '/novedades/$slug',
   getParentRoute: () => PublicRoute,
+} as any)
+const PublicCheckoutPagoRoute = PublicCheckoutPagoRouteImport.update({
+  id: '/pago',
+  path: '/pago',
+  getParentRoute: () => PublicCheckoutRoute,
 } as any)
 const PublicCatalogoSlugRoute = PublicCatalogoSlugRouteImport.update({
   id: '/catalogo/$slug',
@@ -187,12 +225,23 @@ const AuthenticatedAdminVentasRoute =
     path: '/ventas',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminTributosRoute =
+  AuthenticatedAdminTributosRouteImport.update({
+    id: '/tributos',
+    path: '/tributos',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminTalleresRoute =
   AuthenticatedAdminTalleresRouteImport.update({
     id: '/talleres',
     path: '/talleres',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminSireRoute = AuthenticatedAdminSireRouteImport.update({
+  id: '/sire',
+  path: '/sire',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminReportesRoute =
   AuthenticatedAdminReportesRouteImport.update({
     id: '/reportes',
@@ -205,6 +254,17 @@ const AuthenticatedAdminProductosRoute =
     path: '/productos',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminPedidosRoute =
+  AuthenticatedAdminPedidosRouteImport.update({
+    id: '/pedidos',
+    path: '/pedidos',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminPagosRoute = AuthenticatedAdminPagosRouteImport.update({
+  id: '/pagos',
+  path: '/pagos',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminPaginaWebRoute =
   AuthenticatedAdminPaginaWebRouteImport.update({
     id: '/pagina-web',
@@ -259,6 +319,12 @@ const AuthenticatedAdminComprobantesRoute =
     path: '/comprobantes',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminComprasRoute =
+  AuthenticatedAdminComprasRouteImport.update({
+    id: '/compras',
+    path: '/compras',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminClientesRoute =
   AuthenticatedAdminClientesRouteImport.update({
     id: '/clientes',
@@ -277,6 +343,24 @@ const AuthenticatedAdminAlmacenesRoute =
     path: '/almacenes',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminPedidosOrderIdRoute =
+  AuthenticatedAdminPedidosOrderIdRouteImport.update({
+    id: '/$orderId',
+    path: '/$orderId',
+    getParentRoute: () => AuthenticatedAdminPedidosRoute,
+  } as any)
+const AuthenticatedAdminConfiguracionTributariaRoute =
+  AuthenticatedAdminConfiguracionTributariaRouteImport.update({
+    id: '/tributaria',
+    path: '/tributaria',
+    getParentRoute: () => AuthenticatedAdminConfiguracionRoute,
+  } as any)
+const AuthenticatedAdminConfiguracionComercioRoute =
+  AuthenticatedAdminConfiguracionComercioRouteImport.update({
+    id: '/comercio',
+    path: '/comercio',
+    getParentRoute: () => AuthenticatedAdminConfiguracionRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
@@ -285,6 +369,8 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/cliente': typeof AuthenticatedClienteRouteWithChildren
+  '/carrito': typeof PublicCarritoRoute
+  '/checkout': typeof PublicCheckoutRouteWithChildren
   '/contacto': typeof PublicContactoRoute
   '/libro-de-reclamaciones': typeof PublicLibroDeReclamacionesRoute
   '/registro': typeof PublicRegistroRoute
@@ -294,8 +380,9 @@ export interface FileRoutesByFullPath {
   '/admin/almacenes': typeof AuthenticatedAdminAlmacenesRoute
   '/admin/calendario': typeof AuthenticatedAdminCalendarioRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
+  '/admin/compras': typeof AuthenticatedAdminComprasRoute
   '/admin/comprobantes': typeof AuthenticatedAdminComprobantesRoute
-  '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
+  '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRouteWithChildren
   '/admin/cotizaciones': typeof AuthenticatedAdminCotizacionesRoute
   '/admin/ferias': typeof AuthenticatedAdminFeriasRoute
   '/admin/manual': typeof AuthenticatedAdminManualRoute
@@ -303,9 +390,13 @@ export interface FileRoutesByFullPath {
   '/admin/movimientos': typeof AuthenticatedAdminMovimientosRoute
   '/admin/novedades': typeof AuthenticatedAdminNovedadesRoute
   '/admin/pagina-web': typeof AuthenticatedAdminPaginaWebRoute
+  '/admin/pagos': typeof AuthenticatedAdminPagosRoute
+  '/admin/pedidos': typeof AuthenticatedAdminPedidosRouteWithChildren
   '/admin/productos': typeof AuthenticatedAdminProductosRoute
   '/admin/reportes': typeof AuthenticatedAdminReportesRoute
+  '/admin/sire': typeof AuthenticatedAdminSireRoute
   '/admin/talleres': typeof AuthenticatedAdminTalleresRoute
+  '/admin/tributos': typeof AuthenticatedAdminTributosRoute
   '/admin/ventas': typeof AuthenticatedAdminVentasRoute
   '/cliente/comprobantes': typeof AuthenticatedClienteComprobantesRoute
   '/cliente/cursos': typeof AuthenticatedClienteCursosRoute
@@ -313,17 +404,25 @@ export interface FileRoutesByFullPath {
   '/cliente/perfil': typeof AuthenticatedClientePerfilRoute
   '/cliente/talleres': typeof AuthenticatedClienteTalleresRoute
   '/catalogo/$slug': typeof PublicCatalogoSlugRoute
+  '/checkout/pago': typeof PublicCheckoutPagoRoute
   '/novedades/$slug': typeof PublicNovedadesSlugRoute
+  '/pago/retorno': typeof PublicPagoRetornoRoute
+  '/pedido/$code': typeof PublicPedidoCodeRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/cliente/': typeof AuthenticatedClienteIndexRoute
   '/catalogo/': typeof PublicCatalogoIndexRoute
   '/novedades/': typeof PublicNovedadesIndexRoute
+  '/admin/configuracion/comercio': typeof AuthenticatedAdminConfiguracionComercioRoute
+  '/admin/configuracion/tributaria': typeof AuthenticatedAdminConfiguracionTributariaRoute
+  '/admin/pedidos/$orderId': typeof AuthenticatedAdminPedidosOrderIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
   '/auth': typeof AuthRoute
   '/plataforma': typeof PlataformaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/carrito': typeof PublicCarritoRoute
+  '/checkout': typeof PublicCheckoutRouteWithChildren
   '/contacto': typeof PublicContactoRoute
   '/libro-de-reclamaciones': typeof PublicLibroDeReclamacionesRoute
   '/registro': typeof PublicRegistroRoute
@@ -333,8 +432,9 @@ export interface FileRoutesByTo {
   '/admin/almacenes': typeof AuthenticatedAdminAlmacenesRoute
   '/admin/calendario': typeof AuthenticatedAdminCalendarioRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
+  '/admin/compras': typeof AuthenticatedAdminComprasRoute
   '/admin/comprobantes': typeof AuthenticatedAdminComprobantesRoute
-  '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
+  '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRouteWithChildren
   '/admin/cotizaciones': typeof AuthenticatedAdminCotizacionesRoute
   '/admin/ferias': typeof AuthenticatedAdminFeriasRoute
   '/admin/manual': typeof AuthenticatedAdminManualRoute
@@ -342,9 +442,13 @@ export interface FileRoutesByTo {
   '/admin/movimientos': typeof AuthenticatedAdminMovimientosRoute
   '/admin/novedades': typeof AuthenticatedAdminNovedadesRoute
   '/admin/pagina-web': typeof AuthenticatedAdminPaginaWebRoute
+  '/admin/pagos': typeof AuthenticatedAdminPagosRoute
+  '/admin/pedidos': typeof AuthenticatedAdminPedidosRouteWithChildren
   '/admin/productos': typeof AuthenticatedAdminProductosRoute
   '/admin/reportes': typeof AuthenticatedAdminReportesRoute
+  '/admin/sire': typeof AuthenticatedAdminSireRoute
   '/admin/talleres': typeof AuthenticatedAdminTalleresRoute
+  '/admin/tributos': typeof AuthenticatedAdminTributosRoute
   '/admin/ventas': typeof AuthenticatedAdminVentasRoute
   '/cliente/comprobantes': typeof AuthenticatedClienteComprobantesRoute
   '/cliente/cursos': typeof AuthenticatedClienteCursosRoute
@@ -352,11 +456,17 @@ export interface FileRoutesByTo {
   '/cliente/perfil': typeof AuthenticatedClientePerfilRoute
   '/cliente/talleres': typeof AuthenticatedClienteTalleresRoute
   '/catalogo/$slug': typeof PublicCatalogoSlugRoute
+  '/checkout/pago': typeof PublicCheckoutPagoRoute
   '/novedades/$slug': typeof PublicNovedadesSlugRoute
+  '/pago/retorno': typeof PublicPagoRetornoRoute
+  '/pedido/$code': typeof PublicPedidoCodeRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/cliente': typeof AuthenticatedClienteIndexRoute
   '/catalogo': typeof PublicCatalogoIndexRoute
   '/novedades': typeof PublicNovedadesIndexRoute
+  '/admin/configuracion/comercio': typeof AuthenticatedAdminConfiguracionComercioRoute
+  '/admin/configuracion/tributaria': typeof AuthenticatedAdminConfiguracionTributariaRoute
+  '/admin/pedidos/$orderId': typeof AuthenticatedAdminPedidosOrderIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -367,6 +477,8 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/cliente': typeof AuthenticatedClienteRouteWithChildren
+  '/_public/carrito': typeof PublicCarritoRoute
+  '/_public/checkout': typeof PublicCheckoutRouteWithChildren
   '/_public/contacto': typeof PublicContactoRoute
   '/_public/libro-de-reclamaciones': typeof PublicLibroDeReclamacionesRoute
   '/_public/registro': typeof PublicRegistroRoute
@@ -377,8 +489,9 @@ export interface FileRoutesById {
   '/_authenticated/admin/almacenes': typeof AuthenticatedAdminAlmacenesRoute
   '/_authenticated/admin/calendario': typeof AuthenticatedAdminCalendarioRoute
   '/_authenticated/admin/clientes': typeof AuthenticatedAdminClientesRoute
+  '/_authenticated/admin/compras': typeof AuthenticatedAdminComprasRoute
   '/_authenticated/admin/comprobantes': typeof AuthenticatedAdminComprobantesRoute
-  '/_authenticated/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
+  '/_authenticated/admin/configuracion': typeof AuthenticatedAdminConfiguracionRouteWithChildren
   '/_authenticated/admin/cotizaciones': typeof AuthenticatedAdminCotizacionesRoute
   '/_authenticated/admin/ferias': typeof AuthenticatedAdminFeriasRoute
   '/_authenticated/admin/manual': typeof AuthenticatedAdminManualRoute
@@ -386,9 +499,13 @@ export interface FileRoutesById {
   '/_authenticated/admin/movimientos': typeof AuthenticatedAdminMovimientosRoute
   '/_authenticated/admin/novedades': typeof AuthenticatedAdminNovedadesRoute
   '/_authenticated/admin/pagina-web': typeof AuthenticatedAdminPaginaWebRoute
+  '/_authenticated/admin/pagos': typeof AuthenticatedAdminPagosRoute
+  '/_authenticated/admin/pedidos': typeof AuthenticatedAdminPedidosRouteWithChildren
   '/_authenticated/admin/productos': typeof AuthenticatedAdminProductosRoute
   '/_authenticated/admin/reportes': typeof AuthenticatedAdminReportesRoute
+  '/_authenticated/admin/sire': typeof AuthenticatedAdminSireRoute
   '/_authenticated/admin/talleres': typeof AuthenticatedAdminTalleresRoute
+  '/_authenticated/admin/tributos': typeof AuthenticatedAdminTributosRoute
   '/_authenticated/admin/ventas': typeof AuthenticatedAdminVentasRoute
   '/_authenticated/cliente/comprobantes': typeof AuthenticatedClienteComprobantesRoute
   '/_authenticated/cliente/cursos': typeof AuthenticatedClienteCursosRoute
@@ -396,11 +513,17 @@ export interface FileRoutesById {
   '/_authenticated/cliente/perfil': typeof AuthenticatedClientePerfilRoute
   '/_authenticated/cliente/talleres': typeof AuthenticatedClienteTalleresRoute
   '/_public/catalogo/$slug': typeof PublicCatalogoSlugRoute
+  '/_public/checkout/pago': typeof PublicCheckoutPagoRoute
   '/_public/novedades/$slug': typeof PublicNovedadesSlugRoute
+  '/_public/pago/retorno': typeof PublicPagoRetornoRoute
+  '/_public/pedido/$code': typeof PublicPedidoCodeRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/cliente/': typeof AuthenticatedClienteIndexRoute
   '/_public/catalogo/': typeof PublicCatalogoIndexRoute
   '/_public/novedades/': typeof PublicNovedadesIndexRoute
+  '/_authenticated/admin/configuracion/comercio': typeof AuthenticatedAdminConfiguracionComercioRoute
+  '/_authenticated/admin/configuracion/tributaria': typeof AuthenticatedAdminConfiguracionTributariaRoute
+  '/_authenticated/admin/pedidos/$orderId': typeof AuthenticatedAdminPedidosOrderIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -411,6 +534,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin'
     | '/cliente'
+    | '/carrito'
+    | '/checkout'
     | '/contacto'
     | '/libro-de-reclamaciones'
     | '/registro'
@@ -420,6 +545,7 @@ export interface FileRouteTypes {
     | '/admin/almacenes'
     | '/admin/calendario'
     | '/admin/clientes'
+    | '/admin/compras'
     | '/admin/comprobantes'
     | '/admin/configuracion'
     | '/admin/cotizaciones'
@@ -429,9 +555,13 @@ export interface FileRouteTypes {
     | '/admin/movimientos'
     | '/admin/novedades'
     | '/admin/pagina-web'
+    | '/admin/pagos'
+    | '/admin/pedidos'
     | '/admin/productos'
     | '/admin/reportes'
+    | '/admin/sire'
     | '/admin/talleres'
+    | '/admin/tributos'
     | '/admin/ventas'
     | '/cliente/comprobantes'
     | '/cliente/cursos'
@@ -439,17 +569,25 @@ export interface FileRouteTypes {
     | '/cliente/perfil'
     | '/cliente/talleres'
     | '/catalogo/$slug'
+    | '/checkout/pago'
     | '/novedades/$slug'
+    | '/pago/retorno'
+    | '/pedido/$code'
     | '/admin/'
     | '/cliente/'
     | '/catalogo/'
     | '/novedades/'
+    | '/admin/configuracion/comercio'
+    | '/admin/configuracion/tributaria'
+    | '/admin/pedidos/$orderId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/plataforma'
     | '/sitemap.xml'
+    | '/carrito'
+    | '/checkout'
     | '/contacto'
     | '/libro-de-reclamaciones'
     | '/registro'
@@ -459,6 +597,7 @@ export interface FileRouteTypes {
     | '/admin/almacenes'
     | '/admin/calendario'
     | '/admin/clientes'
+    | '/admin/compras'
     | '/admin/comprobantes'
     | '/admin/configuracion'
     | '/admin/cotizaciones'
@@ -468,9 +607,13 @@ export interface FileRouteTypes {
     | '/admin/movimientos'
     | '/admin/novedades'
     | '/admin/pagina-web'
+    | '/admin/pagos'
+    | '/admin/pedidos'
     | '/admin/productos'
     | '/admin/reportes'
+    | '/admin/sire'
     | '/admin/talleres'
+    | '/admin/tributos'
     | '/admin/ventas'
     | '/cliente/comprobantes'
     | '/cliente/cursos'
@@ -478,11 +621,17 @@ export interface FileRouteTypes {
     | '/cliente/perfil'
     | '/cliente/talleres'
     | '/catalogo/$slug'
+    | '/checkout/pago'
     | '/novedades/$slug'
+    | '/pago/retorno'
+    | '/pedido/$code'
     | '/admin'
     | '/cliente'
     | '/catalogo'
     | '/novedades'
+    | '/admin/configuracion/comercio'
+    | '/admin/configuracion/tributaria'
+    | '/admin/pedidos/$orderId'
   id:
     | '__root__'
     | '/_authenticated'
@@ -492,6 +641,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/admin'
     | '/_authenticated/cliente'
+    | '/_public/carrito'
+    | '/_public/checkout'
     | '/_public/contacto'
     | '/_public/libro-de-reclamaciones'
     | '/_public/registro'
@@ -502,6 +653,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/almacenes'
     | '/_authenticated/admin/calendario'
     | '/_authenticated/admin/clientes'
+    | '/_authenticated/admin/compras'
     | '/_authenticated/admin/comprobantes'
     | '/_authenticated/admin/configuracion'
     | '/_authenticated/admin/cotizaciones'
@@ -511,9 +663,13 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/movimientos'
     | '/_authenticated/admin/novedades'
     | '/_authenticated/admin/pagina-web'
+    | '/_authenticated/admin/pagos'
+    | '/_authenticated/admin/pedidos'
     | '/_authenticated/admin/productos'
     | '/_authenticated/admin/reportes'
+    | '/_authenticated/admin/sire'
     | '/_authenticated/admin/talleres'
+    | '/_authenticated/admin/tributos'
     | '/_authenticated/admin/ventas'
     | '/_authenticated/cliente/comprobantes'
     | '/_authenticated/cliente/cursos'
@@ -521,11 +677,17 @@ export interface FileRouteTypes {
     | '/_authenticated/cliente/perfil'
     | '/_authenticated/cliente/talleres'
     | '/_public/catalogo/$slug'
+    | '/_public/checkout/pago'
     | '/_public/novedades/$slug'
+    | '/_public/pago/retorno'
+    | '/_public/pedido/$code'
     | '/_authenticated/admin/'
     | '/_authenticated/cliente/'
     | '/_public/catalogo/'
     | '/_public/novedades/'
+    | '/_authenticated/admin/configuracion/comercio'
+    | '/_authenticated/admin/configuracion/tributaria'
+    | '/_authenticated/admin/pedidos/$orderId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -622,6 +784,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicContactoRouteImport
       parentRoute: typeof PublicRoute
     }
+    '/_public/checkout': {
+      id: '/_public/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof PublicCheckoutRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/carrito': {
+      id: '/_public/carrito'
+      path: '/carrito'
+      fullPath: '/carrito'
+      preLoaderRoute: typeof PublicCarritoRouteImport
+      parentRoute: typeof PublicRoute
+    }
     '/_authenticated/cliente': {
       id: '/_authenticated/cliente'
       path: '/cliente'
@@ -664,12 +840,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_public/pedido/$code': {
+      id: '/_public/pedido/$code'
+      path: '/pedido/$code'
+      fullPath: '/pedido/$code'
+      preLoaderRoute: typeof PublicPedidoCodeRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/pago/retorno': {
+      id: '/_public/pago/retorno'
+      path: '/pago/retorno'
+      fullPath: '/pago/retorno'
+      preLoaderRoute: typeof PublicPagoRetornoRouteImport
+      parentRoute: typeof PublicRoute
+    }
     '/_public/novedades/$slug': {
       id: '/_public/novedades/$slug'
       path: '/novedades/$slug'
       fullPath: '/novedades/$slug'
       preLoaderRoute: typeof PublicNovedadesSlugRouteImport
       parentRoute: typeof PublicRoute
+    }
+    '/_public/checkout/pago': {
+      id: '/_public/checkout/pago'
+      path: '/pago'
+      fullPath: '/checkout/pago'
+      preLoaderRoute: typeof PublicCheckoutPagoRouteImport
+      parentRoute: typeof PublicCheckoutRoute
     }
     '/_public/catalogo/$slug': {
       id: '/_public/catalogo/$slug'
@@ -720,11 +917,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminVentasRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/tributos': {
+      id: '/_authenticated/admin/tributos'
+      path: '/tributos'
+      fullPath: '/admin/tributos'
+      preLoaderRoute: typeof AuthenticatedAdminTributosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/talleres': {
       id: '/_authenticated/admin/talleres'
       path: '/talleres'
       fullPath: '/admin/talleres'
       preLoaderRoute: typeof AuthenticatedAdminTalleresRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/sire': {
+      id: '/_authenticated/admin/sire'
+      path: '/sire'
+      fullPath: '/admin/sire'
+      preLoaderRoute: typeof AuthenticatedAdminSireRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/reportes': {
@@ -739,6 +950,20 @@ declare module '@tanstack/react-router' {
       path: '/productos'
       fullPath: '/admin/productos'
       preLoaderRoute: typeof AuthenticatedAdminProductosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/pedidos': {
+      id: '/_authenticated/admin/pedidos'
+      path: '/pedidos'
+      fullPath: '/admin/pedidos'
+      preLoaderRoute: typeof AuthenticatedAdminPedidosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/pagos': {
+      id: '/_authenticated/admin/pagos'
+      path: '/pagos'
+      fullPath: '/admin/pagos'
+      preLoaderRoute: typeof AuthenticatedAdminPagosRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/pagina-web': {
@@ -804,6 +1029,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminComprobantesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/compras': {
+      id: '/_authenticated/admin/compras'
+      path: '/compras'
+      fullPath: '/admin/compras'
+      preLoaderRoute: typeof AuthenticatedAdminComprasRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/clientes': {
       id: '/_authenticated/admin/clientes'
       path: '/clientes'
@@ -825,15 +1057,70 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAlmacenesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/pedidos/$orderId': {
+      id: '/_authenticated/admin/pedidos/$orderId'
+      path: '/$orderId'
+      fullPath: '/admin/pedidos/$orderId'
+      preLoaderRoute: typeof AuthenticatedAdminPedidosOrderIdRouteImport
+      parentRoute: typeof AuthenticatedAdminPedidosRoute
+    }
+    '/_authenticated/admin/configuracion/tributaria': {
+      id: '/_authenticated/admin/configuracion/tributaria'
+      path: '/tributaria'
+      fullPath: '/admin/configuracion/tributaria'
+      preLoaderRoute: typeof AuthenticatedAdminConfiguracionTributariaRouteImport
+      parentRoute: typeof AuthenticatedAdminConfiguracionRoute
+    }
+    '/_authenticated/admin/configuracion/comercio': {
+      id: '/_authenticated/admin/configuracion/comercio'
+      path: '/comercio'
+      fullPath: '/admin/configuracion/comercio'
+      preLoaderRoute: typeof AuthenticatedAdminConfiguracionComercioRouteImport
+      parentRoute: typeof AuthenticatedAdminConfiguracionRoute
+    }
   }
 }
+
+interface AuthenticatedAdminConfiguracionRouteChildren {
+  AuthenticatedAdminConfiguracionComercioRoute: typeof AuthenticatedAdminConfiguracionComercioRoute
+  AuthenticatedAdminConfiguracionTributariaRoute: typeof AuthenticatedAdminConfiguracionTributariaRoute
+}
+
+const AuthenticatedAdminConfiguracionRouteChildren: AuthenticatedAdminConfiguracionRouteChildren =
+  {
+    AuthenticatedAdminConfiguracionComercioRoute:
+      AuthenticatedAdminConfiguracionComercioRoute,
+    AuthenticatedAdminConfiguracionTributariaRoute:
+      AuthenticatedAdminConfiguracionTributariaRoute,
+  }
+
+const AuthenticatedAdminConfiguracionRouteWithChildren =
+  AuthenticatedAdminConfiguracionRoute._addFileChildren(
+    AuthenticatedAdminConfiguracionRouteChildren,
+  )
+
+interface AuthenticatedAdminPedidosRouteChildren {
+  AuthenticatedAdminPedidosOrderIdRoute: typeof AuthenticatedAdminPedidosOrderIdRoute
+}
+
+const AuthenticatedAdminPedidosRouteChildren: AuthenticatedAdminPedidosRouteChildren =
+  {
+    AuthenticatedAdminPedidosOrderIdRoute:
+      AuthenticatedAdminPedidosOrderIdRoute,
+  }
+
+const AuthenticatedAdminPedidosRouteWithChildren =
+  AuthenticatedAdminPedidosRoute._addFileChildren(
+    AuthenticatedAdminPedidosRouteChildren,
+  )
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAlmacenesRoute: typeof AuthenticatedAdminAlmacenesRoute
   AuthenticatedAdminCalendarioRoute: typeof AuthenticatedAdminCalendarioRoute
   AuthenticatedAdminClientesRoute: typeof AuthenticatedAdminClientesRoute
+  AuthenticatedAdminComprasRoute: typeof AuthenticatedAdminComprasRoute
   AuthenticatedAdminComprobantesRoute: typeof AuthenticatedAdminComprobantesRoute
-  AuthenticatedAdminConfiguracionRoute: typeof AuthenticatedAdminConfiguracionRoute
+  AuthenticatedAdminConfiguracionRoute: typeof AuthenticatedAdminConfiguracionRouteWithChildren
   AuthenticatedAdminCotizacionesRoute: typeof AuthenticatedAdminCotizacionesRoute
   AuthenticatedAdminFeriasRoute: typeof AuthenticatedAdminFeriasRoute
   AuthenticatedAdminManualRoute: typeof AuthenticatedAdminManualRoute
@@ -841,9 +1128,13 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminMovimientosRoute: typeof AuthenticatedAdminMovimientosRoute
   AuthenticatedAdminNovedadesRoute: typeof AuthenticatedAdminNovedadesRoute
   AuthenticatedAdminPaginaWebRoute: typeof AuthenticatedAdminPaginaWebRoute
+  AuthenticatedAdminPagosRoute: typeof AuthenticatedAdminPagosRoute
+  AuthenticatedAdminPedidosRoute: typeof AuthenticatedAdminPedidosRouteWithChildren
   AuthenticatedAdminProductosRoute: typeof AuthenticatedAdminProductosRoute
   AuthenticatedAdminReportesRoute: typeof AuthenticatedAdminReportesRoute
+  AuthenticatedAdminSireRoute: typeof AuthenticatedAdminSireRoute
   AuthenticatedAdminTalleresRoute: typeof AuthenticatedAdminTalleresRoute
+  AuthenticatedAdminTributosRoute: typeof AuthenticatedAdminTributosRoute
   AuthenticatedAdminVentasRoute: typeof AuthenticatedAdminVentasRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -852,8 +1143,10 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAlmacenesRoute: AuthenticatedAdminAlmacenesRoute,
   AuthenticatedAdminCalendarioRoute: AuthenticatedAdminCalendarioRoute,
   AuthenticatedAdminClientesRoute: AuthenticatedAdminClientesRoute,
+  AuthenticatedAdminComprasRoute: AuthenticatedAdminComprasRoute,
   AuthenticatedAdminComprobantesRoute: AuthenticatedAdminComprobantesRoute,
-  AuthenticatedAdminConfiguracionRoute: AuthenticatedAdminConfiguracionRoute,
+  AuthenticatedAdminConfiguracionRoute:
+    AuthenticatedAdminConfiguracionRouteWithChildren,
   AuthenticatedAdminCotizacionesRoute: AuthenticatedAdminCotizacionesRoute,
   AuthenticatedAdminFeriasRoute: AuthenticatedAdminFeriasRoute,
   AuthenticatedAdminManualRoute: AuthenticatedAdminManualRoute,
@@ -861,9 +1154,13 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminMovimientosRoute: AuthenticatedAdminMovimientosRoute,
   AuthenticatedAdminNovedadesRoute: AuthenticatedAdminNovedadesRoute,
   AuthenticatedAdminPaginaWebRoute: AuthenticatedAdminPaginaWebRoute,
+  AuthenticatedAdminPagosRoute: AuthenticatedAdminPagosRoute,
+  AuthenticatedAdminPedidosRoute: AuthenticatedAdminPedidosRouteWithChildren,
   AuthenticatedAdminProductosRoute: AuthenticatedAdminProductosRoute,
   AuthenticatedAdminReportesRoute: AuthenticatedAdminReportesRoute,
+  AuthenticatedAdminSireRoute: AuthenticatedAdminSireRoute,
   AuthenticatedAdminTalleresRoute: AuthenticatedAdminTalleresRoute,
+  AuthenticatedAdminTributosRoute: AuthenticatedAdminTributosRoute,
   AuthenticatedAdminVentasRoute: AuthenticatedAdminVentasRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
@@ -905,7 +1202,21 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface PublicCheckoutRouteChildren {
+  PublicCheckoutPagoRoute: typeof PublicCheckoutPagoRoute
+}
+
+const PublicCheckoutRouteChildren: PublicCheckoutRouteChildren = {
+  PublicCheckoutPagoRoute: PublicCheckoutPagoRoute,
+}
+
+const PublicCheckoutRouteWithChildren = PublicCheckoutRoute._addFileChildren(
+  PublicCheckoutRouteChildren,
+)
+
 interface PublicRouteChildren {
+  PublicCarritoRoute: typeof PublicCarritoRoute
+  PublicCheckoutRoute: typeof PublicCheckoutRouteWithChildren
   PublicContactoRoute: typeof PublicContactoRoute
   PublicLibroDeReclamacionesRoute: typeof PublicLibroDeReclamacionesRoute
   PublicRegistroRoute: typeof PublicRegistroRoute
@@ -915,11 +1226,15 @@ interface PublicRouteChildren {
   PublicIndexRoute: typeof PublicIndexRoute
   PublicCatalogoSlugRoute: typeof PublicCatalogoSlugRoute
   PublicNovedadesSlugRoute: typeof PublicNovedadesSlugRoute
+  PublicPagoRetornoRoute: typeof PublicPagoRetornoRoute
+  PublicPedidoCodeRoute: typeof PublicPedidoCodeRoute
   PublicCatalogoIndexRoute: typeof PublicCatalogoIndexRoute
   PublicNovedadesIndexRoute: typeof PublicNovedadesIndexRoute
 }
 
 const PublicRouteChildren: PublicRouteChildren = {
+  PublicCarritoRoute: PublicCarritoRoute,
+  PublicCheckoutRoute: PublicCheckoutRouteWithChildren,
   PublicContactoRoute: PublicContactoRoute,
   PublicLibroDeReclamacionesRoute: PublicLibroDeReclamacionesRoute,
   PublicRegistroRoute: PublicRegistroRoute,
@@ -929,6 +1244,8 @@ const PublicRouteChildren: PublicRouteChildren = {
   PublicIndexRoute: PublicIndexRoute,
   PublicCatalogoSlugRoute: PublicCatalogoSlugRoute,
   PublicNovedadesSlugRoute: PublicNovedadesSlugRoute,
+  PublicPagoRetornoRoute: PublicPagoRetornoRoute,
+  PublicPedidoCodeRoute: PublicPedidoCodeRoute,
   PublicCatalogoIndexRoute: PublicCatalogoIndexRoute,
   PublicNovedadesIndexRoute: PublicNovedadesIndexRoute,
 }

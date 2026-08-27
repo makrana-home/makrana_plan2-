@@ -331,7 +331,7 @@ export function ProductTypeManager({
     e.preventDefault();
     setSavingCategories(true);
     try {
-      const saved = [];
+      const saved: any[] = [];
       for (const category of categoryDrafts) {
         saved.push(
           await updateCategory({
@@ -644,11 +644,7 @@ function HomeCategoryEditor({
     <section className="overflow-hidden rounded-2xl border border-sand/80 bg-cream/35">
       <div className="aspect-[5/4] bg-sand/35">
         {category.home_image_url ? (
-          <img
-            src={category.home_image_url}
-            alt=""
-            className="h-full w-full object-cover"
-          />
+          <img src={category.home_image_url} alt="" className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground">
             <ImageIcon className="h-12 w-12 opacity-35" />
@@ -671,9 +667,7 @@ function HomeCategoryEditor({
             value={category.home_description ?? ""}
             rows={3}
             maxLength={180}
-            onChange={(event) =>
-              onChange({ ...category, home_description: event.target.value })
-            }
+            onChange={(event) => onChange({ ...category, home_description: event.target.value })}
           />
         </div>
         <div className="grid grid-cols-[1fr_auto] items-end gap-3">
@@ -700,7 +694,11 @@ function HomeCategoryEditor({
         <Button asChild type="button" variant="outline" className="w-full">
           <label htmlFor={`${inputId}-image`} className="cursor-pointer">
             <Upload className="h-4 w-4" />
-            {uploading ? "Subiendo..." : category.home_image_url ? "Cambiar imagen" : "Agregar imagen"}
+            {uploading
+              ? "Subiendo..."
+              : category.home_image_url
+                ? "Cambiar imagen"
+                : "Agregar imagen"}
           </label>
         </Button>
         <input
@@ -1186,7 +1184,9 @@ function InfoSection({
 }) {
   return (
     <section className={`rounded-2xl border border-sand/70 bg-warm-white p-4 ${className}`}>
-      <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-terracotta">{title}</h3>
+      <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-terracotta">
+        {title}
+      </h3>
       <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
         {text}
       </p>
@@ -1462,9 +1462,7 @@ export function ProductFormFields({
             <Switch
               id="product-made-to-order"
               checked={form.status === "por_encargo"}
-              onCheckedChange={(checked) =>
-                upd("status", checked ? "por_encargo" : "disponible")
-              }
+              onCheckedChange={(checked) => upd("status", checked ? "por_encargo" : "disponible")}
             />
           </div>
         )}

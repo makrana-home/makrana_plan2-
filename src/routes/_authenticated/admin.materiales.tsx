@@ -248,10 +248,11 @@ function MaterialsPage() {
           raw !== "" &&
           raw != null &&
           Number.isFinite(quantity) &&
-          quantity >= 0,
+          (quantity ?? Number.NaN) >= 0,
       );
 
     for (const change of changes) {
+      if (change.quantity == null) continue;
       await applyMovement({
         data: {
           product_id: productId,

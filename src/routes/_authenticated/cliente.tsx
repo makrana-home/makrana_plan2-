@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/cliente")({
 const items = [
   {
     to: "/cliente",
-    label: "Mi dashboard",
+    label: "Inicio",
     icon: LayoutDashboard,
     exact: true as boolean | undefined,
   },
@@ -87,7 +87,7 @@ function ClientShell() {
           <header className="flex min-h-14 items-center justify-between gap-3 border-b border-sand/60 bg-warm-white px-3 sm:px-4">
             <div className="flex min-w-0 items-center gap-2">
               <SidebarTrigger />
-              <span className="truncate font-medium">Intranet del cliente</span>
+              <span className="truncate font-medium">Aula Makrana</span>
             </div>
             <Button size="sm" variant="ghost" onClick={signOut}>
               <LogOut className="h-4 w-4" /> Salir

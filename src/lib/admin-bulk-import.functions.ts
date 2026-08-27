@@ -48,7 +48,7 @@ function isUnsupportedPresentationUnit(error: any) {
 
 export const adminValidateBulkImport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => bulkRowsSchema.parse(d))
+  .validator((d) => bulkRowsSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     return validateRows(context.supabase, data.type, data.rows);
@@ -56,7 +56,7 @@ export const adminValidateBulkImport = createServerFn({ method: "POST" })
 
 export const adminConfirmBulkImport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => bulkRowsSchema.parse(d))
+  .validator((d) => bulkRowsSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const validation = await validateRows(context.supabase, data.type, data.rows);

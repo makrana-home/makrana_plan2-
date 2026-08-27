@@ -13,12 +13,12 @@ middleware de autenticacion.
 - Type: Web Service.
 - Runtime: Node.
 - Branch: `main` cuando se haga deploy productivo.
-- Build Command: `npm install && npm run build`.
+- Build Command: `npm ci && npm run build`.
 - Start Command: `npm start`.
 - Health Check Path: `/`.
 
-No hay `package-lock.json` en el repo, por eso se documenta `npm install` en vez
-de `npm ci`.
+`package-lock.json` está versionado. Render usa `npm ci` para instalar exactamente
+las versiones bloqueadas antes de compilar; `render.yaml` ya declara este flujo.
 
 ## Preset Nitro/TanStack
 
@@ -64,10 +64,19 @@ SUPABASE_URL=
 SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+WHATSAPP_BUSINESS_PHONE_NUMBER_ID=
+WHATSAPP_BUSINESS_ACCESS_TOKEN=
+WHATSAPP_BUSINESS_API_VERSION=v23.0
+WHATSAPP_BUSINESS_FROM_NUMBER=
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY` nunca debe exponerse al frontend. El codigo la lee
 desde `process.env` en el cliente server-side.
+
+Las variables `WHATSAPP_BUSINESS_PHONE_NUMBER_ID`,
+`WHATSAPP_BUSINESS_ACCESS_TOKEN` y `WHATSAPP_BUSINESS_FROM_NUMBER` deben
+completarse como secretos en Render. La versión de la API no es secreta. El
+repositorio no implementa actualmente un webhook entrante.
 
 ## Seguridad
 
@@ -87,14 +96,20 @@ Supabase sera la base principal:
 - Storage.
 - RPCs de inventario/ventas.
 
-Hasta crear el proyecto real, Render puede tener variables vacias o placeholder
-solo en documentacion, pero el servicio real necesitara valores validos para
-cargar paginas que consultan Supabase.
+El estado actual del repositorio contiene 27 migraciones SQL versionadas. La comparación del
+20 de agosto de 2026 encontró 26 coincidentes con el proyecto enlazado y una solo local:
+`20260821100000_add_tax_purchases_and_sire.sql`. Esta diferencia debe revisarse antes de aplicar
+cambios; no se considera desplegada por existir localmente.
+
+Antes de cada despliegue se deben comprobar las variables requeridas y comparar
+las migraciones locales con el proyecto Supabase correcto. La existencia de una
+migración en el repositorio no demuestra que ya esté aplicada en producción.
 
 ## Comandos locales de verificacion
 
 ```bash
 npm run lint
+npm run test:content
 npm run build
 npm start
 ```

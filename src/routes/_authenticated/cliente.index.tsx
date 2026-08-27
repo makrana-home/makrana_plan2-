@@ -29,7 +29,10 @@ function ClientDashboard() {
           </CardHeader>
           <CardContent>
             <div className="font-display text-3xl">{d?.sales?.length ?? 0}</div>
-            <Link to="/cliente/pedidos" className="text-xs text-brand-terracotta underline mt-1 inline-block">
+            <Link
+              to="/cliente/pedidos"
+              className="text-xs text-brand-terracotta underline mt-1 inline-block"
+            >
               Ver todos →
             </Link>
           </CardContent>

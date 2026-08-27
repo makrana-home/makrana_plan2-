@@ -446,8 +446,8 @@ function CalendarPage() {
       <ConflictDialog
         result={conflictResult}
         open={Boolean(conflictResult)}
-        onOpenChange={(open) => !open && setConflictResult(null)}
-        onSuggestion={(iso) => {
+        onOpenChange={(open: boolean) => !open && setConflictResult(null)}
+        onSuggestion={(iso: string) => {
           const duration =
             new Date(form.ends_local).getTime() - new Date(form.starts_local).getTime();
           const startsLocal = utcToLimaLocal(iso);
@@ -500,7 +500,7 @@ function Filters({ data, search, setSearch, filters, setFilters }: any) {
       </label>
       <FilterSelect
         value={filters.type}
-        onChange={(value) => setFilters((current: any) => ({ ...current, type: value }))}
+        onChange={(value: string) => setFilters((current: any) => ({ ...current, type: value }))}
         label="Tipo"
         options={data.eventTypes.map((item: any) => [item.id, item.name])}
       />
@@ -523,13 +523,15 @@ function Filters({ data, search, setSearch, filters, setFilters }: any) {
       />
       <FilterSelect
         value={filters.status}
-        onChange={(value) => setFilters((current: any) => ({ ...current, status: value }))}
+        onChange={(value: string) => setFilters((current: any) => ({ ...current, status: value }))}
         label="Estado"
         options={statusOptions.map(([value, label]) => [value, label])}
       />
       <FilterSelect
         value={filters.responsible}
-        onChange={(value) => setFilters((current: any) => ({ ...current, responsible: value }))}
+        onChange={(value: string) =>
+          setFilters((current: any) => ({ ...current, responsible: value }))
+        }
         label="Responsable"
         options={data.staff.map((item: any) => [item.id, item.full_name || item.email])}
       />
@@ -922,7 +924,7 @@ function EventForm({ form, setForm, data, sales, products }: any) {
           <FormSelect
             label="Tipo *"
             value={form.event_type_id}
-            onChange={(value) => update("event_type_id", value)}
+            onChange={(value: string) => update("event_type_id", value)}
             options={data.eventTypes.map((item: any) => [item.id, item.name])}
           />
         </div>
@@ -933,7 +935,7 @@ function EventForm({ form, setForm, data, sales, products }: any) {
           <FormSelect
             label="Estado *"
             value={form.status}
-            onChange={(value) => update("status", value)}
+            onChange={(value: string) => update("status", value)}
             options={statusOptions}
           />
           <div>
@@ -973,7 +975,7 @@ function EventForm({ form, setForm, data, sales, products }: any) {
           <FormSelect
             label="Modalidad *"
             value={form.modality}
-            onChange={(value) => update("modality", value)}
+            onChange={(value: string) => update("modality", value)}
             options={[
               ["virtual", "Virtual"],
               ["presencial", "Presencial"],
@@ -984,7 +986,7 @@ function EventForm({ form, setForm, data, sales, products }: any) {
           <FormSelect
             label="Responsable *"
             value={form.responsible_user_id}
-            onChange={(value) => update("responsible_user_id", value)}
+            onChange={(value: string) => update("responsible_user_id", value)}
             options={data.staff.map((item: any) => [item.id, item.full_name || item.email])}
           />
           {(form.modality === "presencial" || form.modality === "entrega") && (

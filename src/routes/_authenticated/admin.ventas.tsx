@@ -22,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Plus,
@@ -34,6 +33,9 @@ import {
   Eye,
   CalendarDays,
   Clock3,
+  MapPin,
+  ReceiptText,
+  UserRound,
 } from "lucide-react";
 import {
   PageHeader,
@@ -70,7 +72,10 @@ import {
   getCleanSaleNotes,
   getManualCustomerNameFromSaleNotes,
   getSaleCustomerDisplayName,
+  getSaleDocumentIntent,
 } from "@/lib/sale-notes";
+import { resolveOperationBeforeConfirmation } from "@/lib/business-rules";
+import { WebOrdersView } from "./admin.pedidos";
 
 export const Route = createFileRoute("/_authenticated/admin/ventas")({ component: SalesPage });
 
@@ -88,6 +93,52 @@ const saleNoteButtonClass =
   "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900";
 const quotationButtonClass =
   "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900";
+const documentIntentOptions = [
+  {
+    value: "boleta",
+    label: "Boleta electrónica",
+    help: "Comprobante electrónico para una venta a consumidor final.",
+  },
+  {
+    value: "factura",
+    label: "Factura electrónica",
+    help: "Comprobante electrónico para un cliente con RUC.",
+  },
+  {
+    value: "nota_venta",
+    label: "Nota de venta",
+    help: "Documento interno de Makrana. No reemplaza una boleta ni una factura.",
+  },
+  {
+    value: "pedido_personalizado",
+    label: "Pedido personalizado",
+    help: "Pieza creada o adaptada especialmente para el cliente.",
+  },
+  {
+    value: "cotizacion",
+    label: "Cotización",
+    help: "Propuesta que todavía no representa una venta ni descuenta stock.",
+  },
+] as const;
+
+type SalesFilter =
+  | "all"
+  | "web"
+  | "boleta"
+  | "factura"
+  | "nota_venta"
+  | "pedido_personalizado"
+  | "cotizacion";
+
+const salesFilters: { value: SalesFilter; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "web", label: "Ventas de la web" },
+  { value: "boleta", label: "Boletas electrónicas" },
+  { value: "factura", label: "Facturas electrónicas" },
+  { value: "nota_venta", label: "Notas de venta" },
+  { value: "pedido_personalizado", label: "Pedidos personalizados" },
+  { value: "cotizacion", label: "Cotizaciones" },
+];
 
 function blankSaleItem(keepManualMode = false) {
   return {
@@ -153,7 +204,7 @@ function SalesPage() {
   const upsertCustomer = useServerFn(adminUpsertCustomer);
 
   const [rows, setRows] = useState<any[]>([]);
-  const [documentFilter, setDocumentFilter] = useState<"all" | "quote" | "note">("all");
+  const [documentFilter, setDocumentFilter] = useState<SalesFilter>("all");
   const [wh, setWh] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -165,6 +216,7 @@ function SalesPage() {
     channel: "Showroom",
     delivery_status: "pendiente",
     notes: "",
+    document_intent: "cotizacion",
   });
   const [receiptPreview, setReceiptPreview] = useState<any>(null);
   const [receiptVariant, setReceiptVariant] = useState<ReceiptVariant>("internal");
@@ -179,12 +231,11 @@ function SalesPage() {
   });
   const filteredRows = useMemo(
     () =>
-      rows.filter((sale) => {
-        const hasSaleNote = Boolean(getSaleReceipt(sale)?.id);
-        if (documentFilter === "note") return hasSaleNote;
-        if (documentFilter === "quote") return !hasSaleNote;
-        return true;
-      }),
+      rows.filter(
+        (sale) =>
+          documentFilter === "all" ||
+          (documentFilter !== "web" && getSaleDocumentIntent(sale.notes) === documentFilter),
+      ),
     [documentFilter, rows],
   );
 
@@ -213,6 +264,7 @@ function SalesPage() {
           manual_customer_name: newForm.manual_customer_name || null,
           channel: newForm.channel,
           notes: newForm.notes || null,
+          document_intent: newForm.document_intent,
           delivery_status: getDefaultDeliveryStatusForWarehouse(
             wh.find((item) => item.id === newForm.warehouse_id),
             newForm.delivery_status,
@@ -220,7 +272,7 @@ function SalesPage() {
           discount: 0,
         },
       });
-      toast.success("Venta creada");
+      toast.success("Operación creada como borrador");
       newDlg.close();
       refresh();
       setOpenId(r.id);
@@ -317,7 +369,7 @@ function SalesPage() {
     <div>
       <PageHeader
         title="Ventas"
-        description="Registra ventas multicanal (WhatsApp, Instagram, Web, Ferias). Al confirmar se descuenta stock y se emite comprobante."
+        description="Crea una operación, selecciona su ubicación, cliente y documento. El stock solo se descuenta al confirmar una venta pagada."
         actions={
           <NewButton
             onClick={() => {
@@ -328,54 +380,40 @@ function SalesPage() {
                 channel: isFairWarehouse(wh[0]) ? "Feria" : "Showroom",
                 delivery_status: getDefaultDeliveryStatusForWarehouse(wh[0], "pendiente"),
                 notes: "",
+                document_intent: "cotizacion",
               });
               newDlg.openWith(null);
             }}
-            label="Nueva venta"
+            label="Nueva operación"
           />
         }
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          size="sm"
-          variant={documentFilter === "all" ? "default" : "outline"}
-          onClick={() => setDocumentFilter("all")}
-        >
-          Todos ({rows.length})
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className={
-            documentFilter === "quote"
-              ? "border-amber-300 bg-amber-100 text-amber-900 hover:bg-amber-100"
-              : quotationButtonClass
-          }
-          onClick={() => setDocumentFilter("quote")}
-        >
-          <FileText className="h-3.5 w-3.5" />
-          Cotizaciones ({rows.filter((sale) => !getSaleReceipt(sale)?.id).length})
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className={
-            documentFilter === "note"
-              ? "border-emerald-300 bg-emerald-100 text-emerald-900 hover:bg-emerald-100"
-              : saleNoteButtonClass
-          }
-          onClick={() => setDocumentFilter("note")}
-        >
-          <Eye className="h-3.5 w-3.5" />
-          Notas de venta ({rows.filter((sale) => getSaleReceipt(sale)?.id).length})
-        </Button>
+      <div
+        className="mb-4 flex flex-wrap items-center gap-2"
+        role="tablist"
+        aria-label="Filtrar historial de ventas"
+      >
+        {salesFilters.map((filter) => (
+          <Button
+            key={filter.value}
+            type="button"
+            size="sm"
+            role="tab"
+            aria-selected={documentFilter === filter.value}
+            variant={documentFilter === filter.value ? "default" : "outline"}
+            onClick={() => setDocumentFilter(filter.value)}
+          >
+            {filter.label}
+            {filter.value !== "web" &&
+              ` (${filter.value === "all" ? rows.length : rows.filter((sale) => getSaleDocumentIntent(sale.notes) === filter.value).length})`}
+          </Button>
+        ))}
       </div>
 
-      <div className="grid gap-3 md:hidden">
+      {documentFilter === "web" && <WebOrdersView />}
+
+      <div className={`${documentFilter === "web" ? "hidden" : "grid"} gap-3 md:hidden`}>
         {filteredRows.length === 0 && (
           <div className="rounded-xl border border-sand/60 bg-warm-white px-4 py-8 text-center text-sm text-muted-foreground">
             No hay documentos en este filtro.
@@ -394,7 +432,9 @@ function SalesPage() {
         ))}
       </div>
 
-      <div className="hidden overflow-hidden rounded-xl border border-sand/60 bg-warm-white md:block">
+      <div
+        className={`${documentFilter === "web" ? "hidden" : "hidden md:block"} overflow-hidden rounded-xl border border-sand/60 bg-warm-white`}
+      >
         <Table className="min-w-[1120px]">
           <TableHeader>
             <TableRow>
@@ -507,13 +547,27 @@ function SalesPage() {
       <FormDialog
         open={newDlg.open}
         onOpenChange={newDlg.setOpen}
-        title="Nueva venta"
+        title="Nueva operación"
+        description="Completa los pasos en orden. Nada se guardará hasta que pulses Guardar."
         onSubmit={onCreate}
         submitting={saving}
+        contentClassName="max-w-3xl"
       >
-        <div className="space-y-5">
-          <div>
-            <Label>Almacén *</Label>
+        <div className="space-y-4">
+          <section className="rounded-2xl border border-sand/70 bg-cream/35 p-4 sm:p-5">
+            <div className="mb-4 flex items-start gap-3">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent font-bold text-white">
+                1
+              </span>
+              <div>
+                <h3 className="flex items-center gap-2 font-semibold">
+                  <MapPin className="h-4 w-4 text-brand-terracotta" /> ¿Dónde se realiza la venta?
+                </h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Elige el local o feria desde donde saldrá el producto.
+                </p>
+              </div>
+            </div>
             <div className="mt-2 grid gap-3 sm:grid-cols-3">
               {wh.map((warehouse: any) => {
                 const selected = newForm.warehouse_id === warehouse.id;
@@ -521,9 +575,10 @@ function SalesPage() {
                   <button
                     key={warehouse.id}
                     type="button"
+                    aria-pressed={selected}
                     onClick={() => selectWarehouseForSale(warehouse.id)}
                     className={[
-                      "rounded-2xl border p-4 text-left transition shadow-sm",
+                      "relative min-h-24 rounded-2xl border p-4 text-left shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
                       selected
                         ? "border-accent bg-accent text-warm-white shadow-accent/20"
                         : "border-sand bg-warm-white hover:border-accent/60 hover:bg-cream",
@@ -533,6 +588,7 @@ function SalesPage() {
                       {warehouse.code || "Almacén"}
                     </div>
                     <div className="mt-1 text-sm font-semibold leading-snug">{warehouse.name}</div>
+                    {selected && <CheckCircle2 className="absolute right-3 top-3 h-5 w-5" />}
                     {isFairWarehouse(warehouse) && (
                       <div
                         className={[
@@ -549,19 +605,16 @@ function SalesPage() {
                 );
               })}
             </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label>Canal de venta</Label>
+            <div className="mt-4">
+              <Label>¿Por dónde llegó la venta?</Label>
               {isFairWarehouse(wh.find((item) => item.id === newForm.warehouse_id)) ? (
-                <Input value="Feria" disabled className="bg-cream/60 font-semibold" />
+                <Input value="Feria" disabled className="mt-1.5 bg-cream/60 font-semibold" />
               ) : (
                 <Select
                   value={newForm.channel}
                   onValueChange={(v) => setNewForm((f: any) => ({ ...f, channel: v }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="mt-1.5 bg-warm-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -576,71 +629,138 @@ function SalesPage() {
                 </Select>
               )}
             </div>
-            <div>
-              <div className="mb-1.5 flex items-center justify-between gap-3">
-                <Label>Cliente</Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 text-brand-terracotta hover:bg-accent/10 hover:text-brand-terracotta"
-                  onClick={() => {
-                    setCustomerForm({ full_name: "", phone: "", email: "", document: "" });
-                    customerDlg.openWith(null);
-                  }}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Agregar cliente
-                </Button>
+          </section>
+
+          <section className="rounded-2xl border border-sand/70 bg-cream/35 p-4 sm:p-5">
+            <div className="mb-4 flex items-start gap-3">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent font-bold text-white">
+                2
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="flex items-center gap-2 font-semibold">
+                    <UserRound className="h-4 w-4 text-brand-terracotta" /> ¿Quién compra?
+                  </h3>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-brand-terracotta hover:bg-accent/10 hover:text-brand-terracotta"
+                    onClick={() => {
+                      setCustomerForm({ full_name: "", phone: "", email: "", document: "" });
+                      customerDlg.openWith(null);
+                    }}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Registrar cliente nuevo
+                  </Button>
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Puedes elegir un cliente registrado o escribir un nombre rápido.
+                </p>
               </div>
-              <Select
-                value={newForm.customer_id || "_none"}
-                onValueChange={(v) =>
-                  setNewForm((f: any) => ({
-                    ...f,
-                    customer_id: v === "_none" ? "" : v,
-                    manual_customer_name: v === "_none" ? f.manual_customer_name : "",
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
-                  <SelectItem value="_none">— sin cliente —</SelectItem>
-                  {customers.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.full_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
-            <div>
-              <Label>Cliente manual</Label>
-              <Input
-                value={newForm.manual_customer_name}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setNewForm((f: any) => ({
-                    ...f,
-                    customer_id: value.trim() ? "" : f.customer_id,
-                    manual_customer_name: value,
-                  }));
-                }}
-                placeholder="Nombre para cotizacion"
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label>Cliente registrado</Label>
+                <Select
+                  value={newForm.customer_id || "_none"}
+                  onValueChange={(v) =>
+                    setNewForm((f: any) => ({
+                      ...f,
+                      customer_id: v === "_none" ? "" : v,
+                      manual_customer_name: v === "_none" ? f.manual_customer_name : "",
+                    }))
+                  }
+                >
+                  <SelectTrigger className="mt-1.5 bg-warm-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    <SelectItem value="_none">— sin cliente —</SelectItem>
+                    {customers.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {!newForm.customer_id && (
+                <div>
+                  <Label>
+                    Nombre rápido{" "}
+                    <span className="font-normal text-muted-foreground">(opcional)</span>
+                  </Label>
+                  <Input
+                    className="mt-1.5 bg-warm-white"
+                    value={newForm.manual_customer_name}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setNewForm((f: any) => ({
+                        ...f,
+                        customer_id: value.trim() ? "" : f.customer_id,
+                        manual_customer_name: value,
+                      }));
+                    }}
+                    placeholder="Ej. María Torres"
+                  />
+                </div>
+              )}
             </div>
-            <div className="sm:col-span-2">
-              <Label>Notas</Label>
-              <Textarea
-                rows={2}
-                value={newForm.notes}
-                onChange={(e) => setNewForm((f: any) => ({ ...f, notes: e.target.value }))}
-                placeholder="Detalle de la venta, pedido o coordinación con el cliente."
-              />
+          </section>
+
+          <section className="rounded-2xl border border-sand/70 bg-cream/35 p-4 sm:p-5">
+            <div className="mb-4 flex items-start gap-3">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent font-bold text-white">
+                3
+              </span>
+              <div>
+                <h3 className="flex items-center gap-2 font-semibold">
+                  <ReceiptText className="h-4 w-4 text-brand-terracotta" /> ¿Qué documento
+                  necesitas?
+                </h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Elige una opción. Podrás revisarla antes de confirmar la venta.
+                </p>
+              </div>
             </div>
-          </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {documentIntentOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={newForm.document_intent === option.value}
+                  onClick={() =>
+                    setNewForm((form: any) => ({ ...form, document_intent: option.value }))
+                  }
+                  className={`relative min-h-24 rounded-xl border p-4 pr-10 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${newForm.document_intent === option.value ? "border-accent bg-accent/10 shadow-sm" : "border-sand bg-warm-white hover:border-accent/50"}`}
+                >
+                  <div className="font-semibold">{option.label}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">{option.help}</div>
+                  {newForm.document_intent === option.value && (
+                    <CheckCircle2 className="absolute right-3 top-3 h-5 w-5 text-brand-terracotta" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-sand/70 bg-cream/35 p-4 sm:p-5">
+            <Label>
+              Notas <span className="font-normal text-muted-foreground">(opcional)</span>
+            </Label>
+            <p className="mb-2 mt-0.5 text-xs text-muted-foreground">
+              Añade aquí alguna indicación especial para recordar.
+            </p>
+            <Textarea
+              rows={2}
+              className="bg-warm-white"
+              value={newForm.notes}
+              onChange={(e) => setNewForm((f: any) => ({ ...f, notes: e.target.value }))}
+              placeholder="Detalle de la venta, pedido o coordinación con el cliente."
+            />
+          </section>
         </div>
       </FormDialog>
 
@@ -986,6 +1106,7 @@ function prepareSaleForEdit(sale: any) {
     delivery_status: sale?.delivery_status === "cancelado" ? "entregado" : sale?.delivery_status,
     channel: getChannelFromSaleNotes(sale?.notes),
     manual_customer_name: getManualCustomerNameFromSaleNotes(sale?.notes),
+    document_intent: getSaleDocumentIntent(sale?.notes),
     notes: getCleanSaleNotes(sale?.notes),
   };
 }
@@ -1020,6 +1141,7 @@ function SaleDrawer({
   const [products, setProducts] = useState<any[]>([]);
   const [item, setItem] = useState<any>(() => blankSaleItem());
   const [pay, setPay] = useState<any>(() => blankPayment());
+  const [confirming, setConfirming] = useState(false);
 
   async function refresh() {
     if (!saleId) return;
@@ -1058,6 +1180,7 @@ function SaleDrawer({
           notes: sale.notes,
           delivery_status: sale.delivery_status,
           estimated_completion_at: sale.estimated_completion_at || null,
+          document_intent: sale.document_intent,
         },
       });
       toast.success("Actualizado");
@@ -1148,10 +1271,42 @@ function SaleDrawer({
     }
   }
   async function onConfirm() {
-    if (!confirm("¿Confirmar venta? Se descontará stock y se emitirá comprobante.")) return;
+    if (confirming) return;
+    const paid = (sale.payments ?? []).reduce(
+      (sum: number, payment: any) => sum + Number(payment.amount ?? 0),
+      0,
+    );
+    const decision = resolveOperationBeforeConfirmation({
+      intent: sale.document_intent,
+      total: Number(sale.total),
+      paid,
+    });
+    if (decision.action !== "confirm_sale") {
+      if (decision.action === "convert_to_quote") {
+        setSale((current: any) => ({ ...current, document_intent: "cotizacion" }));
+        await update({
+          data: {
+            id: sale.id,
+            warehouse_id: sale.warehouse_id,
+            customer_id: sale.customer_id,
+            manual_customer_name: sale.manual_customer_name || null,
+            channel: sale.channel,
+            discount: Number(sale.discount),
+            notes: sale.notes,
+            delivery_status: sale.delivery_status,
+            estimated_completion_at: sale.estimated_completion_at || null,
+            document_intent: "cotizacion",
+          },
+        });
+        toast.info(decision.message);
+      } else toast.info("La operación continúa como borrador y no descontará stock.");
+      return;
+    }
+    if (!confirm("¿Guardar y confirmar el comprobante? Se descontará el stock.")) return;
+    setConfirming(true);
     try {
       const r = await confirm_({ data: { id: sale.id } });
-      toast.success(`Comprobante emitido: ${r?.[0]?.receipt_number ?? ""}`);
+      toast.success(`Comprobante guardado: ${r?.[0]?.receipt_number ?? ""}`);
       const updatedSale = await getSale({ data: { id: sale.id } });
       setSale(prepareSaleForEdit(updatedSale));
       const receiptId = getSaleReceipt(updatedSale)?.id;
@@ -1163,6 +1318,8 @@ function SaleDrawer({
       }
     } catch (e: any) {
       toast.error(getSaleConfirmationError(e));
+    } finally {
+      setConfirming(false);
     }
   }
 
@@ -1202,128 +1359,179 @@ function SaleDrawer({
               </div>
             </DialogHeader>
 
-            <div className="grid sm:grid-cols-2 gap-4 mt-6">
-              <div>
-                <Label>Cliente</Label>
-                <Select
-                  disabled={sale.status !== "borrador"}
-                  value={sale.customer_id || "_none"}
-                  onValueChange={(v) =>
-                    setSale((s: any) => ({
-                      ...s,
-                      customer_id: v === "_none" ? null : v,
-                      manual_customer_name: v === "_none" ? s.manual_customer_name : "",
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    <SelectItem value="_none">— sin cliente —</SelectItem>
-                    {customers.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.full_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <section className="mt-6 rounded-2xl border border-sand/70 bg-cream/35 p-4 sm:p-5">
+              <div className="mb-5 flex items-start gap-3">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent font-bold text-white">
+                  1
+                </span>
+                <div>
+                  <h3 className="font-semibold">Datos del pedido</h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Revisa quién compra, qué documento necesita y cómo se entregará.
+                  </p>
+                </div>
               </div>
-              <div>
-                <Label>Cliente manual</Label>
-                <Input
-                  disabled={sale.status !== "borrador"}
-                  value={sale.manual_customer_name ?? ""}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setSale((s: any) => ({
-                      ...s,
-                      customer_id: value.trim() ? null : s.customer_id,
-                      manual_customer_name: value,
-                    }));
-                  }}
-                  placeholder="Nombre para cotizacion"
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label>Cliente registrado</Label>
+                  <Select
+                    disabled={sale.status !== "borrador"}
+                    value={sale.customer_id || "_none"}
+                    onValueChange={(v) =>
+                      setSale((s: any) => ({
+                        ...s,
+                        customer_id: v === "_none" ? null : v,
+                        manual_customer_name: v === "_none" ? s.manual_customer_name : "",
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="mt-1.5 bg-warm-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      <SelectItem value="_none">— sin cliente —</SelectItem>
+                      {customers.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {!sale.customer_id && (
+                  <div>
+                    <Label>
+                      Nombre rápido{" "}
+                      <span className="font-normal text-muted-foreground">(opcional)</span>
+                    </Label>
+                    <Input
+                      className="mt-1.5 bg-warm-white"
+                      disabled={sale.status !== "borrador"}
+                      value={sale.manual_customer_name ?? ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setSale((s: any) => ({
+                          ...s,
+                          customer_id: value.trim() ? null : s.customer_id,
+                          manual_customer_name: value,
+                        }));
+                      }}
+                      placeholder="Ej. María Torres"
+                    />
+                  </div>
+                )}
+                <div>
+                  <Label>Lugar de salida</Label>
+                  <Select
+                    disabled={sale.status !== "borrador"}
+                    value={sale.warehouse_id}
+                    onValueChange={(v) => {
+                      const warehouse = warehouses.find((item) => item.id === v);
+                      setSale((s: any) => ({
+                        ...s,
+                        warehouse_id: v,
+                        delivery_status: getDefaultDeliveryStatusForWarehouse(
+                          warehouse,
+                          s.delivery_status,
+                        ),
+                      }));
+                    }}
+                  >
+                    <SelectTrigger className="mt-1.5 bg-warm-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {warehouses.map((w) => (
+                        <SelectItem key={w.id} value={w.id}>
+                          {w.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Documento solicitado</Label>
+                  <Select
+                    disabled={sale.status !== "borrador"}
+                    value={sale.document_intent}
+                    onValueChange={(v) => setSale((s: any) => ({ ...s, document_intent: v }))}
+                  >
+                    <SelectTrigger className="mt-1.5 bg-warm-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {documentIntentOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Se guardará únicamente cuando pulses el botón Guardar cambios.
+                  </p>
+                </div>
+                <div>
+                  <Label>
+                    Descuento en soles{" "}
+                    <span className="font-normal text-muted-foreground">(opcional)</span>
+                  </Label>
+                  <Input
+                    className="mt-1.5 bg-warm-white"
+                    type="number"
+                    step="0.01"
+                    disabled={sale.status !== "borrador"}
+                    value={Number(sale.discount ?? 0) === 0 ? "" : sale.discount}
+                    placeholder="0.00"
+                    inputMode="decimal"
+                    onChange={(e) => setSale((s: any) => ({ ...s, discount: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label>Estado de entrega *</Label>
+                  <Select
+                    required
+                    value={sale.delivery_status}
+                    onValueChange={(v) => setSale((s: any) => ({ ...s, delivery_status: v }))}
+                  >
+                    <SelectTrigger
+                      className={`mt-1.5 ${getDeliverySelectClass(sale.delivery_status)}`}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {deliveryStatusOptions.map((status) => (
+                        <SelectItem
+                          key={status.value}
+                          value={status.value}
+                          className="data-[state=checked]:bg-cream data-[state=checked]:text-foreground data-[highlighted]:bg-cream data-[highlighted]:text-foreground"
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className={`h-2.5 w-2.5 rounded-full ${status.dotClass}`} />
+                            {status.label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="sm:col-span-2">
+                  <Label>
+                    Notas <span className="font-normal text-muted-foreground">(opcional)</span>
+                  </Label>
+                  <Textarea
+                    rows={2}
+                    className="mt-1.5 bg-warm-white"
+                    value={sale.notes ?? ""}
+                    onChange={(e) => setSale((s: any) => ({ ...s, notes: e.target.value }))}
+                    placeholder="Escribe aquí alguna indicación especial."
+                  />
+                </div>
               </div>
-              <div>
-                <Label>Almacén</Label>
-                <Select
-                  disabled={sale.status !== "borrador"}
-                  value={sale.warehouse_id}
-                  onValueChange={(v) => {
-                    const warehouse = warehouses.find((item) => item.id === v);
-                    setSale((s: any) => ({
-                      ...s,
-                      warehouse_id: v,
-                      delivery_status: getDefaultDeliveryStatusForWarehouse(
-                        warehouse,
-                        s.delivery_status,
-                      ),
-                    }));
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {warehouses.map((w) => (
-                      <SelectItem key={w.id} value={w.id}>
-                        {w.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Descuento (S/)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  disabled={sale.status !== "borrador"}
-                  value={Number(sale.discount ?? 0) === 0 ? "" : sale.discount}
-                  placeholder="0.00"
-                  inputMode="decimal"
-                  onChange={(e) => setSale((s: any) => ({ ...s, discount: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label>Estado de entrega *</Label>
-                <Select
-                  required
-                  value={sale.delivery_status}
-                  onValueChange={(v) => setSale((s: any) => ({ ...s, delivery_status: v }))}
-                >
-                  <SelectTrigger className={getDeliverySelectClass(sale.delivery_status)}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {deliveryStatusOptions.map((status) => (
-                      <SelectItem
-                        key={status.value}
-                        value={status.value}
-                        className="data-[state=checked]:bg-cream data-[state=checked]:text-foreground data-[highlighted]:bg-cream data-[highlighted]:text-foreground"
-                      >
-                        <span className="flex items-center gap-2">
-                          <span className={`h-2.5 w-2.5 rounded-full ${status.dotClass}`} />
-                          {status.label}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="sm:col-span-2">
-                <Label>Notas</Label>
-                <Textarea
-                  rows={2}
-                  value={sale.notes ?? ""}
-                  onChange={(e) => setSale((s: any) => ({ ...s, notes: e.target.value }))}
-                />
-              </div>
-            </div>
-            <Button size="sm" variant="outline" className="mt-3" onClick={onSaveHeader}>
-              Guardar cambios
-            </Button>
+              <Button className="mt-5 w-full sm:w-auto" onClick={onSaveHeader}>
+                <CheckCircle2 className="h-4 w-4" /> Guardar cambios
+              </Button>
+            </section>
 
             {(item.is_manual_item ||
               (sale.items ?? []).some(
@@ -1331,8 +1539,18 @@ function SaleDrawer({
                   saleItem.is_manual_item || saleItem.provisional_source === PROVISIONAL_SOURCE,
               )) && <SaleAgenda sale={sale} onScheduled={refresh} />}
 
-            <div className="mt-8">
-              <h3 className="font-display text-lg mb-2">Ítems</h3>
+            <section className="mt-5 rounded-2xl border border-sand/70 bg-warm-white p-4 sm:p-5">
+              <div className="mb-4 flex items-start gap-3">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent font-bold text-white">
+                  2
+                </span>
+                <div>
+                  <h3 className="font-semibold">Productos del pedido</h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Busca una pieza, indica la cantidad y agrégala al pedido.
+                  </p>
+                </div>
+              </div>
               <div className="space-y-2 md:hidden">
                 {(sale.items ?? []).map((it: any) => {
                   const presentationLabel = getSaleItemPresentationLabel(it);
@@ -1448,238 +1666,244 @@ function SaleDrawer({
               </div>
               {sale.status === "borrador" && (
                 <>
-                  <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-sand/60 bg-cream/50 px-3 py-2">
-                    <Label htmlFor="manual-sale-item" className="text-sm font-semibold">
-                      Pedido personalizado
-                    </Label>
-                    <Switch
-                      id="manual-sale-item"
-                      checked={Boolean(item.is_manual_item)}
-                      onCheckedChange={(checked) =>
-                        setItem((current: any) => ({
-                          ...blankSaleItem(Boolean(checked)),
-                          quantity: current.quantity || 1,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-12 sm:items-end">
-                    {item.is_manual_item && (
-                      <div className="sm:col-span-6">
-                        <Label className="text-xs">Nombre del articulo</Label>
-                        <Input
-                          value={item.manual_item_name}
-                          onChange={(e) =>
-                            setItem((s: any) => ({ ...s, manual_item_name: e.target.value }))
-                          }
-                          placeholder="Ej. Camino de mesa feria"
-                        />
-                      </div>
-                    )}
-                    {!item.is_manual_item && (
-                      <>
-                        <div className="sm:col-span-4">
-                          <Label className="text-xs">
-                            Buscar pieza, material o presentación por SKU o nombre
-                          </Label>
+                  <div className="mt-4 rounded-xl border border-dashed border-sand bg-cream/40 p-3 sm:p-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:items-end">
+                      {item.is_manual_item && (
+                        <div className="sm:col-span-6">
+                          <Label className="text-xs">Nombre del articulo</Label>
                           <Input
-                            value={item.product_search}
+                            value={item.manual_item_name}
                             onChange={(e) =>
-                              setItem((s: any) => ({ ...s, product_search: e.target.value }))
+                              setItem((s: any) => ({ ...s, manual_item_name: e.target.value }))
                             }
-                            placeholder="Ej. 0001 o camino de mesa"
+                            placeholder="Ej. Camino de mesa feria"
                           />
                         </div>
-                        <div className="sm:col-span-4">
-                          <Label className="text-xs">Pieza, material o presentación</Label>
-                          <Select
-                            value={item.product_option}
-                            onValueChange={(v) => selectSaleItemOption(v)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleccionar" />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-[300px]">
-                              {filteredProducts.map((p) => (
-                                <SelectItem key={p.value} value={p.value} textValue={p.label}>
-                                  <span className="flex flex-col gap-0.5">
-                                    <span>{p.label}</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      {p.sku || "Sin SKU"} · {moneyPEN(p.price)}
+                      )}
+                      {!item.is_manual_item && (
+                        <>
+                          <div className="sm:col-span-4">
+                            <Label className="text-xs">Buscar por nombre o código</Label>
+                            <Input
+                              value={item.product_search}
+                              onChange={(e) =>
+                                setItem((s: any) => ({ ...s, product_search: e.target.value }))
+                              }
+                              placeholder="Ej. 0001 o camino de mesa"
+                            />
+                          </div>
+                          <div className="sm:col-span-4">
+                            <Label className="text-xs">Producto</Label>
+                            <Select
+                              value={item.product_option}
+                              onValueChange={(v) => selectSaleItemOption(v)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar" />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-[300px]">
+                                {filteredProducts.map((p) => (
+                                  <SelectItem key={p.value} value={p.value} textValue={p.label}>
+                                    <span className="flex flex-col gap-0.5">
+                                      <span>{p.label}</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {p.sku || "Sin SKU"} · {moneyPEN(p.price)}
+                                      </span>
                                     </span>
-                                  </span>
-                                </SelectItem>
-                              ))}
-                              {filteredProducts.length === 0 && (
-                                <div className="px-3 py-2 text-sm text-muted-foreground">
-                                  Sin piezas, materiales o presentaciones para esa búsqueda.
-                                </div>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </>
-                    )}
-                    <div className="sm:col-span-2">
-                      <Label className="text-xs">Cant.</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        step="1"
-                        inputMode="numeric"
-                        value={item.quantity}
-                        onChange={(e) => setItem((s: any) => ({ ...s, quantity: e.target.value }))}
-                      />
-                    </div>
-                    <div className={item.is_manual_item ? "sm:col-span-2" : "sm:col-span-1"}>
-                      <Label className="text-xs">P. unit (S/)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        inputMode="decimal"
-                        value={item.unit_price}
-                        onChange={(e) =>
-                          setItem((s: any) => ({ ...s, unit_price: e.target.value }))
-                        }
-                        placeholder="Precio"
-                      />
-                    </div>
-                    {item.is_manual_item && (
-                      <div className="sm:col-span-10">
-                        <Label className="text-xs">Descripción del artículo</Label>
-                        <Textarea
-                          rows={2}
-                          value={item.description}
+                                  </SelectItem>
+                                ))}
+                                {filteredProducts.length === 0 && (
+                                  <div className="px-3 py-2 text-sm text-muted-foreground">
+                                    Sin piezas, materiales o presentaciones para esa búsqueda.
+                                  </div>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </>
+                      )}
+                      <div className="sm:col-span-2">
+                        <Label className="text-xs">Cantidad</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          step="1"
+                          inputMode="numeric"
+                          value={item.quantity}
                           onChange={(e) =>
-                            setItem((s: any) => ({ ...s, description: e.target.value }))
+                            setItem((s: any) => ({ ...s, quantity: e.target.value }))
                           }
-                          placeholder="Detalle del pedido especial"
                         />
                       </div>
-                    )}
-                    <div className={item.is_manual_item ? "sm:col-span-2" : "sm:col-span-1"}>
-                      <Button onClick={onAddItem} className="h-11 w-full">
-                        <Plus className="h-4 w-4" /> Agregar
-                      </Button>
+                      <div className={item.is_manual_item ? "sm:col-span-2" : "sm:col-span-1"}>
+                        <Label className="text-xs">Precio unitario</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          inputMode="decimal"
+                          value={item.unit_price}
+                          onChange={(e) =>
+                            setItem((s: any) => ({ ...s, unit_price: e.target.value }))
+                          }
+                          placeholder="Precio"
+                        />
+                      </div>
+                      {item.is_manual_item && (
+                        <div className="sm:col-span-10">
+                          <Label className="text-xs">Descripción del artículo</Label>
+                          <Textarea
+                            rows={2}
+                            value={item.description}
+                            onChange={(e) =>
+                              setItem((s: any) => ({ ...s, description: e.target.value }))
+                            }
+                            placeholder="Detalle del pedido especial"
+                          />
+                        </div>
+                      )}
+                      <div className={item.is_manual_item ? "sm:col-span-2" : "sm:col-span-1"}>
+                        <Button onClick={onAddItem} className="h-11 w-full">
+                          <Plus className="h-4 w-4" /> Agregar producto
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </>
               )}
-            </div>
+            </section>
 
-            <div className="mt-8 grid sm:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-display text-lg mb-2">Pagos</h3>
-                <div className="space-y-2">
-                  {(sale.payments ?? []).map((p: any) => (
-                    <div
-                      key={p.id}
-                      className="flex items-center justify-between border border-sand/50 rounded-md px-3 py-2"
-                    >
-                      <div className="text-sm">
-                        <div className="font-medium">
-                          {moneyPEN(p.amount)} · {p.method}
+            <section className="mt-5 rounded-2xl border border-sand/70 bg-cream/35 p-4 sm:p-5">
+              <div className="mb-4 flex items-start gap-3">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent font-bold text-white">
+                  3
+                </span>
+                <div>
+                  <h3 className="font-semibold">Pago y confirmación</h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Registra el pago, revisa el total y guarda el comprobante.
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div>
+                  <h4 className="mb-2 font-semibold">Pagos registrados</h4>
+                  <div className="space-y-2">
+                    {(sale.payments ?? []).map((p: any) => (
+                      <div
+                        key={p.id}
+                        className="flex items-center justify-between border border-sand/50 rounded-md px-3 py-2"
+                      >
+                        <div className="text-sm">
+                          <div className="font-medium">
+                            {moneyPEN(p.amount)} · {p.method}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {p.operation_code ?? "—"}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {p.operation_code ?? "—"}
-                        </div>
+                        <Button size="icon" variant="ghost" onClick={() => onDelPay(p.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
-                      <Button size="icon" variant="ghost" onClick={() => onDelPay(p.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                    ))}
+                    {(sale.payments ?? []).length === 0 && (
+                      <p className="text-xs text-muted-foreground">Sin pagos registrados.</p>
+                    )}
+                  </div>
+                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-12 sm:items-end">
+                    <div className="sm:col-span-5">
+                      <Label className="text-xs">Método</Label>
+                      <Select
+                        value={pay.method}
+                        onValueChange={(v) => setPay((s: any) => ({ ...s, method: v }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["efectivo", "yape", "plin", "transferencia", "tarjeta", "otro"].map(
+                            (m) => (
+                              <SelectItem key={m} value={m}>
+                                {m}
+                              </SelectItem>
+                            ),
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="sm:col-span-4">
+                      <Label className="text-xs">Monto</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        inputMode="decimal"
+                        value={pay.amount}
+                        onChange={(e) => setPay((s: any) => ({ ...s, amount: e.target.value }))}
+                        placeholder="Monto"
+                      />
+                    </div>
+                    <div className="sm:col-span-3">
+                      <Button onClick={onAddPay} className="h-11 w-full">
+                        <Plus className="h-4 w-4" /> Pago
                       </Button>
                     </div>
-                  ))}
-                  {(sale.payments ?? []).length === 0 && (
-                    <p className="text-xs text-muted-foreground">Sin pagos registrados.</p>
-                  )}
-                </div>
-                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-12 sm:items-end">
-                  <div className="sm:col-span-5">
-                    <Label className="text-xs">Método</Label>
-                    <Select
-                      value={pay.method}
-                      onValueChange={(v) => setPay((s: any) => ({ ...s, method: v }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {["efectivo", "yape", "plin", "transferencia", "tarjeta", "otro"].map(
-                          (m) => (
-                            <SelectItem key={m} value={m}>
-                              {m}
-                            </SelectItem>
-                          ),
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="sm:col-span-4">
-                    <Label className="text-xs">Monto</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      inputMode="decimal"
-                      value={pay.amount}
-                      onChange={(e) => setPay((s: any) => ({ ...s, amount: e.target.value }))}
-                      placeholder="Monto"
-                    />
-                  </div>
-                  <div className="sm:col-span-3">
-                    <Button onClick={onAddPay} className="h-11 w-full">
-                      <Plus className="h-4 w-4" /> Pago
-                    </Button>
                   </div>
                 </div>
-              </div>
 
-              <div className="self-start rounded-xl border border-sand/60 bg-cream/40 p-4 max-sm:sticky max-sm:bottom-0 max-sm:z-20 max-sm:-mx-4 max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0 max-sm:bg-warm-white/95 max-sm:pb-[calc(1rem+env(safe-area-inset-bottom))] max-sm:shadow-[0_-8px_20px_rgba(47,33,27,0.08)]">
-                <div className="flex justify-between text-sm py-1">
-                  <span>Subtotal</span>
-                  <span>{moneyPEN(sale.subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-sm py-1">
-                  <span>Descuento</span>
-                  <span>- {moneyPEN(sale.discount)}</span>
-                </div>
-                <div className="flex justify-between text-lg py-2 border-t border-sand/60 mt-1 font-display">
-                  <span>Total</span>
-                  <span>{moneyPEN(sale.total)}</span>
-                </div>
-                {sale.status === "borrador" && (sale.items ?? []).length > 0 && (
-                  <Button variant="hero" className="mt-3 h-12 w-full" onClick={onConfirm}>
-                    <CheckCircle2 className="h-4 w-4" /> Confirmar y emitir
-                  </Button>
-                )}
-                <div className="mt-2 grid gap-2">
-                  <Button
-                    variant="outline"
-                    className={`w-full ${internalDocumentButtonClass}`}
-                    onClick={() => onViewInternal(sale)}
-                  >
-                    <Eye className="h-4 w-4" /> Interno
-                  </Button>
-                  {getSaleReceipt(sale)?.id && (
+                <div className="self-start rounded-xl border border-sand/60 bg-cream/40 p-4 max-sm:sticky max-sm:bottom-0 max-sm:z-20 max-sm:-mx-4 max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0 max-sm:bg-warm-white/95 max-sm:pb-[calc(1rem+env(safe-area-inset-bottom))] max-sm:shadow-[0_-8px_20px_rgba(47,33,27,0.08)]">
+                  <div className="flex justify-between text-sm py-1">
+                    <span>Subtotal</span>
+                    <span>{moneyPEN(sale.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm py-1">
+                    <span>Descuento</span>
+                    <span>- {moneyPEN(sale.discount)}</span>
+                  </div>
+                  <div className="flex justify-between text-lg py-2 border-t border-sand/60 mt-1 font-display">
+                    <span>Total</span>
+                    <span>{moneyPEN(sale.total)}</span>
+                  </div>
+                  {sale.status === "borrador" && (sale.items ?? []).length > 0 && (
                     <Button
-                      variant="outline"
-                      className={`w-full ${saleNoteButtonClass}`}
-                      onClick={() => onViewReceipt(getSaleReceipt(sale).id, "note")}
+                      variant="hero"
+                      className="mt-3 h-12 w-full"
+                      disabled={confirming}
+                      onClick={onConfirm}
                     >
-                      <FileText className="h-4 w-4" /> Nota de venta
+                      <CheckCircle2 className="h-4 w-4" />
+                      {confirming ? "Guardando…" : "Guardar comprobante"}
                     </Button>
                   )}
-                  {!getSaleReceipt(sale)?.id && (
+                  <div className="mt-2 grid gap-2">
                     <Button
                       variant="outline"
-                      className={`w-full ${quotationButtonClass}`}
-                      onClick={() => onViewQuotation(sale)}
+                      className={`w-full ${internalDocumentButtonClass}`}
+                      onClick={() => onViewInternal(sale)}
                     >
-                      <FileText className="h-4 w-4" /> Cotización
+                      <Eye className="h-4 w-4" /> Interno
                     </Button>
-                  )}
+                    {getSaleReceipt(sale)?.id && (
+                      <Button
+                        variant="outline"
+                        className={`w-full ${saleNoteButtonClass}`}
+                        onClick={() => onViewReceipt(getSaleReceipt(sale).id, "note")}
+                      >
+                        <FileText className="h-4 w-4" /> Nota de venta
+                      </Button>
+                    )}
+                    {!getSaleReceipt(sale)?.id && (
+                      <Button
+                        variant="outline"
+                        className={`w-full ${quotationButtonClass}`}
+                        onClick={() => onViewQuotation(sale)}
+                      >
+                        <FileText className="h-4 w-4" /> Cotización
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            </section>
           </>
         )}
       </DialogContent>

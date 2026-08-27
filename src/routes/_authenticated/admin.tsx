@@ -42,6 +42,8 @@ import {
   Globe2,
   ChevronDown,
   CalendarDays,
+  ReceiptText,
+  Landmark,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { clearDevAdminSession, hasDevAdminSession } from "@/lib/dev-admin";
@@ -72,7 +74,9 @@ export const Route = createFileRoute("/_authenticated/admin")({
         .select("module, enabled")
         .eq("user_id", u.user.id);
       const modules = permissions?.length
-        ? permissions.filter((permission) => permission.enabled).map((permission) => permission.module)
+        ? permissions
+            .filter((permission) => permission.enabled)
+            .map((permission) => permission.module)
         : null;
       if (!canAccessAdminPath(location.pathname, r, modules)) throw redirect({ to: "/admin" });
     }
@@ -94,27 +98,40 @@ const standaloneItems = [
 const menuGroups = [
   {
     key: "inventory",
-    label: "Inventario",
+    label: "Inventario y almacenes",
     icon: Boxes,
     items: [
       { to: "/admin/productos", label: "Piezas", icon: Package },
       { to: "/admin/materiales", label: "Materiales", icon: Boxes },
-    ],
-  },
-  {
-    key: "stock",
-    label: "Stock y logística",
-    icon: Warehouse,
-    items: [
-      { to: "/admin/almacenes", label: "Almacenes", icon: Warehouse },
-      { to: "/admin/movimientos", label: "Movimientos", icon: ArrowLeftRight },
+      { to: "/admin/almacenes", label: "Almacenes y stock", icon: Warehouse },
+      { to: "/admin/movimientos", label: "Movimientos de inventario", icon: ArrowLeftRight },
     ],
   },
   {
     key: "sales",
     label: "Ventas",
     icon: ShoppingCart,
-    items: [{ to: "/admin/ventas", label: "Ventas", icon: ShoppingCart }],
+    items: [
+      { to: "/admin/ventas", label: "Nueva operación", icon: ShoppingCart },
+      { to: "/admin/pedidos", label: "Ventas de la web", icon: Package },
+    ],
+  },
+  {
+    key: "tax",
+    label: "Tributos",
+    icon: Landmark,
+    items: [
+      { to: "/admin/tributos", label: "Resumen tributario", icon: LayoutDashboard },
+      { to: "/admin/comprobantes", label: "Comprobantes electrónicos", icon: ReceiptText },
+      {
+        to: "/admin/comprobantes",
+        hash: "notas-credito",
+        label: "Notas de crédito",
+        icon: ReceiptText,
+      },
+      { to: "/admin/compras", label: "Registro de compras SUNAT", icon: ClipboardList },
+      { to: "/admin/sire", label: "Libros SUNAT", icon: Landmark },
+    ],
   },
   {
     key: "web",
@@ -130,6 +147,7 @@ const menuGroups = [
 
 const configItems = [
   { to: "/admin/configuracion", label: "Configuración", icon: Settings },
+  { to: "/admin/configuracion/comercio", label: "Configuración de comercio", icon: ShoppingCart },
 ] as const;
 
 function AdminShell() {
@@ -151,10 +169,7 @@ function AdminShell() {
       setUserName(formatUserName(user.email, user.user_metadata));
       const [{ data: roles }, { data: permissions }] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", user.id),
-        supabase
-          .from("staff_module_permissions")
-          .select("module, enabled")
-          .eq("user_id", user.id),
+        supabase.from("staff_module_permissions").select("module, enabled").eq("user_id", user.id),
       ]);
       setUserRoles((roles ?? []).map((item: any) => item.role));
       setUserModules(
@@ -226,13 +241,13 @@ function AdminShell() {
           <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
             <SidebarMenuSub className="my-1 ml-5 gap-1 border-l-[#80342c]/20">
               {visibleItems.map((i) => (
-                <SidebarMenuSubItem key={i.to}>
+                <SidebarMenuSubItem key={`${i.to}-${"hash" in i ? i.hash : ""}`}>
                   <SidebarMenuSubButton
                     asChild
                     isActive={pathname.startsWith(i.to)}
                     className="h-9 rounded-full px-3 text-[14px] font-semibold text-white/80 data-[active=true]:bg-[#80342c] data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:shadow-[#80342c]/20 hover:bg-white/20 hover:text-white"
                   >
-                    <Link to={i.to}>
+                    <Link to={i.to} hash={"hash" in i ? i.hash : undefined}>
                       <i.icon className="h-4 w-4" />
                       <span>{i.label}</span>
                     </Link>
