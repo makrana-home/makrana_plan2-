@@ -130,14 +130,54 @@ type SalesFilter =
   | "pedido_personalizado"
   | "cotizacion";
 
-const salesFilters: { value: SalesFilter; label: string }[] = [
-  { value: "all", label: "Todos" },
-  { value: "web", label: "Ventas de la web" },
-  { value: "boleta", label: "Boletas electrónicas" },
-  { value: "factura", label: "Facturas electrónicas" },
-  { value: "nota_venta", label: "Notas de venta" },
-  { value: "pedido_personalizado", label: "Pedidos personalizados" },
-  { value: "cotizacion", label: "Cotizaciones" },
+const salesFilters: {
+  value: SalesFilter;
+  label: string;
+  idleClass: string;
+  activeClass: string;
+}[] = [
+  {
+    value: "all",
+    label: "Todos",
+    idleClass: "border-stone-300 bg-stone-100 text-stone-800 hover:bg-stone-200",
+    activeClass: "border-[#4a3024] bg-[#4a3024] text-white hover:bg-[#3b261d]",
+  },
+  {
+    value: "web",
+    label: "Ventas de la web",
+    idleClass: "border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100",
+    activeClass: "border-sky-700 bg-sky-700 text-white hover:bg-sky-800",
+  },
+  {
+    value: "boleta",
+    label: "Boletas electrónicas",
+    idleClass: "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100",
+    activeClass: "border-emerald-700 bg-emerald-700 text-white hover:bg-emerald-800",
+  },
+  {
+    value: "factura",
+    label: "Facturas electrónicas",
+    idleClass: "border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100",
+    activeClass: "border-indigo-700 bg-indigo-700 text-white hover:bg-indigo-800",
+  },
+  {
+    value: "nota_venta",
+    label: "Notas de venta",
+    idleClass: "border-rose-200 bg-rose-50 text-rose-800 hover:bg-rose-100",
+    activeClass: "border-rose-700 bg-rose-700 text-white hover:bg-rose-800",
+  },
+  {
+    value: "pedido_personalizado",
+    label: "Pedidos personalizados",
+    idleClass: "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100",
+    activeClass: "border-amber-600 bg-amber-600 text-white hover:bg-amber-700",
+  },
+  {
+    value: "cotizacion",
+    label: "Cotizaciones",
+    idleClass: "border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100",
+    activeClass: "border-violet-700 bg-violet-700 text-white hover:bg-violet-800",
+  },
 ];
 
 function blankSaleItem(keepManualMode = false) {
@@ -401,7 +441,10 @@ function SalesPage() {
             size="sm"
             role="tab"
             aria-selected={documentFilter === filter.value}
-            variant={documentFilter === filter.value ? "default" : "outline"}
+            variant="outline"
+            className={`shadow-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 ${
+              documentFilter === filter.value ? filter.activeClass : filter.idleClass
+            }`}
             onClick={() => setDocumentFilter(filter.value)}
           >
             {filter.label}
