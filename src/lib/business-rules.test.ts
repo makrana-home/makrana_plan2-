@@ -24,6 +24,12 @@ test("permisos: los módulos enviados por el cliente no conceden una ruta descon
   assert.equal(canAccessAdminPath("/admin/ventas", ["ventas"], []), false);
 });
 
+test("permisos: un administrador puede limitar sus módulos sin perder configuración", () => {
+  assert.equal(canAccessAdminPath("/admin/ventas", ["admin"], ["products"]), false);
+  assert.equal(canAccessAdminPath("/admin/productos", ["admin"], ["products"]), true);
+  assert.equal(canAccessAdminPath("/admin/configuracion", ["admin"], []), true);
+});
+
 test("venta: calcula subtotal, descuento y redondeo", () => {
   assert.equal(calculateSaleItemSubtotal(3, 9.99, 1), 28.97);
   assert.equal(calculateSaleItemSubtotal(1, 0, 0), 0);

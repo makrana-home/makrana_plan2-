@@ -8,7 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { defaultModulesByRole, staffModuleOptions, type StaffModuleKey } from "@/lib/staff-access";
+import {
+  defaultModulesByRole,
+  staffModuleGroups,
+  staffModuleOptions,
+  type StaffModuleKey,
+} from "@/lib/staff-access";
 import {
   Select,
   SelectContent,
@@ -40,6 +45,7 @@ import {
   UserPlus,
   Users,
   XCircle,
+  FlaskConical,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/configuracion")({
@@ -108,8 +114,8 @@ function ConfigPage() {
 const staffProfiles = {
   admin: {
     label: "Administrador",
-    description: "Control total de la plataforma y configuración.",
-    modules: ["Todos los módulos", "Usuarios y configuración"],
+    description: "Gestiona la plataforma y elige qué módulos tendrá visibles.",
+    modules: ["Módulos asignados", "Usuarios y configuración"],
   },
   ventas: {
     label: "Vendedor",
@@ -309,6 +315,7 @@ function UsersAccessPanel() {
         title={dialog.data ? "Editar usuario" : "Crear usuario"}
         onSubmit={onSubmit}
         submitting={saving}
+        contentClassName="max-w-5xl"
       >
         <div className="space-y-5">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -383,40 +390,92 @@ function UsersAccessPanel() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-sand/70 bg-cream/40 p-4">
-            <div className="flex items-center gap-2 font-semibold">
-              <ShieldCheck className="h-4 w-4 text-brand-terracotta" />
-              Módulos de {selectedProfile.label}
+          <div className="rounded-3xl border border-sand/70 bg-cream/40 p-4 sm:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 font-semibold">
+                  <ShieldCheck className="h-4 w-4 text-brand-terracotta" />
+                  Módulos de {selectedProfile.label}
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">{selectedProfile.description}</p>
+              </div>
+              <Badge className="border-sand bg-warm-white text-foreground">
+                {form.modules.length} de {staffModuleOptions.length} activos
+              </Badge>
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">{selectedProfile.description}</p>
-            {form.role === "admin" ? (
-              <p className="mt-3 text-sm font-medium">Acceso total a todos los módulos.</p>
-            ) : (
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                {staffModuleOptions.map((module) => {
-                  const checked = form.modules.includes(module.key);
-                  return (
-                    <label
-                      key={module.key}
-                      className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-sand/70 bg-warm-white px-3 py-2 text-sm"
-                    >
+            <div className="mt-5 grid items-start gap-4 lg:grid-cols-2">
+              {staffModuleGroups.map((group) => (
+                <fieldset
+                  key={group.key}
+                  className={`rounded-2xl border p-4 shadow-sm ${group.key === "experimental" ? "border-amber-300/70 bg-amber-50/70" : "border-sand/70 bg-warm-white/70"}`}
+                >
+                  <legend className="px-2 text-sm font-semibold text-foreground">
+                    <span className="inline-flex items-center gap-2">
+                      {group.key === "experimental" && (
+                        <FlaskConical className="h-4 w-4 text-amber-700" />
+                      )}
+                      {group.label}
+                    </span>
+                  </legend>
+                  {group.modules.length > 1 && (
+                    <label className="mb-3 flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-accent/25 bg-accent/5 px-3 py-2 text-sm font-semibold">
                       <Checkbox
-                        checked={checked}
-                        onCheckedChange={(nextChecked) =>
-                          setForm((current) => ({
-                            ...current,
-                            modules: nextChecked
-                              ? [...current.modules, module.key]
-                              : current.modules.filter((key) => key !== module.key),
-                          }))
+                        checked={group.modules.every((module) => form.modules.includes(module.key))}
+                        onCheckedChange={(enabled) =>
+                          setForm((current) => {
+                            const groupKeys = group.modules.map((module) => module.key);
+                            const outsideGroup = current.modules.filter(
+                              (module) => !groupKeys.some((groupKey) => groupKey === module),
+                            );
+                            return {
+                              ...current,
+                              modules: enabled ? [...outsideGroup, ...groupKeys] : outsideGroup,
+                            };
+                          })
                         }
                       />
-                      {module.label}
+                      Activar todo {group.label.toLowerCase()}
                     </label>
-                  );
-                })}
-              </div>
-            )}
+                  )}
+                  <div className="mt-1 grid gap-2 sm:grid-cols-2">
+                    {group.modules.map((module) => {
+                      const checked = form.modules.includes(module.key);
+                      const restricted =
+                        module.key === "electronic_invoicing" &&
+                        (dialog.data?.email ?? form.email).toLowerCase() !==
+                          "it.admin@makrana.local";
+                      return (
+                        <label
+                          key={module.key}
+                          className={`flex min-h-12 items-center gap-3 rounded-xl border px-3 py-2 text-sm transition-colors ${restricted ? "cursor-not-allowed border-sand/50 bg-sand/20 text-muted-foreground" : "cursor-pointer border-sand/70 bg-warm-white hover:border-accent/50 hover:bg-cream/50"}`}
+                        >
+                          <Checkbox
+                            checked={checked}
+                            disabled={restricted}
+                            onCheckedChange={(nextChecked) =>
+                              setForm((current) => ({
+                                ...current,
+                                modules: nextChecked
+                                  ? [...current.modules, module.key]
+                                  : current.modules.filter((key) => key !== module.key),
+                              }))
+                            }
+                          />
+                          <span className="flex-1">
+                            <span className="block font-medium">{module.label}</span>
+                            {module.key === "electronic_invoicing" && (
+                              <span className="mt-0.5 block text-xs text-muted-foreground">
+                                En pruebas · disponible únicamente para IT Admin
+                              </span>
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              ))}
+            </div>
           </div>
         </div>
       </FormDialog>

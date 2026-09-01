@@ -104,6 +104,9 @@ export const adminCreateStaffUser = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    if (data.modules.includes("electronic_invoicing")) {
+      throw new Error("La facturación electrónica solo puede asignarse a IT Admin.");
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
@@ -160,6 +163,13 @@ export const adminUpdateStaffUser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (
+      data.modules.includes("electronic_invoicing") &&
+      data.email.toLowerCase() !== "it.admin@makrana.local"
+    ) {
+      throw new Error("La facturación electrónica solo puede asignarse a IT Admin.");
+    }
 
     const { data: currentRoles, error: currentRolesError } = await supabaseAdmin
       .from("user_roles")

@@ -140,6 +140,24 @@ const saleSchema = z.object({
     .default("cotizacion"),
 });
 
+async function assertElectronicInvoicingAccess(
+  context: { supabase: any; userId: string },
+  documentIntent: string,
+) {
+  if (!["boleta", "factura"].includes(documentIntent)) return;
+  const { data, error } = await context.supabase
+    .from("staff_module_permissions")
+    .select("enabled")
+    .eq("user_id", context.userId)
+    .eq("module", "electronic_invoicing")
+    .eq("enabled", true)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) {
+    throw new Error("La facturación electrónica todavía no está habilitada para este usuario.");
+  }
+}
+
 export const adminListSales = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -176,6 +194,7 @@ export const adminCreateSale = createServerFn({ method: "POST" })
   .validator((d) => saleSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertSales(context);
+    await assertElectronicInvoicingAccess(context, data.document_intent);
     const notes = composeSaleNotes({
       channel: data.channel,
       notes: data.notes,
@@ -204,6 +223,7 @@ export const adminUpdateSale = createServerFn({ method: "POST" })
   .validator((d) => saleSchema.extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertSales(context);
+    await assertElectronicInvoicingAccess(context, data.document_intent);
     const notes = composeSaleNotes({
       channel: data.channel,
       notes: data.notes,

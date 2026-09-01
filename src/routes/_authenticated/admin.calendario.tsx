@@ -486,63 +486,100 @@ function StatsGrid({ stats }: { stats: ReturnType<typeof calculateStats> }) {
 }
 
 function Filters({ data, search, setSearch, filters, setFilters }: any) {
+  const activeFilterCount = [
+    search,
+    filters.type !== "all",
+    filters.status !== "all",
+    filters.responsible !== "all",
+    filters.from,
+    filters.to,
+  ].filter(Boolean).length;
+
   return (
-    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-6">
-      <label className="relative lg:col-span-2">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Cliente, pedido o pieza"
-          aria-label="Buscar eventos"
-          className="h-11 pl-9"
+    <div className="rounded-2xl border border-sand/70 bg-cream/30 p-3 sm:p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <ListFilter className="h-4 w-4 text-brand-terracotta" /> Filtros de agenda
+          {activeFilterCount > 0 && (
+            <Badge variant="outline" className="bg-warm-white">
+              {activeFilterCount} activo{activeFilterCount === 1 ? "" : "s"}
+            </Badge>
+          )}
+        </div>
+        {activeFilterCount > 0 && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-9"
+            onClick={() => {
+              setSearch("");
+              setFilters(emptyFilters);
+            }}
+          >
+            Limpiar todo
+          </Button>
+        )}
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <label className="relative sm:col-span-2 xl:col-span-2">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Buscar cliente, pedido o pieza"
+            aria-label="Buscar eventos"
+            className="h-11 bg-warm-white pl-9"
+          />
+        </label>
+        <FilterSelect
+          value={filters.type}
+          onChange={(value: string) => setFilters((current: any) => ({ ...current, type: value }))}
+          label="Tipo"
+          options={data.eventTypes.map((item: any) => [item.id, item.name])}
         />
-      </label>
-      <FilterSelect
-        value={filters.type}
-        onChange={(value: string) => setFilters((current: any) => ({ ...current, type: value }))}
-        label="Tipo"
-        options={data.eventTypes.map((item: any) => [item.id, item.name])}
-      />
-      <Input
-        type="date"
-        value={filters.from}
-        onChange={(event) =>
-          setFilters((current: any) => ({ ...current, from: event.target.value }))
-        }
-        aria-label="Filtrar desde"
-        className="h-11"
-      />
-      <Input
-        type="date"
-        value={filters.to}
-        min={filters.from || undefined}
-        onChange={(event) => setFilters((current: any) => ({ ...current, to: event.target.value }))}
-        aria-label="Filtrar hasta"
-        className="h-11"
-      />
-      <FilterSelect
-        value={filters.status}
-        onChange={(value: string) => setFilters((current: any) => ({ ...current, status: value }))}
-        label="Estado"
-        options={statusOptions.map(([value, label]) => [value, label])}
-      />
-      <FilterSelect
-        value={filters.responsible}
-        onChange={(value: string) =>
-          setFilters((current: any) => ({ ...current, responsible: value }))
-        }
-        label="Responsable"
-        options={data.staff.map((item: any) => [item.id, item.full_name || item.email])}
-      />
-      <Button
-        type="button"
-        variant="outline"
-        className="h-11"
-        onClick={() => setFilters(emptyFilters)}
-      >
-        <ListFilter className="h-4 w-4" /> Limpiar
-      </Button>
+        <FilterSelect
+          value={filters.status}
+          onChange={(value: string) =>
+            setFilters((current: any) => ({ ...current, status: value }))
+          }
+          label="Estado"
+          options={statusOptions.map(([value, label]) => [value, label])}
+        />
+        <FilterSelect
+          value={filters.responsible}
+          onChange={(value: string) =>
+            setFilters((current: any) => ({ ...current, responsible: value }))
+          }
+          label="Responsable"
+          options={data.staff.map((item: any) => [item.id, item.full_name || item.email])}
+        />
+        <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
+          Desde
+          <Input
+            type="date"
+            value={filters.from}
+            onChange={(event) =>
+              setFilters((current: any) => ({ ...current, from: event.target.value }))
+            }
+            aria-label="Filtrar desde"
+            className="h-11 bg-warm-white text-foreground"
+          />
+        </label>
+        <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
+          Hasta
+          <Input
+            type="date"
+            value={filters.to}
+            min={filters.from || undefined}
+            onChange={(event) =>
+              setFilters((current: any) => ({ ...current, to: event.target.value }))
+            }
+            aria-label="Filtrar hasta"
+            className="h-11 bg-warm-white text-foreground"
+          />
+        </label>
+      </div>
     </div>
   );
 }
@@ -550,7 +587,7 @@ function Filters({ data, search, setSearch, filters, setFilters }: any) {
 function FilterSelect({ value, onChange, label, options }: any) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="h-11">
+      <SelectTrigger className="h-11 min-w-0 bg-warm-white">
         <SelectValue placeholder={label} />
       </SelectTrigger>
       <SelectContent>

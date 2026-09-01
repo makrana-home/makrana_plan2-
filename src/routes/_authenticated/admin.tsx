@@ -21,6 +21,7 @@ import {
   SidebarMenuSubItem,
   SidebarTrigger,
   SidebarHeader,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -48,8 +49,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { clearDevAdminSession, hasDevAdminSession } from "@/lib/dev-admin";
 import { BrandLogo } from "@/components/brand-logo";
-import { useEffect, useState } from "react";
-import { canAccessAdminPath } from "@/lib/staff-access";
+import { useEffect, useRef, useState } from "react";
+import { canAccessAdminPath, firstAccessibleAdminPath } from "@/lib/staff-access";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async ({ location }) => {
@@ -68,17 +69,17 @@ export const Route = createFileRoute("/_authenticated/admin")({
     const r = (roles ?? []).map((x: any) => x.role);
     const isStaff = r.includes("admin") || r.includes("ventas") || r.includes("almacen");
     if (!isStaff) throw redirect({ to: "/cliente" });
-    if (!r.includes("admin")) {
-      const { data: permissions } = await supabase
-        .from("staff_module_permissions")
-        .select("module, enabled")
-        .eq("user_id", u.user.id);
-      const modules = permissions?.length
-        ? permissions
-            .filter((permission) => permission.enabled)
-            .map((permission) => permission.module)
-        : null;
-      if (!canAccessAdminPath(location.pathname, r, modules)) throw redirect({ to: "/admin" });
+    const { data: permissions } = await supabase
+      .from("staff_module_permissions")
+      .select("module, enabled")
+      .eq("user_id", u.user.id);
+    const modules = permissions?.length
+      ? permissions
+          .filter((permission) => permission.enabled)
+          .map((permission) => permission.module)
+      : null;
+    if (!canAccessAdminPath(location.pathname, r, modules)) {
+      throw redirect({ to: firstAccessibleAdminPath(r, modules) });
     }
   },
   component: AdminShell,
@@ -263,6 +264,7 @@ function AdminShell() {
 
   return (
     <SidebarProvider>
+      <AdminSidebarAutoCollapse pathname={pathname} />
       <div className="flex min-h-screen w-full max-w-full overflow-x-clip bg-cream text-foreground">
         <Sidebar className="border-r border-[#d58f6b] bg-[#edbfa5] text-white">
           <SidebarHeader className="border-b border-[#80342c]/15 bg-transparent px-4 py-5">
@@ -276,7 +278,9 @@ function AdminShell() {
             <SidebarGroup>
               <SidebarGroupContent>
                 <SidebarMenu className="gap-2">
-                  {topItems.map(renderNavItem)}
+                  {topItems
+                    .filter((item) => canAccessAdminPath(item.to, userRoles, userModules))
+                    .map(renderNavItem)}
                   {menuGroups.slice(0, 1).map(renderNavGroup)}
                   {standaloneItems
                     .slice(0, 2)
@@ -350,6 +354,20 @@ function AdminShell() {
       </div>
     </SidebarProvider>
   );
+}
+
+function AdminSidebarAutoCollapse({ pathname }: { pathname: string }) {
+  const { setOpen, setOpenMobile } = useSidebar();
+  const previousPathname = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (previousPathname.current === pathname) return;
+    previousPathname.current = pathname;
+    setOpen(false);
+    setOpenMobile(false);
+  }, [pathname, setOpen, setOpenMobile]);
+
+  return null;
 }
 
 function formatUserName(email?: string, metadata?: Record<string, any> | null) {

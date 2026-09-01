@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Plus,
   Trash2,
@@ -36,6 +37,9 @@ import {
   MapPin,
   ReceiptText,
   UserRound,
+  ChevronDown,
+  PackageCheck,
+  CreditCard,
 } from "lucide-react";
 import {
   PageHeader,
@@ -76,6 +80,7 @@ import {
 } from "@/lib/sale-notes";
 import { resolveOperationBeforeConfirmation } from "@/lib/business-rules";
 import { WebOrdersView } from "./admin.pedidos";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/admin/ventas")({ component: SalesPage });
 
@@ -269,6 +274,21 @@ function SalesPage() {
     email: "",
     document: "",
   });
+  const [taxDocumentsEnabled, setTaxDocumentsEnabled] = useState(false);
+  const visibleDocumentIntentOptions = useMemo(
+    () =>
+      taxDocumentsEnabled
+        ? documentIntentOptions
+        : documentIntentOptions.filter((option) => !["boleta", "factura"].includes(option.value)),
+    [taxDocumentsEnabled],
+  );
+  const visibleSalesFilters = useMemo(
+    () =>
+      taxDocumentsEnabled
+        ? salesFilters
+        : salesFilters.filter((filter) => !["boleta", "factura"].includes(filter.value)),
+    [taxDocumentsEnabled],
+  );
   const filteredRows = useMemo(
     () =>
       rows.filter(
@@ -286,6 +306,18 @@ function SalesPage() {
     refresh();
     listWh().then(setWh);
     listCustomers().then(setCustomers); /* eslint-disable-line */
+    supabase.auth.getUser().then(async ({ data: authData }) => {
+      if (!authData.user) return;
+      const { data: permissions } = await supabase
+        .from("staff_module_permissions")
+        .select("module, enabled")
+        .eq("user_id", authData.user.id);
+      setTaxDocumentsEnabled(
+        permissions?.some(
+          (permission) => permission.enabled && permission.module === "electronic_invoicing",
+        ) ?? false,
+      );
+    });
     const linkedSale = new URLSearchParams(window.location.search).get("sale");
     if (linkedSale) {
       setOpenId(linkedSale);
@@ -339,6 +371,7 @@ function SalesPage() {
         customer_id: created.id,
         manual_customer_name: "",
       }));
+      setCustomerForm({ full_name: "", phone: "", email: "", document: "" });
       customerDlg.close();
       toast.success("Cliente agregado y seleccionado");
     } catch (e: any) {
@@ -434,7 +467,7 @@ function SalesPage() {
         role="tablist"
         aria-label="Filtrar historial de ventas"
       >
-        {salesFilters.map((filter) => (
+        {visibleSalesFilters.map((filter) => (
           <Button
             key={filter.value}
             type="button"
@@ -456,7 +489,7 @@ function SalesPage() {
 
       {documentFilter === "web" && <WebOrdersView />}
 
-      <div className={`${documentFilter === "web" ? "hidden" : "grid"} gap-3 md:hidden`}>
+      <div className={`${documentFilter === "web" ? "hidden" : "grid"} gap-3 xl:hidden`}>
         {filteredRows.length === 0 && (
           <div className="rounded-xl border border-sand/60 bg-warm-white px-4 py-8 text-center text-sm text-muted-foreground">
             No hay documentos en este filtro.
@@ -476,7 +509,7 @@ function SalesPage() {
       </div>
 
       <div
-        className={`${documentFilter === "web" ? "hidden" : "hidden md:block"} overflow-hidden rounded-xl border border-sand/60 bg-warm-white`}
+        className={`${documentFilter === "web" ? "hidden" : "hidden xl:block"} max-w-full overflow-x-auto rounded-xl border border-sand/60 bg-warm-white`}
       >
         <Table className="min-w-[1120px]">
           <TableHeader>
@@ -503,7 +536,24 @@ function SalesPage() {
               </TableRow>
             )}
             {filteredRows.map((r) => (
-              <TableRow key={r.id}>
+              <TableRow
+                key={r.id}
+                tabIndex={0}
+                role="button"
+                aria-label={`Editar pedido de ${getSaleCustomerDisplayName(r, "cliente sin nombre")}`}
+                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+                onClick={(event) => {
+                  if ((event.target as HTMLElement).closest("button, a, input, select")) return;
+                  setOpenId(r.id);
+                }}
+                onKeyDown={(event) => {
+                  if ((event.target as HTMLElement).closest("button, a, input, select")) return;
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setOpenId(r.id);
+                  }
+                }}
+              >
                 <TableCell className="text-xs text-muted-foreground">
                   {formatDate(r.created_at)}
                 </TableCell>
@@ -769,7 +819,7 @@ function SalesPage() {
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              {documentIntentOptions.map((option) => (
+              {visibleDocumentIntentOptions.map((option) => (
                 <button
                   key={option.value}
                   type="button"
@@ -866,6 +916,7 @@ function SalesPage() {
         }}
         customers={customers}
         warehouses={wh}
+        taxDocumentsEnabled={taxDocumentsEnabled}
         onViewReceipt={viewReceipt}
         onViewQuotation={previewQuotationFromSale}
         onViewInternal={(sale) => {
@@ -902,7 +953,23 @@ function SaleMobileCard({
 }) {
   const receipt = getSaleReceipt(sale);
   return (
-    <article className="rounded-xl border border-sand/60 bg-warm-white p-4 shadow-sm">
+    <article
+      role="button"
+      tabIndex={0}
+      aria-label={`Editar pedido de ${getSaleCustomerDisplayName(sale, "cliente sin nombre")}`}
+      className="cursor-pointer rounded-xl border border-sand/60 bg-warm-white p-4 shadow-sm transition hover:border-accent/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      onClick={(event) => {
+        if ((event.target as HTMLElement).closest("button, a, input, select")) return;
+        onOpen();
+      }}
+      onKeyDown={(event) => {
+        if ((event.target as HTMLElement).closest("button, a, input, select")) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen();
+        }
+      }}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">{formatDate(sale.created_at)}</p>
@@ -1159,6 +1226,7 @@ function SaleDrawer({
   onClose,
   customers,
   warehouses,
+  taxDocumentsEnabled,
   onViewReceipt,
   onViewQuotation,
   onViewInternal,
@@ -1167,6 +1235,7 @@ function SaleDrawer({
   onClose: () => void;
   customers: any[];
   warehouses: any[];
+  taxDocumentsEnabled: boolean;
   onViewReceipt: (id: string, variant: ReceiptVariant) => void;
   onViewQuotation: (sale: any) => void;
   onViewInternal: (sale: any) => void;
@@ -1185,14 +1254,28 @@ function SaleDrawer({
   const [item, setItem] = useState<any>(() => blankSaleItem());
   const [pay, setPay] = useState<any>(() => blankPayment());
   const [confirming, setConfirming] = useState(false);
+  const [openSteps, setOpenSteps] = useState({
+    details: false,
+    products: true,
+    payment: true,
+    agenda: false,
+  });
+  const visibleDocumentIntentOptions = taxDocumentsEnabled
+    ? documentIntentOptions
+    : documentIntentOptions.filter((option) => !["boleta", "factura"].includes(option.value));
 
   async function refresh() {
     if (!saleId) return;
     const s = await getSale({ data: { id: saleId } });
-    setSale(prepareSaleForEdit(s));
+    const preparedSale = prepareSaleForEdit(s);
+    setSale(preparedSale);
+    if (preparedSale.document_intent === "pedido_personalizado" && !preparedSale.items?.length) {
+      setItem((current: any) => (current.is_manual_item ? current : blankSaleItem(true)));
+    }
   }
   useEffect(() => {
     if (saleId) {
+      setOpenSteps({ details: false, products: true, payment: true, agenda: false });
       refresh();
       Promise.all([
         listProducts({ data: { type: "producto_terminado" } }),
@@ -1227,7 +1310,8 @@ function SaleDrawer({
         },
       });
       toast.success("Actualizado");
-      refresh();
+      await refresh();
+      setOpenSteps((current) => ({ ...current, details: false, products: true, payment: true }));
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -1402,18 +1486,14 @@ function SaleDrawer({
               </div>
             </DialogHeader>
 
-            <section className="mt-6 rounded-2xl border border-sand/70 bg-cream/35 p-4 sm:p-5">
-              <div className="mb-5 flex items-start gap-3">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent font-bold text-white">
-                  1
-                </span>
-                <div>
-                  <h3 className="font-semibold">Datos del pedido</h3>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Revisa quién compra, qué documento necesita y cómo se entregará.
-                  </p>
-                </div>
-              </div>
+            <WorkflowSection
+              step={1}
+              title="Datos del pedido"
+              description="Revisa quién compra, qué documento necesita y cómo se entregará."
+              open={openSteps.details}
+              onOpenChange={(open) => setOpenSteps((current) => ({ ...current, details: open }))}
+              summary={getSaleCustomerDisplayName(sale)}
+            >
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label>Cliente registrado</Label>
@@ -1503,7 +1583,7 @@ function SaleDrawer({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {documentIntentOptions.map((option) => (
+                      {visibleDocumentIntentOptions.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
@@ -1574,26 +1654,17 @@ function SaleDrawer({
               <Button className="mt-5 w-full sm:w-auto" onClick={onSaveHeader}>
                 <CheckCircle2 className="h-4 w-4" /> Guardar cambios
               </Button>
-            </section>
+            </WorkflowSection>
 
-            {(item.is_manual_item ||
-              (sale.items ?? []).some(
-                (saleItem: any) =>
-                  saleItem.is_manual_item || saleItem.provisional_source === PROVISIONAL_SOURCE,
-              )) && <SaleAgenda sale={sale} onScheduled={refresh} />}
-
-            <section className="mt-5 rounded-2xl border border-sand/70 bg-warm-white p-4 sm:p-5">
-              <div className="mb-4 flex items-start gap-3">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent font-bold text-white">
-                  2
-                </span>
-                <div>
-                  <h3 className="font-semibold">Productos del pedido</h3>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Busca una pieza, indica la cantidad y agrégala al pedido.
-                  </p>
-                </div>
-              </div>
+            <WorkflowSection
+              step={2}
+              title="Productos del pedido"
+              description="Busca una pieza, indica la cantidad y agrégala al pedido."
+              icon={PackageCheck}
+              open={openSteps.products}
+              onOpenChange={(open) => setOpenSteps((current) => ({ ...current, products: open }))}
+              summary={`${(sale.items ?? []).length} producto${(sale.items ?? []).length === 1 ? "" : "s"} · ${moneyPEN(sale.total)}`}
+            >
               <div className="space-y-2 md:hidden">
                 {(sale.items ?? []).map((it: any) => {
                   const presentationLabel = getSaleItemPresentationLabel(it);
@@ -1710,6 +1781,26 @@ function SaleDrawer({
               {sale.status === "borrador" && (
                 <>
                   <div className="mt-4 rounded-xl border border-dashed border-sand bg-cream/40 p-3 sm:p-4">
+                    <div
+                      className="mb-4 grid grid-cols-1 gap-2 rounded-xl bg-warm-white p-1 sm:grid-cols-2"
+                      role="group"
+                      aria-label="Tipo de pieza"
+                    >
+                      <Button
+                        type="button"
+                        variant={!item.is_manual_item ? "default" : "ghost"}
+                        onClick={() => setItem(blankSaleItem(false))}
+                      >
+                        Pieza del catálogo
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={item.is_manual_item ? "default" : "ghost"}
+                        onClick={() => setItem(blankSaleItem(true))}
+                      >
+                        Escribir pieza personalizada
+                      </Button>
+                    </div>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:items-end">
                       {item.is_manual_item && (
                         <div className="sm:col-span-6">
@@ -1813,20 +1904,28 @@ function SaleDrawer({
                   </div>
                 </>
               )}
-            </section>
-
-            <section className="mt-5 rounded-2xl border border-sand/70 bg-cream/35 p-4 sm:p-5">
-              <div className="mb-4 flex items-start gap-3">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent font-bold text-white">
-                  3
-                </span>
-                <div>
-                  <h3 className="font-semibold">Pago y confirmación</h3>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Registra el pago, revisa el total y guarda el comprobante.
-                  </p>
+              {(sale.items ?? []).length > 0 && (
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setOpenSteps((current) => ({ ...current, payment: true }))}
+                  >
+                    Continuar al pago
+                  </Button>
                 </div>
-              </div>
+              )}
+            </WorkflowSection>
+
+            <WorkflowSection
+              step={3}
+              title="Pago y confirmación"
+              description="Registra el pago, revisa el total y guarda el comprobante."
+              icon={CreditCard}
+              open={openSteps.payment}
+              onOpenChange={(open) => setOpenSteps((current) => ({ ...current, payment: open }))}
+              summary={`${(sale.payments ?? []).length} pago${(sale.payments ?? []).length === 1 ? "" : "s"} · Total ${moneyPEN(sale.total)}`}
+            >
               <div className="grid gap-6 sm:grid-cols-2">
                 <div>
                   <h4 className="mb-2 font-semibold">Pagos registrados</h4>
@@ -1946,11 +2045,99 @@ function SaleDrawer({
                   </div>
                 </div>
               </div>
-            </section>
+              {shouldScheduleSale(sale, item) && (
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setOpenSteps((current) => ({ ...current, agenda: true }))}
+                  >
+                    Continuar a agenda
+                  </Button>
+                </div>
+              )}
+            </WorkflowSection>
+
+            {shouldScheduleSale(sale, item) && (
+              <WorkflowSection
+                step={4}
+                title="Agenda y fechas importantes"
+                description="Programa avances, visitas, entrega o instalación cuando corresponda."
+                icon={CalendarDays}
+                open={openSteps.agenda}
+                onOpenChange={(open) => setOpenSteps((current) => ({ ...current, agenda: open }))}
+                summary={`${(sale.calendar_events ?? []).length} evento${(sale.calendar_events ?? []).length === 1 ? "" : "s"}`}
+              >
+                <SaleAgenda sale={sale} onScheduled={refresh} />
+              </WorkflowSection>
+            )}
           </>
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function shouldScheduleSale(sale: any, item: any) {
+  return (
+    sale?.document_intent === "pedido_personalizado" ||
+    item?.is_manual_item ||
+    (sale?.items ?? []).some(
+      (saleItem: any) =>
+        saleItem.is_manual_item || saleItem.provisional_source === PROVISIONAL_SOURCE,
+    )
+  );
+}
+
+function WorkflowSection({
+  step,
+  title,
+  description,
+  summary,
+  icon: Icon = CheckCircle2,
+  open,
+  onOpenChange,
+  children,
+}: {
+  step: number;
+  title: string;
+  description: string;
+  summary?: string;
+  icon?: typeof CheckCircle2;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Collapsible open={open} onOpenChange={onOpenChange} className="group/workflow mt-4">
+      <section className="overflow-hidden rounded-2xl border border-sand/70 bg-warm-white shadow-sm transition-shadow data-[state=open]:shadow-md">
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-cream/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent sm:px-5"
+          >
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent font-bold text-white">
+              {step}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-2 font-semibold">
+                <Icon className="h-4 w-4 text-brand-terracotta" /> {title}
+              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                {open ? description : summary || description}
+              </span>
+            </span>
+            <span className="hidden rounded-full border border-sand/70 bg-cream/50 px-3 py-1 text-xs font-medium text-muted-foreground sm:inline-flex">
+              {open ? "Ocultar" : "Desglosar"}
+            </span>
+            <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]/workflow:rotate-180" />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="border-t border-sand/60 bg-cream/20 p-4 sm:p-5">{children}</div>
+        </CollapsibleContent>
+      </section>
+    </Collapsible>
   );
 }
 
@@ -1991,7 +2178,7 @@ function SaleAgenda({ sale, onScheduled }: { sale: any; onScheduled: () => Promi
     }
   }
   return (
-    <section className="mt-8 rounded-2xl border border-sand/70 bg-cream/30 p-4">
+    <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="flex items-center gap-2 font-display text-lg">
@@ -2108,6 +2295,6 @@ function SaleAgenda({ sale, onScheduled }: { sale: any; onScheduled: () => Promi
           </div>
         )}
       </div>
-    </section>
+    </div>
   );
 }

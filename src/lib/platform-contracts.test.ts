@@ -69,7 +69,7 @@ test("navegación separa ventas, tributos e inventario con etiquetas comprensibl
     assert.ok(menu.includes(label), label);
   assert.doesNotMatch(menu, /label:\s*"Datos y conexión SUNAT"/);
   assert.doesNotMatch(menu, /label:\s*"SIRE"/);
-  assert.equal(moduleForAdminPath("/admin/comprobantes"), "tax");
+  assert.equal(moduleForAdminPath("/admin/comprobantes"), "receipts");
 });
 
 test("la interfaz unifica ventas web y conserva un único origen para emitir comprobantes", async () => {

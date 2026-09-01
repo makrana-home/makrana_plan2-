@@ -409,7 +409,116 @@ export function ProductTypeManager({
         </Select>
       </div>
 
-      <div className="overflow-x-auto rounded-3xl border border-sand/80 bg-warm-white/75 shadow-sm">
+      <div className="grid gap-3 xl:hidden">
+        {filteredRows.length === 0 && (
+          <div className="rounded-3xl border border-sand/80 bg-warm-white/75 px-5 py-10 text-center text-muted-foreground shadow-sm">
+            Sin piezas con estos filtros.
+          </div>
+        )}
+        {filteredRows.map((r) => {
+          const stock = getStockSummary(r.id, tableStock, warehouses);
+          return (
+            <article
+              key={r.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`Ver detalle de ${r.name}`}
+              className="rounded-3xl border border-sand/80 bg-warm-white/75 p-4 shadow-sm transition hover:border-clay/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+              onClick={(event) => {
+                if ((event.target as HTMLElement).closest("button, a, input, select")) return;
+                void openDetail(r);
+              }}
+              onKeyDown={(event) => {
+                if ((event.target as HTMLElement).closest("button, a, input, select")) return;
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  void openDetail(r);
+                }
+              }}
+            >
+              <div className="flex min-w-0 items-start gap-3">
+                <ProductThumb product={r} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-medium leading-tight text-foreground">{r.name}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {r.category?.name ?? "Sin categoría"} · SKU {r.sku ?? "—"}
+                      </p>
+                    </div>
+                    <StatusBadge status={r.status} visible={r.is_visible} />
+                  </div>
+                  {r.type === "kit" && (
+                    <Badge variant="outline" className="mt-2">
+                      Kit
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded-2xl bg-cream/70 px-3 py-2">
+                  <p className="text-xs text-muted-foreground">Costo</p>
+                  <p className="mt-0.5 tabular-nums">{moneyPEN(r.cost ?? 0)}</p>
+                </div>
+                <div className="rounded-2xl bg-cream/70 px-3 py-2">
+                  <p className="text-xs text-muted-foreground">Precio</p>
+                  <p className="mt-0.5 font-medium tabular-nums">{moneyPEN(r.price)}</p>
+                </div>
+              </div>
+
+              <div className="mt-2 grid grid-cols-4 gap-1.5 text-center">
+                {[
+                  ["Total", stock.total],
+                  ["SA", stock.sa],
+                  ["PL", stock.pl],
+                  ["FE", stock.feria],
+                ].map(([label, quantity]) => (
+                  <div key={label} className="rounded-xl border border-sand/70 px-1 py-2">
+                    <p className="text-[10px] font-medium uppercase text-muted-foreground">
+                      {label}
+                    </p>
+                    <p className="mt-0.5 text-sm font-medium tabular-nums">
+                      {formatQuantity(quantity as number)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <Button type="button" size="sm" variant="outline" onClick={() => openDetail(r)}>
+                  <Eye className="h-4 w-4" />
+                  Ver detalle
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => openMovement(r, "transferencia")}
+                >
+                  <ArrowRightLeft className="h-4 w-4" />
+                  Mover
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => openMovement(r, "entrada")}
+                >
+                  <PackagePlus className="h-4 w-4" />
+                  Entrada
+                </Button>
+                <Button type="button" size="sm" variant="outline" onClick={() => onDelete(r)}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                  Eliminar
+                </Button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      <div className="hidden max-w-full overflow-x-auto rounded-3xl border border-sand/80 bg-warm-white/75 shadow-sm xl:block">
         <Table className="min-w-[1320px]">
           <TableHeader className="bg-cream/75">
             <TableRow>
@@ -438,7 +547,24 @@ export function ProductTypeManager({
             {filteredRows.map((r) => {
               const stock = getStockSummary(r.id, tableStock, warehouses);
               return (
-                <TableRow key={r.id}>
+                <TableRow
+                  key={r.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Ver detalle de ${r.name}`}
+                  className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/40"
+                  onClick={(event) => {
+                    if ((event.target as HTMLElement).closest("button, a, input, select")) return;
+                    void openDetail(r);
+                  }}
+                  onKeyDown={(event) => {
+                    if ((event.target as HTMLElement).closest("button, a, input, select")) return;
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      void openDetail(r);
+                    }
+                  }}
+                >
                   <TableCell className="text-muted-foreground">{r.sku ?? "—"}</TableCell>
                   <TableCell>
                     <ProductThumb product={r} />
@@ -523,9 +649,12 @@ export function ProductTypeManager({
       <FormDialog
         open={dlg.open}
         onOpenChange={dlg.setOpen}
-        title={dlg.data ? "Detalle de pieza" : "Nueva pieza"}
+        title={dlg.data ? "Editar pieza" : "Nueva pieza"}
+        description="Completa la información por secciones. Los cambios se guardarán al final."
         onSubmit={onSubmit}
         submitting={saving}
+        submitLabel="Guardar cambios"
+        contentClassName="max-w-3xl bg-[#FFF9F4]"
       >
         <ProductFormFields
           form={form}
@@ -750,7 +879,7 @@ function StatusBadge({ status, visible }: { status: string; visible: boolean }) 
   return (
     <div className="flex gap-1">
       <span className={`text-xs px-2 py-0.5 rounded-full ${map[status] ?? "bg-muted"}`}>
-        {status}
+        {formatProductStatus(status)}
       </span>
       {!visible && (
         <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
@@ -759,6 +888,25 @@ function StatusBadge({ status, visible }: { status: string; visible: boolean }) 
       )}
     </div>
   );
+}
+
+function formatProductStatus(status: string) {
+  const labels: Record<string, string> = {
+    disponible: "Disponible",
+    por_encargo: "Por encargo",
+    agotado: "Agotado",
+    reservado: "Reservado",
+  };
+  return labels[status] ?? status.replaceAll("_", " ");
+}
+
+function formatProductType(type?: string | null) {
+  const labels: Record<string, string> = {
+    producto_terminado: "Pieza terminada",
+    material: "Material",
+    kit: "Kit",
+  };
+  return type ? (labels[type] ?? type.replaceAll("_", " ")) : "—";
 }
 
 function ProductThumb({ product }: { product: any }) {
@@ -822,7 +970,7 @@ export function StockMovementDialog({
       submitting={submitting}
       submitLabel={submitLabel}
     >
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-5 text-base sm:grid-cols-2 [&_input]:min-h-12 [&_input]:text-base [&_[role=combobox]]:min-h-12 [&_[role=combobox]]:text-base">
         {presentationOptions.length > 0 && (
           <div className="sm:col-span-2">
             <Label>Presentación *</Label>
@@ -983,22 +1131,22 @@ export function ProductDetailDialog({
   const presentationRows =
     product.type === "material" ? (product.presentations ?? []).filter(Boolean) : [];
   const hasPresentationRows = presentationRows.length > 0;
+  const totalStock = itemStock.reduce((total, item) => total + Number(item.quantity ?? 0), 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-h-[92vh] max-w-4xl overflow-y-auto"
+        className="max-h-[94vh] max-w-4xl overflow-y-auto bg-[#FFF9F4] text-base"
         onEscapeKeyDown={(event) => event.preventDefault()}
         onInteractOutside={(event) => event.preventDefault()}
         onPointerDownOutside={(event) => event.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between gap-3 pr-8 font-display">
+          <DialogTitle className="flex items-center justify-between gap-3 pr-8 font-display text-xl">
             <span>{product.type === "material" ? "Detalle de material" : "Detalle de pieza"}</span>
             <Button
               type="button"
-              size="sm"
-              className="rounded-full"
+              className="min-h-11 rounded-full px-5 text-base"
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -1011,7 +1159,7 @@ export function ProductDetailDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="rounded-3xl border border-sand/80 bg-cream/35 p-5">
+        <div className="rounded-3xl border border-sand/80 bg-warm-white p-4 shadow-sm sm:p-5">
           <div className="grid gap-6 md:grid-cols-[180px_1fr]">
             <div>
               {product.main_image_url ? (
@@ -1028,32 +1176,55 @@ export function ProductDetailDialog({
             </div>
 
             <div className="space-y-5">
-              <div>
-                <div className="text-xs uppercase tracking-[0.18em] text-brand-terracotta">
+              <div className="rounded-2xl border border-[#AC6454] bg-[#AC6454]/10 p-4">
+                <div className="text-sm font-semibold uppercase tracking-[0.14em] text-brand-terracotta">
                   {product.type === "material" ? "Material" : "Pieza"}
                 </div>
-                <h2 className="mt-1 font-display text-3xl">{product.name}</h2>
+                <h2 className="mt-1 font-display text-3xl font-semibold leading-tight text-[#AC6454]">
+                  {product.name}
+                </h2>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <Badge variant="outline">SKU: {product.sku || "Sin SKU"}</Badge>
+                  <Badge
+                    className="border-[#AC6454] bg-[#AC6454]/10 text-[#AC6454]"
+                    variant="outline"
+                  >
+                    SKU: {product.sku || "Sin SKU"}
+                  </Badge>
                   <Badge variant="outline">{product.category?.name ?? "Sin categoría"}</Badge>
-                  <Badge>{product.status}</Badge>
+                  <Badge>{formatProductStatus(product.status)}</Badge>
                   {!product.is_visible && <Badge variant="outline">Oculto en web</Badge>}
                   {product.is_featured && <Badge variant="outline">Destacado</Badge>}
                 </div>
               </div>
 
-              <div
-                className={`grid gap-3 ${hasPresentationRows ? "sm:grid-cols-2" : "sm:grid-cols-4"}`}
-              >
+              <DetailSectionHeading
+                title="Resumen comercial"
+                description="Precio, costo y control mínimo de existencias."
+              />
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 {!hasPresentationRows && (
                   <>
-                    <DetailBox label="Costo" value={moneyPEN(product.cost ?? 0)} muted />
-                    <DetailBox label="Precio" value={moneyPEN(product.price ?? 0)} />
+                    <DetailBox label="Costo" value={moneyPEN(product.cost ?? 0)} emphasis="soft" />
+                    <DetailBox
+                      label="Precio"
+                      value={moneyPEN(product.price ?? 0)}
+                      emphasis="strong"
+                    />
                   </>
                 )}
-                <DetailBox label="Stock mínimo" value={formatUnits(product.min_stock ?? 0)} />
-                <DetailBox label="Tipo" value={product.type ?? "—"} />
+                <DetailBox label="Stock total" value={formatUnits(totalStock)} emphasis="stock" />
+                <DetailBox
+                  label="Stock mínimo"
+                  value={formatUnits(product.min_stock ?? 0)}
+                  emphasis="stock"
+                />
               </div>
+
+              <DetailSectionHeading
+                title="Características"
+                description="Datos físicos y clasificación de la pieza."
+              />
+              <DetailBox label="Tipo" value={formatProductType(product.type)} />
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <DetailBox label="Medidas" value={product.measurements || "—"} />
@@ -1067,18 +1238,27 @@ export function ProductDetailDialog({
             </div>
           </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <InfoSection title="Descripción corta" text={product.short_description || "—"} />
-            <InfoSection title="Notas internas" text={product.internal_notes || "—"} />
+          <div className="mt-7">
+            <DetailSectionHeading
+              title="Información adicional"
+              description="Descripción para consulta y notas del equipo."
+            />
+          </div>
+          <div className="mt-3 grid gap-4 md:grid-cols-2">
             <InfoSection
               title="Descripción"
               text={product.description || "—"}
               className="md:col-span-2"
             />
+            <InfoSection
+              title="Notas internas"
+              text={product.internal_notes || "—"}
+              className="md:col-span-2"
+            />
           </div>
 
           {hasPresentationRows && (
-            <div className="mt-6 rounded-2xl border border-sand/70 bg-warm-white p-4">
+            <div className="mt-6 rounded-2xl border-2 border-[#80342C] bg-[#FFF9F4] p-4 shadow-sm">
               <h3 className="font-display text-lg">Presentaciones</h3>
               <div className="mt-3 grid gap-3">
                 {presentationRows.map((presentation: any) => (
@@ -1127,9 +1307,13 @@ export function ProductDetailDialog({
           )}
 
           {!hasPresentationRows && (
-            <div className="mt-6 rounded-2xl border border-sand/70 bg-warm-white p-4">
-              <h3 className="font-display text-lg">Stock por almacén</h3>
-              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <div className="mt-6 rounded-2xl border border-sand/70 bg-warm-white p-4 shadow-sm">
+              <DetailSectionHeading
+                title="Stock por almacén"
+                description="Existencias disponibles en cada ubicación."
+                stock
+              />
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 {warehouses.map((warehouse) => {
                   const qty = itemStock
                     .filter(
@@ -1138,12 +1322,15 @@ export function ProductDetailDialog({
                     )
                     .reduce((total, item) => total + Number(item.quantity ?? 0), 0);
                   return (
-                    <div key={warehouse.id} className="rounded-xl border border-sand/60 p-3">
-                      <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                    <div
+                      key={warehouse.id}
+                      className="rounded-xl border border-[#E8BCA4] bg-[#E8BCA4]/40 p-4 transition hover:border-[#AC6454] hover:shadow-sm"
+                    >
+                      <div className="text-sm font-bold uppercase tracking-[0.08em] text-[#AC6454]">
                         {warehouse.code}
                       </div>
-                      <div className="truncate text-sm font-medium">{warehouse.name}</div>
-                      <div className="mt-2 text-xl tabular-nums">{formatUnits(qty)}</div>
+                      <div className="mt-1 text-base font-semibold">{warehouse.name}</div>
+                      <div className="mt-3 text-2xl font-bold tabular-nums">{formatUnits(qty)}</div>
                     </div>
                   );
                 })}
@@ -1160,15 +1347,58 @@ function DetailBox({
   label,
   value,
   muted = false,
+  emphasis,
 }: {
   label: string;
   value: string;
   muted?: boolean;
+  emphasis?: "soft" | "strong" | "stock";
+}) {
+  const emphasisClasses =
+    emphasis === "strong"
+      ? "border-[#847838] bg-[#847838]/15"
+      : emphasis === "stock"
+        ? "border-[#E8BCA4] bg-[#E8BCA4]/40"
+        : emphasis === "soft"
+          ? "border-[#847838] bg-[#847838]/15"
+          : "border-sand/70 bg-warm-white";
+  return (
+    <div
+      className={`rounded-2xl border p-3 transition-colors hover:border-clay/60 ${emphasisClasses}`}
+    >
+      <div
+        className={`text-sm font-semibold uppercase tracking-[0.1em] ${emphasis === "stock" ? "text-[#AC6454]" : emphasis ? "text-[#847838]" : "text-foreground/75"}`}
+      >
+        {label}
+      </div>
+      <div
+        className={`mt-1 font-semibold tabular-nums ${emphasis ? "text-xl" : "text-base"} ${emphasis === "stock" ? "text-[#80342C]" : emphasis ? "text-[#5F5728]" : ""} ${muted ? "text-foreground/70" : ""}`}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function DetailSectionHeading({
+  title,
+  description,
+  stock = false,
+}: {
+  title: string;
+  description: string;
+  stock?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-sand/70 bg-warm-white p-3">
-      <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
-      <div className={`mt-1 font-medium ${muted ? "text-muted-foreground" : ""}`}>{value}</div>
+    <div className="flex items-start gap-3 border-l-4 border-[#E8BCA4] pl-3">
+      <div>
+        <h3
+          className={`text-lg font-bold leading-tight ${stock ? "text-[#AC6454]" : "text-foreground"}`}
+        >
+          {title}
+        </h3>
+        <p className="mt-1 text-sm leading-relaxed text-foreground/65">{description}</p>
+      </div>
     </div>
   );
 }
@@ -1183,7 +1413,9 @@ function InfoSection({
   className?: string;
 }) {
   return (
-    <section className={`rounded-2xl border border-sand/70 bg-warm-white p-4 ${className}`}>
+    <section
+      className={`rounded-2xl border border-[#C87434]/45 bg-warm-white p-4 shadow-sm ${className}`}
+    >
       <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-terracotta">
         {title}
       </h3>
@@ -1336,11 +1568,17 @@ export function ProductFormFields({
   }
   return (
     <>
-      <div className="grid sm:grid-cols-2 gap-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FormSectionHeading
+          number="1"
+          title="Identificación"
+          description="Datos principales para reconocer la pieza rápidamente."
+        />
         <div>
-          <Label>Nombre *</Label>
+          <Label className="font-semibold text-[#AC6454]">Nombre *</Label>
           <Input
             required
+            className="mt-1 border-[#AC6454] bg-[#AC6454]/10 text-base font-semibold focus-visible:ring-[#AC6454]/30"
             value={form.name}
             onChange={(e) => {
               const n = e.target.value;
@@ -1349,8 +1587,9 @@ export function ProductFormFields({
           />
         </div>
         <div>
-          <Label>SKU</Label>
+          <Label className="font-semibold text-[#AC6454]">SKU</Label>
           <Input
+            className="mt-1 border-[#AC6454] bg-[#AC6454]/10 font-medium uppercase tracking-wide focus-visible:ring-[#AC6454]/30"
             value={form.sku ?? ""}
             onChange={(e) => upd("sku", e.target.value.toUpperCase())}
             placeholder={`${getProductSkuPrefix(form.type)}-00001`}
@@ -1468,8 +1707,13 @@ export function ProductFormFields({
         )}
         {!hideCommercialFields && (
           <>
+            <FormSectionHeading
+              number="2"
+              title="Información comercial"
+              description="Valores usados para compras y ventas."
+            />
             <div>
-              <Label>
+              <Label className="font-semibold text-[#847838]">
                 Precio (S/)
                 {form.type === "material" && (
                   <span className="ml-1 text-xs font-normal text-muted-foreground">
@@ -1478,6 +1722,7 @@ export function ProductFormFields({
                 )}
               </Label>
               <Input
+                className="mt-1 border-[#847838] bg-[#847838]/15 text-lg font-semibold tabular-nums focus-visible:ring-[#847838]/30"
                 type="number"
                 step="0.01"
                 value={form.price}
@@ -1485,8 +1730,9 @@ export function ProductFormFields({
               />
             </div>
             <div>
-              <Label>Costo (S/)</Label>
+              <Label className="font-semibold text-[#847838]">Costo (S/)</Label>
               <Input
+                className="mt-1 border-[#847838] bg-[#847838]/15 text-lg font-semibold tabular-nums focus-visible:ring-[#847838]/30"
                 type="number"
                 step="0.01"
                 value={form.cost ?? 0}
@@ -1495,15 +1741,11 @@ export function ProductFormFields({
             </div>
           </>
         )}
-        <div>
-          <Label>Stock mínimo</Label>
-          <Input
-            type="number"
-            step="1"
-            value={form.min_stock ?? 0}
-            onChange={(e) => upd("min_stock", e.target.value)}
-          />
-        </div>
+        <FormSectionHeading
+          number="3"
+          title="Características"
+          description="Información física y materiales de la pieza."
+        />
         <div>
           <Label>Medidas</Label>
           <Input
@@ -1519,6 +1761,21 @@ export function ProductFormFields({
         <div>
           <Label>Material principal</Label>
           <Input value={form.material ?? ""} onChange={(e) => upd("material", e.target.value)} />
+        </div>
+        <FormSectionHeading
+          number="4"
+          title="Inventario"
+          description="Define el mínimo y las cantidades disponibles por ubicación."
+        />
+        <div>
+          <Label className="font-semibold text-[#AC6454]">Stock mínimo</Label>
+          <Input
+            className="mt-1 border-[#E8BCA4] bg-[#E8BCA4]/40 text-lg font-semibold tabular-nums focus-visible:ring-[#E8BCA4]/60"
+            type="number"
+            step="1"
+            value={form.min_stock ?? 0}
+            onChange={(e) => upd("min_stock", e.target.value)}
+          />
         </div>
         {!hideStockFields && (
           <div className="sm:col-span-2">
@@ -1547,42 +1804,84 @@ export function ProductFormFields({
           </div>
         )}
       </div>
-      <ProductImageDropzone form={form} onUploaded={(url) => upd("main_image_url", url)} />
-      <div>
-        <Label>Descripción corta (opcional)</Label>
-        <Input
-          value={form.short_description ?? ""}
-          onChange={(e) => upd("short_description", e.target.value)}
-          maxLength={280}
+      <section className="rounded-2xl border border-sand bg-[#FFF9F4] p-4 shadow-sm">
+        <FormSectionHeading
+          number="5"
+          title="Imagen principal"
+          description="Fotografía que identifica la pieza en el catálogo."
+          nested
         />
-      </div>
-      <div>
-        <Label>Descripción (opcional)</Label>
-        <Textarea
-          rows={4}
-          value={form.description ?? ""}
-          onChange={(e) => upd("description", e.target.value)}
+        <ProductImageDropzone form={form} onUploaded={(url) => upd("main_image_url", url)} />
+      </section>
+      <section className="space-y-4 rounded-2xl border border-sand bg-[#FFF9F4] p-4 shadow-sm">
+        <FormSectionHeading
+          number="6"
+          title="Descripción y publicación"
+          description="Explica la pieza con palabras sencillas y decide cómo mostrarla."
+          nested
         />
-      </div>
-      <div>
-        <Label>Notas internas</Label>
-        <Textarea
-          rows={2}
-          value={form.internal_notes ?? ""}
-          onChange={(e) => upd("internal_notes", e.target.value)}
-        />
-      </div>
-      <div className="flex flex-wrap gap-3 sm:gap-6">
-        <label className="flex min-h-10 items-center gap-2">
-          <Switch checked={form.is_visible} onCheckedChange={(v) => upd("is_visible", v)} /> Visible
-          en web
-        </label>
-        <label className="flex min-h-10 items-center gap-2">
-          <Switch checked={form.is_featured} onCheckedChange={(v) => upd("is_featured", v)} />{" "}
-          Mostrar como pieza destacada
-        </label>
-      </div>
+        <div>
+          <Label>Descripción de la pieza (opcional)</Label>
+          <Textarea
+            rows={4}
+            value={form.description ?? ""}
+            onChange={(e) => upd("description", e.target.value)}
+            placeholder="Describe sus materiales, medidas, uso o algún detalle especial."
+          />
+        </div>
+        <div>
+          <Label>Notas para el equipo</Label>
+          <Textarea
+            rows={2}
+            value={form.internal_notes ?? ""}
+            onChange={(e) => upd("internal_notes", e.target.value)}
+            placeholder="Estas notas no se mostrarán a los clientes."
+          />
+        </div>
+        <div className="flex flex-wrap gap-3 rounded-xl bg-cream/70 p-3 sm:gap-6">
+          <label className="flex min-h-11 items-center gap-2 font-medium">
+            <Switch checked={form.is_visible} onCheckedChange={(v) => upd("is_visible", v)} />
+            Visible en web
+          </label>
+          <label className="flex min-h-11 items-center gap-2 font-medium">
+            <Switch checked={form.is_featured} onCheckedChange={(v) => upd("is_featured", v)} />
+            Mostrar como pieza destacada
+          </label>
+        </div>
+      </section>
     </>
+  );
+}
+
+function FormSectionHeading({
+  number,
+  title,
+  description,
+  nested = false,
+}: {
+  number: string;
+  title: string;
+  description: string;
+  nested?: boolean;
+}) {
+  return (
+    <div
+      className={
+        nested
+          ? "mb-4"
+          : "rounded-2xl border border-sand/70 bg-warm-white p-4 shadow-sm sm:col-span-2"
+      }
+    >
+      <div className="flex items-start gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E8BCA4] text-sm font-bold text-[#80342C]">
+          {number}
+        </span>
+        <div>
+          <h3 className="text-lg font-bold leading-tight text-foreground">{title}</h3>
+          <p className="mt-1 text-sm leading-relaxed text-foreground/65">{description}</p>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1602,10 +1901,16 @@ export function StockByWarehouseFields({
   compact?: boolean;
 }) {
   return (
-    <div className={`rounded-2xl border border-sand/70 bg-cream/35 ${compact ? "p-3" : "p-4"}`}>
+    <div
+      className={`rounded-2xl border border-sand/70 bg-cream/20 shadow-sm ${compact ? "p-3" : "p-4"}`}
+    >
       <div className={compact ? "mb-2" : "mb-3"}>
-        <Label className={compact ? "text-sm" : "text-base"}>{title}</Label>
-        {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
+        <Label className={`${compact ? "text-base" : "text-lg"} font-bold text-[#AC6454]`}>
+          {title}
+        </Label>
+        {description && (
+          <p className="mt-1 text-sm leading-relaxed text-foreground/70">{description}</p>
+        )}
       </div>
       {warehouses.length === 0 ? (
         <p className="text-sm text-muted-foreground">
@@ -1618,13 +1923,14 @@ export function StockByWarehouseFields({
           {warehouses.map((warehouse: any) => (
             <div
               key={warehouse.id}
-              className={`rounded-xl border border-sand/70 bg-warm-white ${compact ? "p-2" : "p-3"}`}
+              className={`rounded-xl border border-[#E8BCA4] bg-[#E8BCA4]/25 transition hover:border-[#AC6454] hover:shadow-sm focus-within:ring-2 focus-within:ring-[#E8BCA4]/60 ${compact ? "p-3" : "p-4"}`}
             >
-              <Label className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+              <Label className="text-sm font-bold uppercase tracking-[0.08em] text-[#AC6454]">
                 {warehouse.code}
               </Label>
-              <div className="mb-2 truncate text-sm font-medium">{warehouse.name}</div>
+              <div className="mb-3 text-base font-semibold leading-tight">{warehouse.name}</div>
               <Input
+                className="min-h-12 border-[#E8BCA4] bg-[#E8BCA4]/40 text-lg font-semibold tabular-nums focus-visible:ring-[#E8BCA4]/60"
                 type="number"
                 min="0"
                 step="1"
