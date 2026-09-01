@@ -148,7 +148,6 @@ const menuGroups = [
 
 const configItems = [
   { to: "/admin/configuracion", label: "Configuración", icon: Settings },
-  { to: "/admin/configuracion/comercio", label: "Configuración de comercio", icon: ShoppingCart },
 ] as const;
 
 function AdminShell() {
