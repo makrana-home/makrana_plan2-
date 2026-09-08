@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BrandLogo } from "@/components/brand-logo";
 import { formatDate, moneyPEN } from "@/components/admin-ui";
 import { formatUnits } from "@/lib/format-units";
+import { supabase } from "@/integrations/supabase/client";
 import {
   getCleanSaleNotes,
   getSaleChannelDisplayName,
@@ -557,40 +558,41 @@ function WhatsAppReceiptDialog({
   const [phone, setPhone] = useState(defaultPhone);
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
+  const [readyUrl, setReadyUrl] = useState("");
 
   useEffect(() => {
     if (open) {
       setPhone(defaultPhone ?? "");
       setError("");
+      setReadyUrl("");
     }
   }, [defaultPhone, open]);
 
   async function sendWhatsApp() {
     const normalizedPhone = normalizeWhatsAppPhone(phone);
-    if (!normalizedPhone) {
-      setError("Ingresa un número de WhatsApp.");
+    if (!/^[1-9]\d{7,14}$/.test(normalizedPhone)) {
+      setError("Ingresa un número válido con código de país, por ejemplo +51 986 608 552.");
       return;
     }
-
+    if (sending) return;
+    // Reserve the tab during the click; opening it after generating a PDF is blocked on iOS.
+    const whatsappWindow = window.open("about:blank", "_blank");
+    if (whatsappWindow) whatsappWindow.opener = null;
+    setError("");
+    setReadyUrl("");
     setSending(true);
     try {
-      const pdfUrl = await getReceiptPdfUrl(receipt, variant);
-      if (!pdfUrl) {
-        const attachmentMessage = buildWhatsAppMessage(receipt, variant, {
-          attachment: true,
-        });
-        const shared = await shareReceiptPdfFile(receipt, variant, attachmentMessage);
-        if (shared) {
-          onOpenChange(false);
-          return;
-        }
-      }
-
+      const pdfUrl = await uploadReceiptShare(receipt, variant);
       const message = buildWhatsAppMessage(receipt, variant, { pdfUrl });
       const whatsappUrl = `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-      if (!pdfUrl) await downloadReceiptPdf(receipt, variant);
-      onOpenChange(false);
+      setReadyUrl(whatsappUrl);
+      if (whatsappWindow && !whatsappWindow.closed) {
+        whatsappWindow.location.replace(whatsappUrl);
+        onOpenChange(false);
+      }
+    } catch {
+      whatsappWindow?.close();
+      setError("No se pudo preparar el PDF. Revisa tu conexión e inténtalo de nuevo.");
     } finally {
       setSending(false);
     }
@@ -606,6 +608,10 @@ function WhatsAppReceiptDialog({
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Abriremos el chat con el mensaje y un enlace al PDF válido por 7 días. Pulsa Enviar en
+            WhatsApp para compartirlo.
+          </p>
           <div>
             <Label htmlFor="receipt-whatsapp-phone">Número de WhatsApp</Label>
             <Input
@@ -615,6 +621,7 @@ function WhatsAppReceiptDialog({
               onChange={(event) => {
                 setPhone(event.target.value);
                 setError("");
+                setReadyUrl("");
               }}
               placeholder="+51 986 608 552"
               inputMode="tel"
@@ -622,6 +629,13 @@ function WhatsAppReceiptDialog({
             />
             {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
           </div>
+          {readyUrl && (
+            <Button asChild className="w-full">
+              <a href={readyUrl} target="_blank" rel="noopener noreferrer">
+                Abrir WhatsApp con el PDF
+              </a>
+            </Button>
+          )}
           <div className="grid gap-2 sm:flex sm:justify-end">
             <Button
               type="button"
@@ -632,7 +646,7 @@ function WhatsAppReceiptDialog({
               Cancelar
             </Button>
             <Button type="button" className="h-11" onClick={sendWhatsApp} disabled={sending}>
-              <Send className="h-4 w-4" /> {sending ? "Preparando..." : "Enviar"}
+              <Send className="h-4 w-4" /> {sending ? "Preparando PDF..." : "Abrir WhatsApp"}
             </Button>
           </div>
         </div>
@@ -648,76 +662,33 @@ function normalizeWhatsAppPhone(phone: string) {
   return digits;
 }
 
-function buildWhatsAppMessage(
-  receipt: any,
-  variant: ReceiptVariant,
-  delivery: { pdfUrl?: string | null; attachment?: boolean } = {},
-) {
+function buildWhatsAppMessage(receipt: any, variant: ReceiptVariant, delivery: { pdfUrl: string }) {
   const sale = receipt.sale ?? {};
   const customerName = getSaleCustomerDisplayName(sale, "cliente");
   const documentName = getReceiptVariantDocumentName(variant);
   const lines = [
-    `Hola ${customerName}, gracias por tu compra en Makrana Home Art.`,
+    `Hola ${customerName}, te saludamos de Makrana Home Art.`,
     `Te compartimos tu ${documentName} ${formatReceiptNumber(receipt.number)}.`,
     `Total: ${moneyPEN(sale.total)}`,
+    `Ver PDF: ${delivery.pdfUrl}`,
   ];
-
-  if (delivery.pdfUrl) {
-    lines.push(`Ver PDF: ${delivery.pdfUrl}`);
-  } else if (delivery.attachment) {
-    lines.push("Adjunto el PDF para que puedas revisarlo.");
-  } else {
-    lines.push("El PDF se descargara en el dispositivo para enviarlo manualmente si lo necesitas.");
-  }
 
   return lines.join("\n");
 }
 
-function getReceiptPdfUrl(receipt: any, _variant: ReceiptVariant) {
-  return isShareableReceiptUrl(receipt.pdf_url) ? receipt.pdf_url : null;
+async function uploadReceiptShare(receipt: any, variant: ReceiptVariant) {
+  const blob = await createReceiptPdfBlob(receipt, variant);
+  const path = `${crypto.randomUUID()}/${getReceiptPdfFilename(receipt, variant)}`;
+  const storage = supabase.storage.from("receipt-shares");
+  const { error: uploadError } = await storage.upload(path, blob, {
+    contentType: "application/pdf",
+    upsert: false,
+  });
+  if (uploadError) throw uploadError;
+  const { data, error } = await storage.createSignedUrl(path, 7 * 24 * 60 * 60);
+  if (error) throw error;
+  return data.signedUrl;
 }
-
-function isShareableReceiptUrl(value: unknown) {
-  if (typeof value !== "string" || !value.trim()) return false;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-async function shareReceiptPdfFile(receipt: any, variant: ReceiptVariant, message: string) {
-  if (typeof navigator === "undefined" || !navigator.share) return false;
-
-  const file = await createReceiptPdfFile(receipt, variant);
-  if (navigator.canShare && !navigator.canShare({ files: [file] })) return false;
-
-  try {
-    await navigator.share({
-      title: getReceiptVariantLabel(variant),
-      text: message,
-      files: [file],
-    });
-    return true;
-  } catch (error) {
-    if ((error as DOMException)?.name !== "AbortError") {
-      console.warn("No se pudo compartir el PDF como adjunto.", error);
-    }
-    return false;
-  }
-}
-
-async function createReceiptPdfFile(receipt: any, variant: ReceiptVariant) {
-  return new File(
-    [await createReceiptPdfBlob(receipt, variant)],
-    getReceiptPdfFilename(receipt, variant),
-    {
-      type: "application/pdf",
-    },
-  );
-}
-
 function getReceiptPdfFilename(receipt: any, variant: ReceiptVariant) {
   return `${getReceiptVariantFileSlug(variant)}-${formatReceiptNumber(receipt.number)}.pdf`;
 }
