@@ -56,7 +56,7 @@ export const adminUpsertCustomer = createServerFn({ method: "POST" })
     const { data: row, error } = await context.supabase
       .from("customers")
       .upsert(payload, { onConflict: "id" })
-      .select("id")
+      .select("*")
       .single();
     if (error) throw error;
     return row;

@@ -327,6 +327,7 @@ function SalesPage() {
 
   async function onCreate(e: React.FormEvent) {
     e.preventDefault();
+    if (customerDlg.open || customerSaving || saving) return;
     setSaving(true);
     try {
       const r = await create({
@@ -361,11 +362,15 @@ function SalesPage() {
   }
   async function onCreateCustomer(e: React.FormEvent) {
     e.preventDefault();
+    e.stopPropagation();
+    if (customerSaving) return;
     setCustomerSaving(true);
     try {
       const created = await upsertCustomer({ data: customerForm });
-      const updatedCustomers = await listCustomers();
-      setCustomers(updatedCustomers);
+      setCustomers((current) => [
+        created,
+        ...current.filter((customer) => customer.id !== created.id),
+      ]);
       setNewForm((form: any) => ({
         ...form,
         customer_id: created.id,
@@ -373,7 +378,7 @@ function SalesPage() {
       }));
       setCustomerForm({ full_name: "", phone: "", email: "", document: "" });
       customerDlg.close();
-      toast.success("Cliente agregado y seleccionado");
+      toast.success("Cliente registrado y asignado a este comprobante");
     } catch (e: any) {
       toast.error(e.message ?? "No se pudo agregar el cliente");
     } finally {
@@ -758,13 +763,16 @@ function SalesPage() {
                 <Label>Cliente registrado</Label>
                 <Select
                   value={newForm.customer_id || "_none"}
-                  onValueChange={(v) =>
+                  onValueChange={(v) => {
+                    // Ignore empty events while Radix updates the options after creating a customer.
+                    // Only the explicit “sin cliente” option should clear the selection.
+                    if (!v) return;
                     setNewForm((f: any) => ({
                       ...f,
                       customer_id: v === "_none" ? "" : v,
                       manual_customer_name: v === "_none" ? f.manual_customer_name : "",
-                    }))
-                  }
+                    }));
+                  }}
                 >
                   <SelectTrigger className="mt-1.5 bg-warm-white">
                     <SelectValue />
@@ -861,6 +869,8 @@ function SalesPage() {
         open={customerDlg.open}
         onOpenChange={customerDlg.setOpen}
         title="Agregar cliente"
+        description="Al guardarlo quedará seleccionado para este comprobante."
+        submitLabel="Guardar y usar en este comprobante"
         onSubmit={onCreateCustomer}
         submitting={customerSaving}
       >
