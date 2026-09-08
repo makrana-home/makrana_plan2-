@@ -559,6 +559,8 @@ function WhatsAppReceiptDialog({
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [sharing, setSharing] = useState(false);
   const [prepareAttempt, setPrepareAttempt] = useState(0);
 
   useEffect(() => {
@@ -569,15 +571,25 @@ function WhatsAppReceiptDialog({
     if (!open) return;
     let cancelled = false;
     setPdfUrl("");
+    setPdfFile(null);
     setError("");
     setSending(true);
-    uploadReceiptShare(receipt, variant)
+    createReceiptPdfBlob(receipt, variant)
+      .then((blob) => {
+        if (cancelled) return "";
+        setPdfFile(
+          new File([blob], getReceiptPdfFilename(receipt, variant), { type: "application/pdf" }),
+        );
+        return uploadReceiptShare(receipt, variant, blob);
+      })
       .then((url) => {
         if (!cancelled) setPdfUrl(url);
       })
       .catch(() => {
         if (!cancelled)
-          setError("No se pudo preparar el PDF. Revisa tu conexión e inténtalo de nuevo.");
+          setError(
+            "No se pudo preparar el enlace. Puedes compartir el archivo si ya está listo o reintentar.",
+          );
       })
       .finally(() => {
         if (!cancelled) setSending(false);
@@ -593,6 +605,31 @@ function WhatsAppReceiptDialog({
     pdfUrl && validPhone
       ? `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(buildWhatsAppMessage(receipt, variant, { pdfUrl }))}`
       : "";
+  async function shareAttachment() {
+    if (!pdfFile || sharing) return;
+    setError("");
+    if (!navigator.share || !navigator.canShare?.({ files: [pdfFile] })) {
+      setError(
+        "Este navegador no permite compartir archivos. Descarga el PDF con el botón PDF del comprobante y adjúntalo en WhatsApp, o usa el enlace al número.",
+      );
+      return;
+    }
+    setSharing(true);
+    try {
+      // File is already prepared: keep this call inside the user's tap for iPad/iPhone.
+      await navigator.share({
+        files: [pdfFile],
+        title: getReceiptVariantLabel(variant),
+        text: buildWhatsAppMessage(receipt, variant, {}),
+      });
+    } catch (cause) {
+      if ((cause as DOMException)?.name !== "AbortError") {
+        setError("No se pudo compartir el archivo. Vuelve a intentarlo o usa el enlace al número.");
+      }
+    } finally {
+      setSharing(false);
+    }
+  }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100vw-1.5rem)] max-w-md max-h-[calc(100dvh-1rem)] overflow-y-auto print:hidden">
@@ -604,8 +641,21 @@ function WhatsAppReceiptDialog({
         </DialogHeader>
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Abriremos el chat con el mensaje y un enlace al PDF válido por 7 días. Pulsa Enviar en
-            WhatsApp para compartirlo.
+            Para enviarlo como documento adjunto, elige WhatsApp y el contacto en el menú de
+            compartir. El PDF adjunto no caduca a los 7 días.
+          </p>
+          <Button
+            type="button"
+            className="min-h-11 w-full"
+            disabled={!pdfFile || sharing}
+            onClick={shareAttachment}
+          >
+            <Send className="h-4 w-4" />
+            {sharing ? "Compartiendo..." : !pdfFile ? "Preparando PDF..." : "Compartir PDF adjunto"}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            También puedes abrir el chat del número indicado con un enlace de descarga. Solo ese
+            enlace caduca en 7 días; no es la vigencia de la cotización.
           </p>
           <div>
             <Label htmlFor="receipt-whatsapp-phone">Número de WhatsApp</Label>
@@ -635,7 +685,7 @@ function WhatsAppReceiptDialog({
             {readyUrl ? (
               <Button asChild className="h-11">
                 <a href={readyUrl}>
-                  <Send className="h-4 w-4" /> Abrir WhatsApp con el PDF
+                  <Send className="h-4 w-4" /> Enviar enlace al número
                 </a>
               </Button>
             ) : (
@@ -671,7 +721,11 @@ function normalizeWhatsAppPhone(phone: string) {
   return digits;
 }
 
-function buildWhatsAppMessage(receipt: any, variant: ReceiptVariant, delivery: { pdfUrl: string }) {
+function buildWhatsAppMessage(
+  receipt: any,
+  variant: ReceiptVariant,
+  delivery: { pdfUrl?: string },
+) {
   const sale = receipt.sale ?? {};
   const customerName = getSaleCustomerDisplayName(sale, "cliente");
   const documentName = getReceiptVariantDocumentName(variant);
@@ -679,14 +733,13 @@ function buildWhatsAppMessage(receipt: any, variant: ReceiptVariant, delivery: {
     `Hola ${customerName}, te saludamos de Makrana Home Art.`,
     `Te compartimos tu ${documentName} ${formatReceiptNumber(receipt.number)}.`,
     `Total: ${moneyPEN(sale.total)}`,
-    `Ver PDF: ${delivery.pdfUrl}`,
+    delivery.pdfUrl ? `Ver PDF: ${delivery.pdfUrl}` : "Adjunto el PDF para que puedas revisarlo.",
   ];
 
   return lines.join("\n");
 }
 
-async function uploadReceiptShare(receipt: any, variant: ReceiptVariant) {
-  const blob = await createReceiptPdfBlob(receipt, variant);
+async function uploadReceiptShare(receipt: any, variant: ReceiptVariant, blob: Blob) {
   const path = `${crypto.randomUUID()}/${getReceiptPdfFilename(receipt, variant)}`;
   const storage = supabase.storage.from("receipt-shares");
   const { error: uploadError } = await storage.upload(path, blob, {
