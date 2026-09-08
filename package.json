@@ -14,7 +14,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "test:content": "node --experimental-strip-types --test src/lib/content-normalization.test.ts",
-    "test:platform": "node --experimental-strip-types --test src/lib/content-normalization.test.ts src/lib/business-rules.test.ts src/lib/platform-contracts.test.ts src/lib/whatsapp-business.test.ts src/lib/commerce-contracts.test.ts src/server/services/payments/payment-flow.test.ts",
+    "test:platform": "node --experimental-strip-types --test src/lib/content-normalization.test.ts src/lib/business-rules.test.ts src/lib/sale-customer.test.ts src/lib/platform-contracts.test.ts src/lib/whatsapp-business.test.ts src/lib/commerce-contracts.test.ts src/server/services/payments/payment-flow.test.ts",
     "test:tax": "node --experimental-strip-types --test src/server/services/tax/tax.test.ts src/server/services/tax/phase3.test.ts",
     "format": "prettier --write ."
   },

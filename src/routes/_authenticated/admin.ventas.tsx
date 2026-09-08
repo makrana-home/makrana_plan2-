@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { selectSaleCustomer } from "@/lib/sale-customer";
 import {
   Table,
   TableBody,
@@ -305,7 +306,12 @@ function SalesPage() {
   useEffect(() => {
     refresh();
     listWh().then(setWh);
-    listCustomers().then(setCustomers); /* eslint-disable-line */
+    listCustomers().then((loaded) =>
+      setCustomers((current) => [
+        ...current,
+        ...loaded.filter((customer) => !current.some((item) => item.id === customer.id)),
+      ]),
+    );
     supabase.auth.getUser().then(async ({ data: authData }) => {
       if (!authData.user) return;
       const { data: permissions } = await supabase
@@ -371,11 +377,7 @@ function SalesPage() {
         created,
         ...current.filter((customer) => customer.id !== created.id),
       ]);
-      setNewForm((form: any) => ({
-        ...form,
-        customer_id: created.id,
-        manual_customer_name: "",
-      }));
+      setNewForm((form: any) => selectSaleCustomer(form, created.id, [created]));
       setCustomerForm({ full_name: "", phone: "", email: "", document: "" });
       customerDlg.close();
       toast.success("Cliente registrado y asignado a este comprobante");
@@ -763,16 +765,7 @@ function SalesPage() {
                 <Label>Cliente registrado</Label>
                 <Select
                   value={newForm.customer_id || "_none"}
-                  onValueChange={(v) => {
-                    // Ignore empty events while Radix updates the options after creating a customer.
-                    // Only the explicit “sin cliente” option should clear the selection.
-                    if (!v) return;
-                    setNewForm((f: any) => ({
-                      ...f,
-                      customer_id: v === "_none" ? "" : v,
-                      manual_customer_name: v === "_none" ? f.manual_customer_name : "",
-                    }));
-                  }}
+                  onValueChange={(v) => setNewForm((f: any) => selectSaleCustomer(f, v, customers))}
                 >
                   <SelectTrigger className="mt-1.5 bg-warm-white">
                     <SelectValue />
@@ -1510,13 +1503,7 @@ function SaleDrawer({
                   <Select
                     disabled={sale.status !== "borrador"}
                     value={sale.customer_id || "_none"}
-                    onValueChange={(v) =>
-                      setSale((s: any) => ({
-                        ...s,
-                        customer_id: v === "_none" ? null : v,
-                        manual_customer_name: v === "_none" ? s.manual_customer_name : "",
-                      }))
-                    }
+                    onValueChange={(v) => setSale((s: any) => selectSaleCustomer(s, v, customers))}
                   >
                     <SelectTrigger className="mt-1.5 bg-warm-white">
                       <SelectValue />
