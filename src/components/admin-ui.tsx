@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import {
   Dialog,
   DialogContent,
@@ -58,6 +58,7 @@ export function FormDialog({
   onSubmit,
   submitting,
   submitLabel = "Guardar",
+  showHeaderSubmit = false,
   contentClassName = "max-w-2xl",
 }: {
   trigger?: ReactNode;
@@ -69,8 +70,10 @@ export function FormDialog({
   onSubmit: (e: React.FormEvent) => void;
   submitting?: boolean;
   submitLabel?: string;
+  showHeaderSubmit?: boolean;
   contentClassName?: string;
 }) {
+  const formId = useId();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
@@ -81,10 +84,23 @@ export function FormDialog({
         onPointerDownOutside={(event) => event.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle className="font-display">{title}</DialogTitle>
+          <DialogTitle className={`font-display ${showHeaderSubmit ? "pr-40 text-left" : ""}`}>
+            {title}
+          </DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4">
+        {showHeaderSubmit && (
+          <Button
+            type="submit"
+            form={formId}
+            disabled={submitting}
+            size="sm"
+            className="absolute right-11 top-2 h-8 px-3 text-xs"
+          >
+            {submitting ? "Guardando…" : submitLabel}
+          </Button>
+        )}
+        <form id={formId} onSubmit={onSubmit} className="space-y-4">
           {children}
           <DialogFooter className="sticky bottom-0 -mx-1 bg-background/95 py-2 backdrop-blur">
             <Button type="submit" disabled={submitting} className="w-full sm:w-auto">

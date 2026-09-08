@@ -107,9 +107,7 @@ export function ProductCard({
             >
               {hasPresentations
                 ? "En distintas presentaciones"
-                : product.status === "por_encargo"
-                  ? "Cotizar"
-                  : `S/ ${Number(product.price).toFixed(0)}`}
+                : `S/ ${Number(product.price).toFixed(2)}`}
             </span>
           )}
           {(!showPrice || product.show_price !== true) && actionLabel && (

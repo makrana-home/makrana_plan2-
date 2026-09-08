@@ -10,6 +10,10 @@ import {
 } from "@/lib/content-normalization";
 import { getUnitsInPresentation, PRESENTATION_UNIT_VALUES } from "@/lib/presentation-units";
 import { validateInventoryMovement } from "@/lib/business-rules";
+import {
+  getDefaultProductPriceVisibility,
+  resolveProductPriceVisibility,
+} from "@/lib/product-price-visibility";
 
 // ---------- helpers ----------
 async function assertStaff(ctx: { supabase: any; userId: string }) {
@@ -35,6 +39,7 @@ const productSchema = z.object({
   category_id: z.string().uuid().optional().nullable(),
   main_image_url: z.string().url().max(500).optional().nullable().or(z.literal("")),
   price: z.coerce.number().nonnegative(),
+  show_price: z.boolean().optional().nullable(),
   cost: z.preprocess(
     (value) => (value === "" || value === undefined ? null : value),
     z.coerce.number().nonnegative().nullable().optional(),
@@ -81,7 +86,14 @@ export const adminGetProduct = createServerFn({ method: "GET" })
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw error;
-    return row;
+    if (!row) return row;
+    return {
+      ...row,
+      show_price: resolveProductPriceVisibility(
+        row.show_price,
+        row.show_price == null ? await getDefaultProductPriceVisibility(context.supabase) : false,
+      ),
+    };
   });
 
 export const adminUpsertProduct = createServerFn({ method: "POST" })

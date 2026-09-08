@@ -65,7 +65,8 @@ const homeSectionOptions: Array<{
   {
     key: "showProductPrices",
     label: "Mostrar precios de venta",
-    description: "Autoriza o bloquea la visualización de precios en todo el catálogo público.",
+    description:
+      "Visibilidad predeterminada de precios. Cada pieza puede tener su propia opción en Información comercial.",
   },
 ];
 

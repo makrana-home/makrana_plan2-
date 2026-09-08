@@ -49,6 +49,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { clearDevAdminSession, hasDevAdminSession } from "@/lib/dev-admin";
 import { BrandLogo } from "@/components/brand-logo";
+import circularLogo from "@/assets/makrana-logo-peach.png";
 import { useEffect, useRef, useState } from "react";
 import { canAccessAdminPath, firstAccessibleAdminPath } from "@/lib/staff-access";
 
@@ -315,7 +316,15 @@ function AdminShell() {
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex min-h-20 items-center justify-between gap-3 border-b border-sand/70 bg-warm-white/45 px-3 sm:gap-4 sm:px-6">
             <div className="flex min-w-0 flex-1 items-center gap-4">
-              <SidebarTrigger className="h-11 w-11 shrink-0" />
+              <SidebarTrigger className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-[#F7C2A6] p-0 shadow-sm hover:opacity-90">
+                <img
+                  src={circularLogo}
+                  alt="Makrana Home Art"
+                  width={2000}
+                  height={2000}
+                  className="h-full w-full scale-[1.4] object-cover"
+                />
+              </SidebarTrigger>
               <label className="relative hidden w-full max-w-[28rem] md:block">
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input

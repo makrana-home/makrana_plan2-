@@ -1783,6 +1783,7 @@ export type Database = {
           min_stock: number | null;
           name: string;
           price: number;
+          show_price: boolean | null;
           short_description: string | null;
           sku: string | null;
           slug: string;
@@ -1808,6 +1809,7 @@ export type Database = {
           min_stock?: number | null;
           name: string;
           price?: number;
+          show_price?: boolean | null;
           short_description?: string | null;
           sku?: string | null;
           slug: string;
@@ -1833,6 +1835,7 @@ export type Database = {
           min_stock?: number | null;
           name?: string;
           price?: number;
+          show_price?: boolean | null;
           short_description?: string | null;
           sku?: string | null;
           slug?: string;

@@ -1,3 +1,7 @@
+import {
+  getDefaultProductPriceVisibility,
+  resolveProductPriceVisibility,
+} from "@/lib/product-price-visibility";
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
@@ -28,21 +32,6 @@ function publicClient() {
   return createClient<Database>(supabaseUrl, supabasePublicKey, {
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
   });
-}
-
-async function getProductPriceVisibility(sb: ReturnType<typeof publicClient>) {
-  const { data, error } = await sb
-    .from("categories")
-    .select("description")
-    .eq("slug", "configuracion-inicio")
-    .eq("is_active", true)
-    .maybeSingle();
-  if (error || !data?.description?.startsWith("site-home:")) return false;
-  try {
-    return JSON.parse(data.description.slice("site-home:".length)).showProductPrices === true;
-  } catch {
-    return false;
-  }
 }
 
 export const listCategories = createServerFn({ method: "GET" }).handler(async () => {
@@ -172,7 +161,7 @@ export const listProducts = createServerFn({ method: "GET" })
     let q = sb
       .from("products")
       .select(
-        "id, sku, slug, name, short_description, main_image_url, price, status, type, is_featured, category:categories(slug, name), presentations:material_presentations(id, unit, label, price)",
+        "id, sku, slug, name, short_description, main_image_url, price, show_price, status, type, is_featured, category:categories(slug, name), presentations:material_presentations(id, unit, label, price)",
       )
       .eq("is_visible", true)
       .order("created_at", { ascending: false });
@@ -180,13 +169,16 @@ export const listProducts = createServerFn({ method: "GET" })
     if (data.limit) q = q.limit(data.limit);
     const [{ data: rows, error }, showPrice] = await Promise.all([
       q,
-      getProductPriceVisibility(sb),
+      getDefaultProductPriceVisibility(sb),
     ]);
     if (error) throw error;
     const filtered = data.categorySlug
       ? (rows ?? []).filter((r) => (r as any).category?.slug === data.categorySlug)
       : (rows ?? []);
-    return filtered.map((row) => ({ ...row, show_price: showPrice }));
+    return filtered.map((row) => ({
+      ...row,
+      show_price: resolveProductPriceVisibility(row.show_price, showPrice),
+    }));
   });
 
 export const getProductBySlug = createServerFn({ method: "GET" })
@@ -202,10 +194,12 @@ export const getProductBySlug = createServerFn({ method: "GET" })
         .eq("slug", data.slug)
         .eq("is_visible", true)
         .maybeSingle(),
-      getProductPriceVisibility(sb),
+      getDefaultProductPriceVisibility(sb),
     ]);
     if (error) throw error;
-    return product ? { ...product, show_price: showPrice } : null;
+    return product
+      ? { ...product, show_price: resolveProductPriceVisibility(product.show_price, showPrice) }
+      : null;
   });
 
 export const listNews = createServerFn({ method: "GET" })

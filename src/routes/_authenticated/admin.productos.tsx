@@ -650,10 +650,11 @@ export function ProductTypeManager({
         open={dlg.open}
         onOpenChange={dlg.setOpen}
         title={dlg.data ? "Editar pieza" : "Nueva pieza"}
-        description="Completa la información por secciones. Los cambios se guardarán al final."
+        description="Completa la información por secciones y pulsa Guardar cambios."
         onSubmit={onSubmit}
         submitting={saving}
         submitLabel="Guardar cambios"
+        showHeaderSubmit
         contentClassName="max-w-3xl bg-[#FFF9F4]"
       >
         <ProductFormFields
@@ -855,6 +856,7 @@ function blank(type: "producto_terminado" | "material") {
     category_id: "",
     main_image_url: "",
     price: 0,
+    show_price: false,
     cost: 0,
     status: "disponible",
     measurements: "",
@@ -1695,7 +1697,7 @@ export function ProductFormFields({
                 Pieza bajo pedido
               </Label>
               <p className="mt-1 text-xs text-muted-foreground">
-                Actívalo para mostrar “Bajo pedido” y “Cotizar” en la página web.
+                Actívalo para mostrar “Bajo pedido” en la página web.
               </p>
             </div>
             <Switch
@@ -1712,6 +1714,22 @@ export function ProductFormFields({
               title="Información comercial"
               description="Valores usados para compras y ventas."
             />
+            <div className="flex items-center justify-between gap-5 rounded-2xl border border-sand/70 bg-cream/35 px-4 py-3 sm:col-span-2">
+              <div>
+                <Label htmlFor="product-show-price" className="font-semibold">
+                  Mostrar precio de venta en la web
+                </Label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Actívalo y guarda los cambios para mostrar el precio en el catálogo y en la página
+                  de esta pieza.
+                </p>
+              </div>
+              <Switch
+                id="product-show-price"
+                checked={form.show_price === true}
+                onCheckedChange={(checked) => upd("show_price", checked)}
+              />
+            </div>
             <div>
               <Label className="font-semibold text-[#847838]">
                 Precio (S/)
@@ -1746,9 +1764,12 @@ export function ProductFormFields({
           title="Características"
           description="Información física y materiales de la pieza."
         />
-        <div>
-          <Label>Medidas</Label>
-          <Input
+        <div className="sm:col-span-2">
+          <Label htmlFor="product-measurements">Medidas</Label>
+          <Textarea
+            id="product-measurements"
+            rows={4}
+            className="min-h-28 resize-y"
             value={form.measurements ?? ""}
             onChange={(e) => upd("measurements", e.target.value)}
             placeholder="60 x 80 cm"
