@@ -558,46 +558,41 @@ function WhatsAppReceiptDialog({
   const [phone, setPhone] = useState(defaultPhone);
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
-  const [readyUrl, setReadyUrl] = useState("");
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [prepareAttempt, setPrepareAttempt] = useState(0);
 
   useEffect(() => {
-    if (open) {
-      setPhone(defaultPhone ?? "");
-      setError("");
-      setReadyUrl("");
-    }
+    if (open) setPhone(defaultPhone ?? "");
   }, [defaultPhone, open]);
 
-  async function sendWhatsApp() {
-    const normalizedPhone = normalizeWhatsAppPhone(phone);
-    if (!/^[1-9]\d{7,14}$/.test(normalizedPhone)) {
-      setError("Ingresa un número válido con código de país, por ejemplo +51 986 608 552.");
-      return;
-    }
-    if (sending) return;
-    // Reserve the tab during the click; opening it after generating a PDF is blocked on iOS.
-    const whatsappWindow = window.open("about:blank", "_blank");
-    if (whatsappWindow) whatsappWindow.opener = null;
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    setPdfUrl("");
     setError("");
-    setReadyUrl("");
     setSending(true);
-    try {
-      const pdfUrl = await uploadReceiptShare(receipt, variant);
-      const message = buildWhatsAppMessage(receipt, variant, { pdfUrl });
-      const whatsappUrl = `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
-      setReadyUrl(whatsappUrl);
-      if (whatsappWindow && !whatsappWindow.closed) {
-        whatsappWindow.location.replace(whatsappUrl);
-        onOpenChange(false);
-      }
-    } catch {
-      whatsappWindow?.close();
-      setError("No se pudo preparar el PDF. Revisa tu conexión e inténtalo de nuevo.");
-    } finally {
-      setSending(false);
-    }
-  }
+    uploadReceiptShare(receipt, variant)
+      .then((url) => {
+        if (!cancelled) setPdfUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled)
+          setError("No se pudo preparar el PDF. Revisa tu conexión e inténtalo de nuevo.");
+      })
+      .finally(() => {
+        if (!cancelled) setSending(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, receipt, variant, prepareAttempt]);
 
+  const normalizedPhone = normalizeWhatsAppPhone(phone);
+  const validPhone = /^[1-9]\d{7,14}$/.test(normalizedPhone);
+  const readyUrl =
+    pdfUrl && validPhone
+      ? `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(buildWhatsAppMessage(receipt, variant, { pdfUrl }))}`
+      : "";
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100vw-1.5rem)] max-w-md max-h-[calc(100dvh-1rem)] overflow-y-auto print:hidden">
@@ -621,7 +616,6 @@ function WhatsAppReceiptDialog({
               onChange={(event) => {
                 setPhone(event.target.value);
                 setError("");
-                setReadyUrl("");
               }}
               placeholder="+51 986 608 552"
               inputMode="tel"
@@ -629,13 +623,6 @@ function WhatsAppReceiptDialog({
             />
             {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
           </div>
-          {readyUrl && (
-            <Button asChild className="w-full">
-              <a href={readyUrl} target="_blank" rel="noopener noreferrer">
-                Abrir WhatsApp con el PDF
-              </a>
-            </Button>
-          )}
           <div className="grid gap-2 sm:flex sm:justify-end">
             <Button
               type="button"
@@ -645,9 +632,31 @@ function WhatsAppReceiptDialog({
             >
               Cancelar
             </Button>
-            <Button type="button" className="h-11" onClick={sendWhatsApp} disabled={sending}>
-              <Send className="h-4 w-4" /> {sending ? "Preparando PDF..." : "Abrir WhatsApp"}
-            </Button>
+            {readyUrl ? (
+              <Button asChild className="h-11">
+                <a href={readyUrl}>
+                  <Send className="h-4 w-4" /> Abrir WhatsApp con el PDF
+                </a>
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                className="h-11"
+                disabled={sending}
+                onClick={() => {
+                  if (!validPhone) {
+                    setError(
+                      "Ingresa un número válido con código de país, por ejemplo +51 986 608 552.",
+                    );
+                  } else {
+                    setPrepareAttempt((attempt) => attempt + 1);
+                  }
+                }}
+              >
+                <Send className="h-4 w-4" />
+                {sending ? "Preparando PDF..." : pdfUrl ? "Abrir WhatsApp" : "Reintentar PDF"}
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>
