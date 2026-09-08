@@ -42,7 +42,18 @@ export default {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      const normalizedResponse = await normalizeCatastrophicSsrResponse(response);
+      if (normalizedResponse.headers.get("content-type")?.includes("text/html")) {
+        const headers = new Headers(normalizedResponse.headers);
+        // HTML refers to hashed assets that change on deployment. Never reuse an old shell.
+        headers.set("Cache-Control", "no-store");
+        return new Response(normalizedResponse.body, {
+          status: normalizedResponse.status,
+          statusText: normalizedResponse.statusText,
+          headers,
+        });
+      }
+      return normalizedResponse;
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {
