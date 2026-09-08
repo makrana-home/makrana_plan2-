@@ -462,7 +462,7 @@ export function ProductTypeManager({
                   <p className="mt-0.5 tabular-nums">{moneyPEN(r.cost ?? 0)}</p>
                 </div>
                 <div className="rounded-2xl bg-cream/70 px-3 py-2">
-                  <p className="text-xs text-muted-foreground">Precio</p>
+                  <p className="text-xs text-muted-foreground">Precio de venta</p>
                   <p className="mt-0.5 font-medium tabular-nums">{moneyPEN(r.price)}</p>
                 </div>
               </div>
@@ -527,7 +527,7 @@ export function ProductTypeManager({
               <TableHead>Nombre</TableHead>
               <TableHead>Categoría</TableHead>
               <TableHead>Costo</TableHead>
-              <TableHead>Precio</TableHead>
+              <TableHead>Precio de venta</TableHead>
               <TableHead className="text-right">Cantidad total</TableHead>
               <TableHead className="text-right">SA</TableHead>
               <TableHead className="text-right">PL</TableHead>
@@ -1201,14 +1201,14 @@ export function ProductDetailDialog({
 
               <DetailSectionHeading
                 title="Resumen comercial"
-                description="Precio, costo y control mínimo de existencias."
+                description="Precio de venta, costo y control mínimo de existencias."
               />
               <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 {!hasPresentationRows && (
                   <>
                     <DetailBox label="Costo" value={moneyPEN(product.cost ?? 0)} emphasis="soft" />
                     <DetailBox
-                      label="Precio"
+                      label="Precio de venta"
                       value={moneyPEN(product.price ?? 0)}
                       emphasis="strong"
                     />
@@ -1279,7 +1279,10 @@ export function ProductDetailDialog({
                         value={presentation.cost == null ? "—" : moneyPEN(presentation.cost)}
                         muted
                       />
-                      <DetailBox label="Precio" value={moneyPEN(presentation.price ?? 0)} />
+                      <DetailBox
+                        label="Precio de venta"
+                        value={moneyPEN(presentation.price ?? 0)}
+                      />
                       <DetailBox label="Stock mínimo" value={formatUnits(product.min_stock ?? 0)} />
                     </div>
                     <div className="mt-3 grid gap-2 sm:grid-cols-3">
@@ -1732,7 +1735,7 @@ export function ProductFormFields({
             </div>
             <div>
               <Label className="font-semibold text-[#847838]">
-                Precio (S/)
+                Precio de venta (S/)
                 {form.type === "material" && (
                   <span className="ml-1 text-xs font-normal text-muted-foreground">
                     opcional si usas presentaciones
