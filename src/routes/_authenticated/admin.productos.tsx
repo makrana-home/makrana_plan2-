@@ -26,6 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowRightLeft,
+  ArrowUpRight,
   Eye,
   ImageIcon,
   LayoutGrid,
@@ -58,6 +59,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { formatUnits } from "@/lib/format-units";
 import { getPresentationUnitLabel } from "@/lib/presentation-units";
+import { cn } from "@/lib/utils";
 import { generateNextProductSku, getProductSkuPrefix } from "@/lib/sku";
 
 export const Route = createFileRoute("/_authenticated/admin/productos")({
@@ -109,7 +111,12 @@ export function ProductTypeManager({
   const [categoryFilter, setCategoryFilter] = useState("_all");
   const [categoryDrafts, setCategoryDrafts] = useState<any[]>([]);
   const [savingCategories, setSavingCategories] = useState(false);
-  const categoryOptions = getCategoryOptionsForType(cats, type);
+  const categoryOptions = useMemo(() => getCategoryOptionsForType(cats, type), [cats, type]);
+  const itemNoun = type === "material" ? "material" : "pieza";
+  const itemNounPlural = type === "material" ? "materiales" : "piezas";
+  const findHeading =
+    type === "material" ? "Encuentra el material que buscas" : "Encuentra la pieza que buscas";
+  const seeAllLabel = type === "material" ? "Ver todos los materiales" : "Ver todas las piezas";
 
   const filteredRows = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
@@ -119,10 +126,51 @@ export function ProductTypeManager({
         row.name?.toLowerCase().includes(q) ||
         row.sku?.toLowerCase().includes(q) ||
         row.category?.name?.toLowerCase().includes(q);
-      const matchesCategory = categoryFilter === "_all" || row.category?.id === categoryFilter;
+      const matchesCategory =
+        categoryFilter === "_all" ||
+        (categoryFilter === "_none" ? !row.category?.id : row.category?.id === categoryFilter);
       return matchesSearch && matchesCategory;
     });
   }, [rows, searchTerm, categoryFilter]);
+
+  // Mismo criterio que el catálogo público: solo se muestran las categorías que
+  // realmente tienen piezas. Las vacías no ocupan una tarjeta.
+  const categoryCards = useMemo(
+    () =>
+      categoryOptions
+        .map((category: any) => {
+          const categoryRows = rows.filter((row) => row.category?.id === category.id);
+          return {
+            id: category.id as string,
+            name: category.name as string,
+            count: categoryRows.length,
+            imageUrl:
+              (categoryRows.find((row) => row.main_image_url)?.main_image_url as string | null) ??
+              (category.home_image_url as string | null) ??
+              null,
+          };
+        })
+        .filter((category) => category.count > 0),
+    [rows, categoryOptions],
+  );
+
+  const uncategorizedCount = useMemo(() => rows.filter((row) => !row.category?.id).length, [rows]);
+
+  const activeCategoryName =
+    categoryFilter === "_all"
+      ? null
+      : categoryFilter === "_none"
+        ? "Sin categoría"
+        : (categoryOptions.find((category: any) => category.id === categoryFilter)?.name ?? null);
+
+  const listAnchorId = type === "material" ? "listado-materiales" : "listado-piezas";
+
+  function selectCategory(value: string) {
+    setCategoryFilter(value);
+    requestAnimationFrame(() =>
+      document.getElementById(listAnchorId)?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
+  }
 
   async function refresh() {
     const types = allowKit ? ["producto_terminado", "kit"] : [type];
@@ -387,26 +435,49 @@ export function ProductTypeManager({
         }
       />
 
-      <div className="mb-10 grid gap-4 sm:grid-cols-[minmax(0,360px)_minmax(220px,280px)]">
+      <CategoryFilterCards
+        categories={categoryCards}
+        activeId={categoryFilter}
+        onSelect={selectCategory}
+        heading={findHeading}
+        itemNoun={itemNoun}
+        itemNounPlural={itemNounPlural}
+      />
+
+      <div id={listAnchorId} className="mb-8 scroll-mt-24 border-t border-sand/70 pt-8">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-terracotta">
+          Listado
+        </p>
+        <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="font-display text-2xl sm:text-3xl">
+            {activeCategoryName ?? `Todas las ${itemNounPlural}`}
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setCategoryFilter("_all")}
+              className={categoryChipClass(categoryFilter === "_all")}
+            >
+              {seeAllLabel}
+            </button>
+            {uncategorizedCount > 0 && (
+              <button
+                type="button"
+                onClick={() => selectCategory("_none")}
+                className={categoryChipClass(categoryFilter === "_none")}
+              >
+                {`Sin categoría · ${uncategorizedCount}`}
+              </button>
+            )}
+          </div>
+        </div>
+
         <Input
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Buscar pieza..."
-          className="h-12 rounded-2xl border-sand/80 bg-warm-white/75 px-5 text-base shadow-md shadow-clay/10 focus-visible:border-accent focus-visible:ring-accent/20"
+          placeholder={`Buscar ${itemNoun}...`}
+          className="mt-6 h-12 w-full max-w-xl rounded-2xl border-sand/80 bg-warm-white/75 px-5 text-base shadow-md shadow-clay/10 focus-visible:border-accent focus-visible:ring-accent/20"
         />
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="h-12 rounded-2xl border-sand/80 bg-warm-white/75 px-5 text-base shadow-md shadow-clay/10 focus-visible:border-accent focus-visible:ring-accent/20">
-            <SelectValue placeholder="Todas las categorías" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="_all">Todas las categorías</SelectItem>
-            {categoryOptions.map((c: any) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       <div className="grid gap-3 xl:hidden">
@@ -1512,6 +1583,101 @@ function getMaterialCategoryOptions(cats: any[]) {
 
 function getCategoryOptionsForType(cats: any[], type: "producto_terminado" | "material") {
   return type === "material" ? getMaterialCategoryOptions(cats) : getPieceCategoryOptions(cats);
+}
+
+export type CategoryFilterCard = {
+  id: string;
+  name: string;
+  count: number;
+  imageUrl: string | null;
+};
+
+/**
+ * Tarjetas de categoría del panel interno. Replican la subdivisión del catálogo
+ * público: solo llegan aquí categorías con piezas, y al hacer clic se filtra el
+ * listado y se baja hasta él.
+ */
+export function CategoryFilterCards({
+  categories,
+  activeId,
+  onSelect,
+  heading,
+  itemNoun,
+  itemNounPlural,
+}: {
+  categories: CategoryFilterCard[];
+  activeId: string;
+  onSelect: (id: string) => void;
+  heading: string;
+  itemNoun: string;
+  itemNounPlural: string;
+}) {
+  if (categories.length === 0) return null;
+  return (
+    <div className="mb-12">
+      <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-terracotta">
+        Explora por categoría
+      </p>
+      <h2 className="mt-2 font-display text-2xl leading-tight sm:text-3xl">{heading}</h2>
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {categories.map((category) => {
+          const isActive = activeId === category.id;
+          return (
+            <button
+              key={category.id}
+              type="button"
+              onClick={() => onSelect(category.id)}
+              aria-pressed={isActive}
+              className={cn(
+                "group min-w-0 overflow-hidden rounded-[1.35rem] border bg-warm-white text-left shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 motion-reduce:transform-none",
+                isActive
+                  ? "border-accent ring-1 ring-accent/30"
+                  : "border-sand/80 hover:border-accent/40",
+              )}
+            >
+              <span className="relative block aspect-square overflow-hidden bg-sand/35">
+                {category.imageUrl ? (
+                  <img
+                    src={category.imageUrl}
+                    alt=""
+                    loading="lazy"
+                    className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.04] motion-reduce:transform-none"
+                  />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center text-brand-terracotta/40">
+                    <ImageIcon className="h-8 w-8" aria-hidden="true" />
+                  </span>
+                )}
+                <span className="absolute inset-0 bg-gradient-to-t from-foreground/20 via-transparent to-transparent opacity-60" />
+              </span>
+              <span className="flex min-h-[5.25rem] items-start justify-between gap-2 p-4">
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold leading-snug text-foreground sm:text-base">
+                    {category.name}
+                  </span>
+                  <span className="mt-1.5 block text-xs text-muted-foreground">
+                    {category.count === 1 ? `1 ${itemNoun}` : `${category.count} ${itemNounPlural}`}
+                  </span>
+                </span>
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-cream text-brand-terracotta transition group-hover:bg-accent group-hover:text-warm-white">
+                  <ArrowUpRight className="size-4" aria-hidden="true" />
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function categoryChipClass(active: boolean) {
+  return cn(
+    "min-h-11 rounded-full border px-4 text-xs font-semibold transition-colors",
+    active
+      ? "border-accent bg-accent text-warm-white shadow-sm"
+      : "border-sand bg-warm-white text-foreground hover:border-accent/50 hover:text-brand-terracotta",
+  );
 }
 
 export function ProductFormFields({

@@ -156,7 +156,7 @@ function CalendarPage() {
       if (pickType && linkedSale) {
         const sale = next.sales.find((item: any) => item.id === linkedSale);
         const type = next.eventTypes.find((item: any) => item.slug === pickType);
-        setPendingSchedule({ sale, type, returnTo });
+        setPendingSchedule({ saleId: linkedSale, sale, type, returnTo });
         setView("month");
       } else if (scheduleType && linkedSale) {
         const sale = next.sales.find((item: any) => item.id === linkedSale);
@@ -165,8 +165,10 @@ function CalendarPage() {
         draft.sale_id = linkedSale;
         draft.customer_id = sale?.customer_id ?? "";
         draft.event_type_id = type?.id ?? next.eventTypes[0]?.id ?? "";
+        draft.modality = modalityForEventType(type?.slug);
         draft.title = saleEventTitle(sale, type);
         setForm(draft);
+        setPendingSchedule({ saleId: linkedSale, sale, type, returnTo });
         formDialog.openWith(null);
       } else if (linkedEvent) {
         const event = next.events.find((item: any) => item.id === linkedEvent);
@@ -216,10 +218,11 @@ function CalendarPage() {
 
   function openCreate(date = anchor) {
     const next = newForm(date, data.currentUserId ?? "");
-    if (pendingSchedule?.sale) {
-      next.sale_id = pendingSchedule.sale.id;
-      next.customer_id = pendingSchedule.sale.customer_id ?? "";
+    if (pendingSchedule?.saleId) {
+      next.sale_id = pendingSchedule.saleId;
+      next.customer_id = pendingSchedule.sale?.customer_id ?? "";
       next.event_type_id = pendingSchedule.type?.id ?? data.eventTypes[0]?.id ?? "";
+      next.modality = modalityForEventType(pendingSchedule.type?.slug);
       next.title = saleEventTitle(pendingSchedule.sale, pendingSchedule.type);
     } else if (data.eventTypes[0]) next.event_type_id = data.eventTypes[0].id;
     setForm(next);
@@ -260,10 +263,12 @@ function CalendarPage() {
       setConflictResult(null);
       formDialog.close();
       await refresh();
-      if (pendingSchedule?.returnTo === "ventas" && pendingSchedule.sale?.id) {
+      if (pendingSchedule?.returnTo === "ventas" && pendingSchedule.saleId) {
+        const saleId = pendingSchedule.saleId;
+        setPendingSchedule(null);
         await router.navigate({
           to: "/admin/ventas",
-          search: { sale: pendingSchedule.sale.id } as any,
+          search: { sale: saleId } as any,
         });
       }
     } catch (caught: any) {
@@ -316,16 +321,19 @@ function CalendarPage() {
               Selecciona una fecha para {pendingSchedule.type?.name?.toLowerCase()}
             </p>
             <p className="text-sm text-muted-foreground">
-              Haz clic sobre un día del calendario. Al guardar volverás automáticamente a la venta.
+              El evento quedará enlazado a {saleReference(pendingSchedule.sale)}. Haz clic sobre un
+              día del calendario. Al guardar volverás automáticamente a la venta.
             </p>
           </div>
           <Button
             type="button"
             variant="outline"
             onClick={() => {
+              const saleId = pendingSchedule.saleId;
+              setPendingSchedule(null);
               void router.navigate({
                 to: "/admin/ventas",
-                search: { sale: pendingSchedule.sale.id } as any,
+                search: { sale: saleId } as any,
               });
             }}
           >
@@ -626,6 +634,10 @@ function CalendarLegend({ eventTypes }: { eventTypes: any[] }) {
   );
 }
 
+function modalityForEventType(slug?: string | null) {
+  return slug === "entrega" ? ("entrega" as const) : ("interna" as const);
+}
+
 function saleReference(sale: any) {
   if (!sale) return "Pedido sin número";
   const quotation = sale.quote_number ? `Cotización ${sale.quote_number}` : "Pedido";
@@ -894,6 +906,14 @@ function EventForm({ form, setForm, data, sales, products }: any) {
   const linkedCustomer = form.customer_id
     ? data.customers.find((customer: any) => customer.id === form.customer_id)
     : null;
+  const saleOptions: string[][] = [["_none", "Sin pedido"]];
+  for (const sale of sales) saleOptions.push([sale.id, saleReference(sale)]);
+  if (form.sale_id && !saleOptions.some(([value]) => value === form.sale_id)) {
+    saleOptions.splice(1, 0, [
+      form.sale_id,
+      linkedSale ? saleReference(linkedSale) : "Pedido enlazado desde la venta",
+    ]);
+  }
   return (
     <div className="space-y-5">
       {linkedSale && (
@@ -963,6 +983,20 @@ function EventForm({ form, setForm, data, sales, products }: any) {
             value={form.event_type_id}
             onChange={(value: string) => update("event_type_id", value)}
             options={data.eventTypes.map((item: any) => [item.id, item.name])}
+          />
+          <FormSelect
+            label="Pedido enlazado"
+            value={form.sale_id || "_none"}
+            onChange={(value: string) => {
+              if (value === "_none") return update("sale_id", "");
+              const sale = data.sales.find((item: any) => item.id === value);
+              setForm((current: any) => ({
+                ...current,
+                sale_id: value,
+                customer_id: sale?.customer_id ?? current.customer_id,
+              }));
+            }}
+            options={saleOptions}
           />
         </div>
       </FormSection>
