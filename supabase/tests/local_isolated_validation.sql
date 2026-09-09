@@ -217,6 +217,19 @@ SELECT pg_temp.assert_true((SELECT count(*)=1 FROM public.sales WHERE order_id='
 SELECT pg_temp.assert_true((SELECT count(*)=1 FROM public.sale_payments sp JOIN public.sales s ON s.id=sp.sale_id WHERE s.order_id='50000000-0000-0000-0000-000000000001'),'pago web debe registrarse una sola vez');
 SELECT pg_temp.assert_true((SELECT count(*)=1 FROM public.receipts r JOIN public.sales s ON s.id=r.sale_id WHERE s.order_id='50000000-0000-0000-0000-000000000001'),'reintento no debe duplicar recibo');
 
+SELECT pg_temp.assert_true(
+  (SELECT count(*)=1 FROM pg_proc WHERE pronamespace='public'::regnamespace AND proname='sync_sale_delivery_status'),
+  'debe existir sync_sale_delivery_status'
+);
+SELECT pg_temp.assert_true(
+  (SELECT count(*)=1 FROM pg_trigger WHERE tgrelid='public.calendar_events'::regclass AND tgname='calendar_events_sync_sale_delivery'),
+  'calendar_events debe sincronizar el estado de entrega de la venta'
+);
+SELECT pg_temp.assert_true(
+  NOT has_function_privilege('anon','public.sync_sale_delivery_status(uuid)','EXECUTE'),
+  'anon no debe ejecutar sync_sale_delivery_status'
+);
+
 ROLLBACK;
 
 SELECT 'LOCAL_ISOLATED_VALIDATION_OK' AS result;

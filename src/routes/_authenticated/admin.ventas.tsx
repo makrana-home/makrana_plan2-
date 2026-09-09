@@ -1069,6 +1069,26 @@ function getDefaultDeliveryStatusForWarehouse(warehouse?: any, current = "pendie
   return current || "pendiente";
 }
 
+const scheduledEventStatuses = ["pending_confirmation", "confirmed", "rescheduled"];
+
+function getSaleDeliveryEvents(sale?: any, statuses?: string[]) {
+  return (sale?.calendar_events ?? [])
+    .filter(
+      (event: any) =>
+        event?.event_type?.slug === "entrega" && (!statuses || statuses.includes(event.status)),
+    )
+    .sort((a: any, b: any) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+}
+
+function getScheduledDeliveryEvent(sale?: any) {
+  return getSaleDeliveryEvents(sale, scheduledEventStatuses)[0] ?? null;
+}
+
+function getCompletedDeliveryEvent(sale?: any) {
+  const completed = getSaleDeliveryEvents(sale, ["completed"]);
+  return completed[completed.length - 1] ?? null;
+}
+
 function normalizeSaleSearch(value: string) {
   return value
     .trim()
@@ -1266,6 +1286,8 @@ function SaleDrawer({
   const visibleDocumentIntentOptions = taxDocumentsEnabled
     ? documentIntentOptions
     : documentIntentOptions.filter((option) => !["boleta", "factura"].includes(option.value));
+  const scheduledDeliveryEvent = getScheduledDeliveryEvent(sale);
+  const completedDeliveryEvent = scheduledDeliveryEvent ? null : getCompletedDeliveryEvent(sale);
 
   async function refresh() {
     if (!saleId) return;
@@ -1432,11 +1454,11 @@ function SaleDrawer({
       } else toast.info("La operación continúa como borrador y no descontará stock.");
       return;
     }
-    if (!confirm("¿Guardar y confirmar el comprobante? Se descontará el stock.")) return;
+    if (!confirm("¿Emitir el comprobante? Se descontará el stock.")) return;
     setConfirming(true);
     try {
       const r = await confirm_({ data: { id: sale.id } });
-      toast.success(`Comprobante guardado: ${r?.[0]?.receipt_number ?? ""}`);
+      toast.success(`Comprobante emitido: ${r?.[0]?.receipt_number ?? ""}`);
       const updatedSale = await getSale({ data: { id: sale.id } });
       setSale(prepareSaleForEdit(updatedSale));
       const receiptId = getSaleReceipt(updatedSale)?.id;
@@ -1550,10 +1572,9 @@ function SaleDrawer({
                       setSale((s: any) => ({
                         ...s,
                         warehouse_id: v,
-                        delivery_status: getDefaultDeliveryStatusForWarehouse(
-                          warehouse,
-                          s.delivery_status,
-                        ),
+                        delivery_status: getScheduledDeliveryEvent(s)
+                          ? s.delivery_status
+                          : getDefaultDeliveryStatusForWarehouse(warehouse, s.delivery_status),
                       }));
                     }}
                   >
@@ -1634,6 +1655,25 @@ function SaleDrawer({
                       ))}
                     </SelectContent>
                   </Select>
+                  {scheduledDeliveryEvent && (
+                    <p className="mt-1.5 flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      <span>
+                        Entrega agendada para el {formatDate(scheduledDeliveryEvent.starts_at)}. La
+                        venta queda en «Pendiente» hasta que marques ese evento como completado en
+                        el calendario.
+                      </span>
+                    </p>
+                  )}
+                  {completedDeliveryEvent && (
+                    <p className="mt-1.5 flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      <span>
+                        Entrega del calendario completada el{" "}
+                        {formatDate(completedDeliveryEvent.starts_at)}.
+                      </span>
+                    </p>
+                  )}
                 </div>
                 <div className="sm:col-span-2">
                   <Label>
@@ -2010,7 +2050,7 @@ function SaleDrawer({
                       onClick={onConfirm}
                     >
                       <CheckCircle2 className="h-4 w-4" />
-                      {confirming ? "Guardando…" : "Guardar comprobante"}
+                      {confirming ? "Emitiendo…" : "Emitir comprobante"}
                     </Button>
                   )}
                   <div className="mt-2 grid gap-2">
