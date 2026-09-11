@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { getProductBySlug, listProducts } from "@/lib/public.functions";
 import { Button } from "@/components/ui/button";
@@ -83,13 +83,18 @@ function ProductDetail() {
 
   return (
     <section className="section-padded">
+      <nav className="container-makrana mb-6" aria-label="Volver al catálogo">
+        <Button asChild variant="soft" className="min-h-11">
+          <Link to="/catalogo">
+            <ArrowLeft aria-hidden="true" />
+            Volver al catálogo
+          </Link>
+        </Button>
+      </nav>
       <div className="container-makrana grid lg:grid-cols-2 gap-12">
         <ProductGallery images={images} productName={p.name} />
         <div>
-          <Link to="/catalogo" className="text-sm text-brand-terracotta">
-            ← Volver al catálogo
-          </Link>
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mt-4">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">
             {p.category?.name}
           </p>
           <h1 className="mt-2 font-display text-3xl leading-tight sm:text-4xl">{p.name}</h1>
@@ -178,7 +183,10 @@ function ProductDetail() {
               </a>
             </Button>
             <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
-              <Link to="/catalogo">Seguir explorando</Link>
+              <Link to="/catalogo">
+                <ArrowLeft aria-hidden="true" />
+                Seguir explorando
+              </Link>
             </Button>
           </div>
         </div>
