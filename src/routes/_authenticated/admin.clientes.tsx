@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CustomerWhatsApp } from "@/components/admin/customer-whatsapp";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -166,7 +167,8 @@ function CustomersTab() {
                 </TableCell>
                 <TableCell>{r.location ?? "â€”"}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">{r.source ?? "â€”"}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right whitespace-nowrap">
+                  <CustomerWhatsApp customer={r} />
                   <Button size="icon" variant="ghost" onClick={() => openEdit(r)}>
                     <Pencil className="h-4 w-4" />
                   </Button>
