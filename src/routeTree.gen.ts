@@ -23,6 +23,7 @@ import { Route as PublicLibroDeReclamacionesRouteImport } from './routes/_public
 import { Route as PublicContactoRouteImport } from './routes/_public.contacto'
 import { Route as PublicCheckoutRouteImport } from './routes/_public.checkout'
 import { Route as PublicCarritoRouteImport } from './routes/_public.carrito'
+import { Route as PublicBrochureRouteImport } from './routes/_public.brochure'
 import { Route as AuthenticatedClienteRouteImport } from './routes/_authenticated/cliente'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as PublicNovedadesIndexRouteImport } from './routes/_public.novedades.index'
@@ -131,6 +132,11 @@ const PublicCheckoutRoute = PublicCheckoutRouteImport.update({
 const PublicCarritoRoute = PublicCarritoRouteImport.update({
   id: '/carrito',
   path: '/carrito',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicBrochureRoute = PublicBrochureRouteImport.update({
+  id: '/brochure',
+  path: '/brochure',
   getParentRoute: () => PublicRoute,
 } as any)
 const AuthenticatedClienteRoute = AuthenticatedClienteRouteImport.update({
@@ -369,6 +375,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/cliente': typeof AuthenticatedClienteRouteWithChildren
+  '/brochure': typeof PublicBrochureRoute
   '/carrito': typeof PublicCarritoRoute
   '/checkout': typeof PublicCheckoutRouteWithChildren
   '/contacto': typeof PublicContactoRoute
@@ -421,6 +428,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/plataforma': typeof PlataformaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/brochure': typeof PublicBrochureRoute
   '/carrito': typeof PublicCarritoRoute
   '/checkout': typeof PublicCheckoutRouteWithChildren
   '/contacto': typeof PublicContactoRoute
@@ -477,6 +485,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/cliente': typeof AuthenticatedClienteRouteWithChildren
+  '/_public/brochure': typeof PublicBrochureRoute
   '/_public/carrito': typeof PublicCarritoRoute
   '/_public/checkout': typeof PublicCheckoutRouteWithChildren
   '/_public/contacto': typeof PublicContactoRoute
@@ -534,6 +543,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin'
     | '/cliente'
+    | '/brochure'
     | '/carrito'
     | '/checkout'
     | '/contacto'
@@ -586,6 +596,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/plataforma'
     | '/sitemap.xml'
+    | '/brochure'
     | '/carrito'
     | '/checkout'
     | '/contacto'
@@ -641,6 +652,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/admin'
     | '/_authenticated/cliente'
+    | '/_public/brochure'
     | '/_public/carrito'
     | '/_public/checkout'
     | '/_public/contacto'
@@ -796,6 +808,13 @@ declare module '@tanstack/react-router' {
       path: '/carrito'
       fullPath: '/carrito'
       preLoaderRoute: typeof PublicCarritoRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/brochure': {
+      id: '/_public/brochure'
+      path: '/brochure'
+      fullPath: '/brochure'
+      preLoaderRoute: typeof PublicBrochureRouteImport
       parentRoute: typeof PublicRoute
     }
     '/_authenticated/cliente': {
@@ -1215,6 +1234,7 @@ const PublicCheckoutRouteWithChildren = PublicCheckoutRoute._addFileChildren(
 )
 
 interface PublicRouteChildren {
+  PublicBrochureRoute: typeof PublicBrochureRoute
   PublicCarritoRoute: typeof PublicCarritoRoute
   PublicCheckoutRoute: typeof PublicCheckoutRouteWithChildren
   PublicContactoRoute: typeof PublicContactoRoute
@@ -1233,6 +1253,7 @@ interface PublicRouteChildren {
 }
 
 const PublicRouteChildren: PublicRouteChildren = {
+  PublicBrochureRoute: PublicBrochureRoute,
   PublicCarritoRoute: PublicCarritoRoute,
   PublicCheckoutRoute: PublicCheckoutRouteWithChildren,
   PublicContactoRoute: PublicContactoRoute,

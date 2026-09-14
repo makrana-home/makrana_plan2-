@@ -1,0 +1,497 @@
+[
+  {
+    "slug": "nuevo-05_06_16",
+    "name": "Mural en verde y crudo",
+    "category": "Murales",
+    "measurements": null,
+    "width": 1254,
+    "height": 1254,
+    "fit": "cover"
+  },
+  {
+    "slug": "nuevo-05_52_44",
+    "name": "Mural de hojas multicolor",
+    "category": "Murales de hojas",
+    "measurements": null,
+    "width": 1254,
+    "height": 1254,
+    "fit": "cover"
+  },
+  {
+    "slug": "nuevo-05_06_01",
+    "name": "Mural en azul y crudo",
+    "category": "Murales",
+    "measurements": null,
+    "width": 1254,
+    "height": 1254,
+    "fit": "cover"
+  },
+  {
+    "slug": "mural-julia-pz-021",
+    "name": "Mural Julia",
+    "category": "Murales",
+    "measurements": "30 × 57 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "mural-marcelo-pz-023",
+    "name": "Mural Marcelo",
+    "category": "Murales",
+    "measurements": "50 × 80 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "mural-fer-pz-024",
+    "name": "Mural Fer",
+    "category": "Murales",
+    "measurements": "60 × 77 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "mural-hojas-rellenas-pz-025",
+    "name": "Mural hojas rellenas",
+    "category": "Murales",
+    "measurements": "30 x 50 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "mural-hilos-de-la-memoria-pz-001",
+    "name": "Mural hilos de la memoria",
+    "category": "Murales inspirados en quipus",
+    "measurements": "66 × 140 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "quipus-amaru-pz-002",
+    "name": "Quipus Amaru",
+    "category": "Murales inspirados en quipus",
+    "measurements": "40 × 65 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "quipus-kori-tierra-50cm-pz-003",
+    "name": "Quipus Kori tierra 50cm",
+    "category": "Murales inspirados en quipus",
+    "measurements": "50 × 70 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "quipus-kori-tierra-30cm-pz-004",
+    "name": "Quipus Kori Tierra 30cm",
+    "category": "Murales inspirados en quipus",
+    "measurements": "30 × 52 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "quipus-kori-tierra-20cm-pz-005",
+    "name": "Quipus Kori tierra 20cm",
+    "category": "Murales inspirados en quipus",
+    "measurements": "20 × 40 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "quipus-kori-azul-pz-006",
+    "name": "Quipus kori azul",
+    "category": "Murales inspirados en quipus",
+    "measurements": "20 × 40 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "mural-coral-pz-046",
+    "name": "Mural cálido",
+    "category": "Murales inspirados en quipus",
+    "measurements": "0.40 × 1.34 m",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "arbol-copa-abanico-pz-007",
+    "name": "Árbol Copa Abanico",
+    "category": "Árboles",
+    "measurements": "Aro: Ø 40 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "arbol-frondoso-beige-40cm-pz-008",
+    "name": "Árbol frondoso beige 40cm",
+    "category": "Árboles",
+    "measurements": "Aro: Ø 40 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "arbol-frondoso-beige-50-cm-pz-009",
+    "name": "Árbol frondoso beige 50 cm",
+    "category": "Árboles",
+    "measurements": "Aro: Ø 50 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "arbol-frondoso-verde-50-cm-pz-010",
+    "name": "Árbol frondoso verde 50 cm",
+    "category": "Árboles",
+    "measurements": "Aro: Ø 50 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "arbol-frondoso-verde-60cm-pz-011",
+    "name": "Árbol frondoso verde 60cm",
+    "category": "Árboles",
+    "measurements": "Aro: Ø 60 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "arbol-frondoso-verde-marron-30cm-pz-012",
+    "name": "Árbol frondoso verde-marrón 30cm",
+    "category": "Árboles",
+    "measurements": "Aro: Ø 30 cm | Largo total: 81 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "arbol-frondoso-verde-arena-30cm-pz-013",
+    "name": "Árbol frondoso verde-arena 30cm",
+    "category": "Árboles",
+    "measurements": "Aro: Ø 30 cm | Largo total: 98 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "arbol-frondoso-beige-con-tiras-40-cm-pz-014",
+    "name": "Árbol frondoso beige con tiras 40 cm",
+    "category": "Árboles",
+    "measurements": "Aro: Ø 40 cm | Largo total: 92 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "arbol-hojas-rellenas-30cm-pz-015",
+    "name": "Árbol hojas rellenas 30cm",
+    "category": "Árboles",
+    "measurements": "Aro: Ø 30 cm | Largo total: 98 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "arbol-frondoso-30cm-pz-016",
+    "name": "Árbol frondoso 30cm",
+    "category": "Árboles",
+    "measurements": "Aro: Ø 30 cm | Largo total: 99 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "arboles-hojas-rellenas-pz-017",
+    "name": "Árboles hojas rellenas",
+    "category": "Árboles",
+    "measurements": "Aro: Ø 20 cm | Largo total: 70 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "arbol-vero-pz-018",
+    "name": "Árbol Vero",
+    "category": "Árboles",
+    "measurements": "Aro: Ø 20 cm | Largo total: 64 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "arbol-frondoso-verde-pequeno-pz-019",
+    "name": "Árbol frondoso verde pequeño",
+    "category": "Árboles",
+    "measurements": "Aro: Ø 13 cm | Largo total: 40 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "arbol-frondoso-crema-pequeno-pz-020",
+    "name": "Árbol frondoso crema pequeño",
+    "category": "Árboles",
+    "measurements": "Aro: Ø 13 cm | Largo total: 40 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "atrapasueno-flor-pz-026",
+    "name": "Atrapasueño Flor",
+    "category": "Atrapasueños",
+    "measurements": "Aro de 20 x 60 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "atrapasueno-sol-pz-027",
+    "name": "Atrapasueño sol",
+    "category": "Atrapasueños",
+    "measurements": "Aro de 20 x 64cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "atrapasueno-mar-pz-028",
+    "name": "Atrapasueño Mar",
+    "category": "Atrapasueños",
+    "measurements": "Aro de 0.40 x 1.10 m",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "corona-makrana-pz-029",
+    "name": "Corona Makrana",
+    "category": "Atrapasueños",
+    "measurements": "Aro de 0.33 × 1.10 m",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "mural-intercalado-de-hojas-pz-030",
+    "name": "Mural intercalado de hojas",
+    "category": "Murales de hojas",
+    "measurements": "Mediano : 30 x 64 cm (hojas de 20 cm); Grande : 42 × 90 cm (hojas de 28 cm)",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "mural-de-hojas-80-cm-pz-031",
+    "name": "Mural de hojas 80 cm",
+    "category": "Murales de hojas",
+    "measurements": "80 x 85 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "contain"
+  },
+  {
+    "slug": "nuevo-05_54_41",
+    "name": "Cojines de macramé",
+    "category": "Decoración hogar",
+    "measurements": null,
+    "width": 1536,
+    "height": 1024,
+    "fit": "contain"
+  },
+  {
+    "slug": "sujetador-de-cortina-pz-032",
+    "name": "Sujetador de cortina",
+    "category": "Decoración hogar",
+    "measurements": "50 cm aprox de largo",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "porta-papel-higienico-pz-033",
+    "name": "Porta papel higiénico",
+    "category": "Decoración hogar",
+    "measurements": "30 x 30 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "porta-toalla-pz-034",
+    "name": "Porta toalla",
+    "category": "Decoración hogar",
+    "measurements": "30 x 30 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "porta-secador-pz-035",
+    "name": "Porta secador",
+    "category": "Decoración hogar",
+    "measurements": "15 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "juego-de-5-porta-macetas-pz-036",
+    "name": "Juego de 5 porta macetas",
+    "category": "Decoración hogar",
+    "measurements": "80 x 120 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "contain"
+  },
+  {
+    "slug": "porta-maceta-suavidad-pz-037",
+    "name": "Porta maceta suavidad",
+    "category": "Decoración hogar",
+    "measurements": "80 cm aprox. de largo",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "repisa-pz-038",
+    "name": "Repisa",
+    "category": "Decoración hogar",
+    "measurements": "80 cm aprox. de largo , tabla: 31 x 19 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "camino-de-mesa-pz-040",
+    "name": "Camino de mesa",
+    "category": "Decoración hogar",
+    "measurements": "35 × 280 cm para mesa de 240 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "individual-pz-041",
+    "name": "Individual",
+    "category": "Decoración hogar",
+    "measurements": "24 x 35 cm",
+    "width": 1000,
+    "height": 1000,
+    "fit": "contain"
+  },
+  {
+    "slug": "servilletero-pz-042",
+    "name": "Servilletero",
+    "category": "Decoración hogar",
+    "measurements": "7 cm de largo",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "posavaso-pz-043",
+    "name": "Posavaso",
+    "category": "Decoración hogar",
+    "measurements": "diámetro 13 cm aprox.",
+    "width": 1000,
+    "height": 1000,
+    "fit": "contain"
+  },
+  {
+    "slug": "posavaso-pz-045",
+    "name": "Posavaso",
+    "category": "Decoración hogar",
+    "measurements": "diámetro 13 cm aprox.",
+    "width": 1000,
+    "height": 1000,
+    "fit": "contain"
+  },
+  {
+    "slug": "borla-terra-pz-049",
+    "name": "Borla Terra",
+    "category": "Decoración hogar",
+    "measurements": "Aro de madera 11 cm × 45 cm de largo",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "camino-de-mesa",
+    "name": "Camino de mesa",
+    "category": "Comedor",
+    "measurements": "60 × 400 cm",
+    "width": 1122,
+    "height": 1402,
+    "fit": "cover"
+  },
+  {
+    "slug": "nuevo-05_54_32",
+    "name": "Espejo con hojas",
+    "category": "Espejos",
+    "measurements": null,
+    "width": 1254,
+    "height": 1254,
+    "fit": "cover"
+  },
+  {
+    "slug": "juego-de-espejos-cuenta-pz-047",
+    "name": "Juego de espejos cuenta",
+    "category": "Espejos",
+    "measurements": "Grande: 50 cm - diám; Mediano: 39 cm - diám; Pequeño: 27 cm - diám",
+    "width": 1000,
+    "height": 1000,
+    "fit": "contain"
+  },
+  {
+    "slug": "juego-de-espejos-estrella-pz-048",
+    "name": "Juego de espejos estrella",
+    "category": "Espejos",
+    "measurements": "Grande: 50 cm - diám; Mediano: 39 cm - diám; Pequeño: 27 cm - diám",
+    "width": 1000,
+    "height": 1000,
+    "fit": "contain"
+  },
+  {
+    "slug": "corona-navidena-grande-pz-044",
+    "name": "Corona navideña grande",
+    "category": "Navidad",
+    "measurements": "100 cm de diámetro",
+    "width": 1000,
+    "height": 1000,
+    "fit": "cover"
+  },
+  {
+    "slug": "portamacetas",
+    "name": "Portamacetas",
+    "category": "Portamacetas",
+    "measurements": "1.5 × 2.5 m",
+    "width": 601,
+    "height": 903,
+    "fit": "cover"
+  },
+  {
+    "slug": "nuevo-05_50_55",
+    "name": "Perritos de macramé",
+    "category": "Muñequitos",
+    "measurements": null,
+    "width": 1254,
+    "height": 1254,
+    "fit": "cover"
+  }
+]
