@@ -172,7 +172,7 @@ export function SaleNoteDocument({
   variant?: ReceiptVariant;
 }) {
   const sale = receipt.sale ?? {};
-  const deliveryDate = getReceiptDeliveryDate(sale);
+  const deliveryDate = getReceiptDeliveryDate(sale, variant === "internal");
   const isQuote = variant === "quote";
   const isCustomOrder = isQuote && hasManualReceiptItems(sale);
   return (
@@ -822,7 +822,7 @@ async function createReceiptPdfBlob(receipt: any, variant: ReceiptVariant) {
 
 function createSimpleReceiptPdfBlob(receipt: any, variant: ReceiptVariant) {
   const sale = receipt.sale ?? {};
-  const deliveryDate = getReceiptDeliveryDate(sale);
+  const deliveryDate = getReceiptDeliveryDate(sale, variant === "internal");
   const type = getReceiptVariantLabel(variant);
   const isQuote = variant === "quote";
   const isCustomOrder = isQuote && hasManualReceiptItems(sale);

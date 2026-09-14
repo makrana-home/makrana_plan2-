@@ -4,7 +4,10 @@ type DeliveryEvent = {
   event_type?: { slug?: string } | null;
 };
 
-export function getReceiptDeliveryDate(sale?: { calendar_events?: DeliveryEvent[] } | null) {
+export function getReceiptDeliveryDate(
+  sale?: { calendar_events?: DeliveryEvent[] } | null,
+  includeTime = false,
+) {
   const deliveries = (sale?.calendar_events ?? [])
     .filter(
       (event) =>
@@ -21,7 +24,7 @@ export function getReceiptDeliveryDate(sale?: { calendar_events?: DeliveryEvent[
   if (!date) return null;
   return new Intl.DateTimeFormat("es-PE", {
     dateStyle: "medium",
-    timeStyle: "short",
+    ...(includeTime ? { timeStyle: "short" as const } : {}),
     timeZone: "America/Lima",
   }).format(new Date(date));
 }

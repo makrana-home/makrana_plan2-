@@ -46,7 +46,13 @@ test("fecha de entrega: no inventa fechas y siempre muestra el horario de Lima",
   );
   const date = getReceiptDeliveryDate({ calendar_events: [event("2026-09-21T02:00:00Z")] });
   assert.match(date!, /20/);
-  assert.match(date!, /9:00 p\. m\./);
+  assert.doesNotMatch(date!, /\d+:\d+/);
+  const internalDate = getReceiptDeliveryDate(
+    { calendar_events: [event("2026-09-21T02:00:00Z")] },
+    true,
+  );
+  assert.match(internalDate!, /20/);
+  assert.match(internalDate!, /9:00 p\. m\./);
 });
 
 test("descuento: solo se muestra para importes positivos", () => {
