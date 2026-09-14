@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/product-card";
 import { getPresentationUnitLabel } from "@/lib/presentation-units";
 import { addToCart } from "@/lib/cart";
+import { CART_ENABLED } from "@/lib/storefront";
 
 const statusLabel: Record<string, string> = {
   disponible: "Disponible",
@@ -51,7 +52,7 @@ export const Route = createFileRoute("/_public/catalogo/$slug")({
     <div className="container-makrana py-24 text-center">
       <h1 className="font-display text-3xl">Pieza no encontrada</h1>
       <Button asChild className="mt-6">
-        <Link to="/catalogo">Volver al catálogo</Link>
+        <Link to="/catalogo">Volver</Link>
       </Button>
     </div>
   ),
@@ -84,12 +85,12 @@ function ProductDetail() {
   return (
     <section className="section-padded">
       <nav className="container-makrana mb-6" aria-label="Volver al catálogo">
-        <Button asChild variant="soft" className="min-h-11">
-          <Link to="/catalogo">
-            <ArrowLeft aria-hidden="true" />
-            Volver al catálogo
-          </Link>
-        </Button>
+        <Link
+          to="/catalogo"
+          className="inline-flex min-h-11 items-center text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          Volver
+        </Link>
       </nav>
       <div className="container-makrana grid lg:grid-cols-2 gap-12">
         <ProductGallery images={images} productName={p.name} />
@@ -158,25 +159,27 @@ function ProductDetail() {
           )}
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button
-              size="lg"
-              variant="hero"
-              className="w-full sm:w-auto"
-              disabled={p.status === "agotado" || (hasPresentations && !selectedPresentationId)}
-              onClick={() => {
-                addToCart({
-                  productId: p.id,
-                  presentationId: selectedPresentationId,
-                  name: p.name,
-                  imageUrl: p.main_image_url,
-                  type: p.type,
-                  quantity: 1,
-                });
-                toast.success("Agregado al carrito");
-              }}
-            >
-              Agregar al carrito
-            </Button>
+            {CART_ENABLED && (
+              <Button
+                size="lg"
+                variant="hero"
+                className="w-full sm:w-auto"
+                disabled={p.status === "agotado" || (hasPresentations && !selectedPresentationId)}
+                onClick={() => {
+                  addToCart({
+                    productId: p.id,
+                    presentationId: selectedPresentationId,
+                    name: p.name,
+                    imageUrl: p.main_image_url,
+                    type: p.type,
+                    quantity: 1,
+                  });
+                  toast.success("Agregado al carrito");
+                }}
+              >
+                Agregar al carrito
+              </Button>
+            )}
             <Button asChild size="lg" variant="hero" className="w-full sm:w-auto">
               <a href={waLink(p.name)} target="_blank" rel="noreferrer">
                 Consultar por WhatsApp

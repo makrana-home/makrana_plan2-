@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { CART_ENABLED } from "@/lib/storefront";
 
 const cartItemSchema = z.object({
   product_id: z.string().uuid(),
@@ -154,6 +155,9 @@ export const priceCart = createServerFn({ method: "POST" })
 export const createCheckoutOrder = createServerFn({ method: "POST" })
   .validator((value) => checkoutSchema.parse(value))
   .handler(async ({ data }) => {
+    if (!CART_ENABLED) {
+      throw new Error("Las compras en línea están pausadas. Consulta por WhatsApp.");
+    }
     const db = await adminDb();
     const cartFingerprint = createHash("sha256").update(JSON.stringify(data.items)).digest("hex");
     const { data: result, error } = await db.rpc("create_checkout_order", {

@@ -15,6 +15,7 @@ import {
   getSaleCustomerDisplayName,
 } from "@/lib/sale-notes";
 import qrNotaVenta from "@/assets/nota-venta-qr.png";
+import { getReceiptDeliveryDate, hasReceiptDiscount } from "@/lib/receipt-details";
 
 export type ReceiptVariant = "internal" | "note" | "quote";
 
@@ -171,6 +172,7 @@ export function SaleNoteDocument({
   variant?: ReceiptVariant;
 }) {
   const sale = receipt.sale ?? {};
+  const deliveryDate = getReceiptDeliveryDate(sale);
   const isQuote = variant === "quote";
   const isCustomOrder = isQuote && hasManualReceiptItems(sale);
   return (
@@ -187,6 +189,7 @@ export function SaleNoteDocument({
           <SectionLabel>Cliente</SectionLabel>
           <div>{getSaleCustomerDisplayName(sale)}</div>
           <div>Canal de venta: {getSaleChannelDisplayName(sale) || "-"}</div>
+          {deliveryDate && <div className="mt-2">Fecha de entrega: {deliveryDate}</div>}
         </div>
         <div className="text-right leading-relaxed">
           <SectionLabel>Contactanos</SectionLabel>
@@ -438,12 +441,14 @@ function ItemsTable({
           </td>
           <td className="pt-3 text-right tabular-nums">{moneyPEN(sale.subtotal)}</td>
         </tr>
-        <tr>
-          <td colSpan={3} className="text-right">
-            Descuento
-          </td>
-          <td className="text-right tabular-nums">- {moneyPEN(sale.discount)}</td>
-        </tr>
+        {hasReceiptDiscount(sale.discount) && (
+          <tr>
+            <td colSpan={3} className="text-right">
+              Descuento
+            </td>
+            <td className="text-right tabular-nums">- {moneyPEN(sale.discount)}</td>
+          </tr>
+        )}
         <tr className="border-t border-sand text-lg">
           <td colSpan={3} className="py-2 text-right font-semibold">
             TOTAL
@@ -817,6 +822,7 @@ async function createReceiptPdfBlob(receipt: any, variant: ReceiptVariant) {
 
 function createSimpleReceiptPdfBlob(receipt: any, variant: ReceiptVariant) {
   const sale = receipt.sale ?? {};
+  const deliveryDate = getReceiptDeliveryDate(sale);
   const type = getReceiptVariantLabel(variant);
   const isQuote = variant === "quote";
   const isCustomOrder = isQuote && hasManualReceiptItems(sale);
@@ -910,7 +916,18 @@ function createSimpleReceiptPdfBlob(receipt: any, variant: ReceiptVariant) {
     { kind: "line", x1: 56, y1: 590, x2: 540, y2: 590 },
   ];
 
-  let y = 568;
+  if (deliveryDate) {
+    // Reservar una línea debajo del cliente y desplazar la tabla completa.
+    for (const element of lines) {
+      if (element.kind === "text" && element.y <= 604) element.y -= 18;
+      if (element.kind === "line" && element.y1 <= 632) {
+        element.y1 -= 18;
+        element.y2 -= 18;
+      }
+    }
+    lines.push({ kind: "text", text: `Fecha de entrega: ${deliveryDate}`, x: 56, y: 634, size: 9 });
+  }
+  let y = deliveryDate ? 550 : 568;
   for (const item of sale.items ?? []) {
     const itemName = getReceiptItemName(item);
     const itemDescription = getReceiptItemDescription(item, itemName);
@@ -944,9 +961,11 @@ function createSimpleReceiptPdfBlob(receipt: any, variant: ReceiptVariant) {
   y -= 6;
   lines.push({ kind: "text", text: "Subtotal", x: 410, y, size: 10 });
   lines.push({ kind: "text", text: moneyPEN(sale.subtotal), x: 490, y, size: 10 });
-  y -= 16;
-  lines.push({ kind: "text", text: "Descuento", x: 410, y, size: 10 });
-  lines.push({ kind: "text", text: `- ${moneyPEN(sale.discount)}`, x: 490, y, size: 10 });
+  if (hasReceiptDiscount(sale.discount)) {
+    y -= 16;
+    lines.push({ kind: "text", text: "Descuento", x: 410, y, size: 10 });
+    lines.push({ kind: "text", text: `- ${moneyPEN(sale.discount)}`, x: 490, y, size: 10 });
+  }
   lines.push({ kind: "line", x1: 56, y1: y - 10, x2: 540, y2: y - 10 });
   y -= 32;
   lines.push({ kind: "text", text: "TOTAL", x: 410, y, size: 14, bold: true });

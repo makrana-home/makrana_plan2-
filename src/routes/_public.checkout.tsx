@@ -1,4 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { CART_ENABLED } from "@/lib/storefront";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,12 @@ import {
   priceCart,
 } from "@/lib/commerce.functions";
 
-export const Route = createFileRoute("/_public/checkout")({ component: CheckoutPage });
+export const Route = createFileRoute("/_public/checkout")({
+  beforeLoad: () => {
+    if (!CART_ENABLED) throw redirect({ to: "/catalogo" });
+  },
+  component: CheckoutPage,
+});
 const initial: any = {
   first_name: "",
   last_name: "",

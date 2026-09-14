@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/components/brand-logo";
+import { CART_ENABLED } from "@/lib/storefront";
 import { getHomeSectionVisibility } from "@/lib/public.functions";
 import { homeSectionDefaults, type HomeSectionVisibility } from "@/lib/site-settings.functions";
 
@@ -16,7 +17,7 @@ const links = [
   { to: "/talleres", label: "Talleres", section: "workshops" },
   { to: "/sobre-makrana", label: "Sobre Makrana", section: "welcome" },
   { to: "/contacto", label: "Contacto", section: null },
-  { to: "/carrito", label: "Carrito", section: null },
+  ...(CART_ENABLED ? [{ to: "/carrito", label: "Carrito", section: null } as const] : []),
 ] as const;
 
 function linkIsVisible(

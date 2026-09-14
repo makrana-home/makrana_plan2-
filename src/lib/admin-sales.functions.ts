@@ -434,7 +434,7 @@ export const adminGetReceipt = createServerFn({ method: "GET" })
     const { data: r, error } = await context.supabase
       .from("receipts")
       .select(
-        "*, sale:sales(*, customer:customers(*), warehouse:warehouses(*), items:sale_items(*, product:products(name, sku), presentation:material_presentations(id, unit, label, sku)), payments:sale_payments(*))",
+        "*, sale:sales(*, customer:customers(*), warehouse:warehouses(*), items:sale_items(*, product:products(name, sku), presentation:material_presentations(id, unit, label, sku)), payments:sale_payments(*), calendar_events(starts_at, status, event_type:calendar_event_types(slug)))",
       )
       .eq("id", data.id)
       .maybeSingle();

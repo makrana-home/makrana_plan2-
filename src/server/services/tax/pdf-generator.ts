@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
+import { hasReceiptDiscount } from "../../../lib/receipt-details.ts";
 
 export interface TaxPdfItem {
   description: string;
@@ -17,6 +18,7 @@ export interface TaxPdfInput {
   number: number;
   issueDate: string;
   issueTime: string;
+  deliveryDate?: string | null;
   legalName: string;
   tradeName?: string | null;
   ruc: string;
@@ -128,6 +130,10 @@ export async function generateTaxPdf(input: TaxPdfInput): Promise<Uint8Array> {
   doc.text(`Documento: ${input.customerDocument || "Sin documento"}`, 18, y + 18);
   doc.text(`Forma de pago: ${input.paymentMethod || "No especificada"}`, 110, y + 18);
   y += 31;
+  if (input.deliveryDate) {
+    doc.text(`Fecha de entrega: ${input.deliveryDate}`, 18, y);
+    y += 8;
+  }
   if (input.relatedDocument) {
     doc.setFont("helvetica", "bold");
     doc.text(`Comprobante afectado: ${input.relatedDocument}`, 14, y);
@@ -137,14 +143,15 @@ export async function generateTaxPdf(input: TaxPdfInput): Promise<Uint8Array> {
     y += 7;
   }
   const columns = [14, 23, 39, 126, 148, 172, 195];
+  const showItemDiscount = input.items.some((item) => hasReceiptDiscount(item.discount));
   const tableHeader = () => {
     doc.setFillColor(128, 52, 44);
     doc.rect(14, y, 181, 8, "F");
     doc.setTextColor(255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7);
-    ["#", "Cant.", "Descripción", "P. unit.", "Dscto.", "Total"].forEach((v, i) =>
-      doc.text(v, columns[i] + 2, y + 5),
+    ["#", "Cant.", "Descripción", "P. unit.", showItemDiscount ? "Dscto." : "", "Total"].forEach(
+      (v, i) => doc.text(v, columns[i] + 2, y + 5),
     );
     y += 8;
     doc.setTextColor(45);
@@ -167,7 +174,7 @@ export async function generateTaxPdf(input: TaxPdfInput): Promise<Uint8Array> {
     doc.text(`${item.quantity} ${item.unitCode}`, columns[1] + 2, y + 5);
     doc.text(lines, columns[2] + 2, y + 5);
     doc.text(money(item.unitPrice), columns[3] + 2, y + 5);
-    doc.text(money(item.discount), columns[4] + 2, y + 5);
+    if (showItemDiscount) doc.text(money(item.discount), columns[4] + 2, y + 5);
     doc.text(money(item.total), columns[5] + 2, y + 5);
     y += height;
   });
@@ -179,7 +186,7 @@ export async function generateTaxPdf(input: TaxPdfInput): Promise<Uint8Array> {
     ["Operaciones gravadas", input.taxableAmount],
     ["Operaciones exoneradas", input.exemptAmount ?? 0],
     ["Operaciones inafectas", input.unaffectedAmount ?? 0],
-    ["Descuentos", input.discountAmount],
+    ...(hasReceiptDiscount(input.discountAmount) ? [["Descuentos", input.discountAmount]] : []),
     ["IGV", input.igvAmount],
   ].forEach(([name, value]) => {
     doc.text(String(name), tx, y);

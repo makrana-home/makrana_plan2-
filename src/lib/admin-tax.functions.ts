@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { getReceiptDeliveryDate } from "@/lib/receipt-details";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   buildDailySummaryXml,
@@ -195,7 +196,7 @@ export const adminIssueTaxDocument = createServerFn({ method: "POST" })
     const { data: sale, error: saleError } = await supabase
       .from("sales")
       .select(
-        "*, customer:customers(*), items:sale_items(*,product:products(name,sku)), payments:sale_payments(*)",
+        "*, customer:customers(*), items:sale_items(*,product:products(name,sku)), payments:sale_payments(*), calendar_events(starts_at, status, event_type:calendar_event_types(slug))",
       )
       .eq("id", data.saleId)
       .single();
@@ -350,6 +351,7 @@ export const adminIssueTaxDocument = createServerFn({ method: "POST" })
       igvAmount: totals.igvCents / 100,
       totalAmount: totals.totalCents / 100,
       paymentMethod: sale.payments?.[0]?.method,
+      deliveryDate: getReceiptDeliveryDate(sale),
       hash: signed.hash,
       qrPayload,
       logoDataUrl,
@@ -469,7 +471,9 @@ export const adminCreateCreditNote = createServerFn({ method: "POST" })
     const supabase = db(context);
     const { data: original, error } = await supabase
       .from("tax_documents")
-      .select("*, settings:tax_settings(*), items:tax_document_items(*)")
+      .select(
+        "*, settings:tax_settings(*), items:tax_document_items(*), sale:sales(calendar_events(starts_at, status, event_type:calendar_event_types(slug)))",
+      )
       .eq("id", data.originalDocumentId)
       .single();
     if (error) throw error;
@@ -610,6 +614,7 @@ export const adminCreateCreditNote = createServerFn({ method: "POST" })
       igvAmount: totals.igvCents / 100,
       totalAmount: totals.totalCents / 100,
       paymentMethod: original.payment_method,
+      deliveryDate: getReceiptDeliveryDate(original.sale),
       hash: signed.hash,
       qrPayload,
       logoDataUrl,

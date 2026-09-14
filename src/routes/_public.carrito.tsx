@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { CART_ENABLED } from "@/lib/storefront";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
@@ -7,7 +8,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { readCart, writeCart, type CartItem } from "@/lib/cart";
 import { priceCart } from "@/lib/commerce.functions";
 
-export const Route = createFileRoute("/_public/carrito")({ component: CartPage });
+export const Route = createFileRoute("/_public/carrito")({
+  beforeLoad: () => {
+    if (!CART_ENABLED) throw redirect({ to: "/catalogo" });
+  },
+  component: CartPage,
+});
 
 function CartPage() {
   const price = useServerFn(priceCart);
