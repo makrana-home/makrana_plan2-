@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { personalizeCustomerMessage } from "@/lib/customer-message";
 import {
   Dialog,
   DialogContent,
@@ -12,22 +13,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-function defaultMessage(name: string) {
-  const catalogUrl = new URL("/catalogo", window.location.origin).href;
-  return `¡Hola, ${name.trim() || "¿qué tal?"}! 😊 Somos *Makrana*, creamos arte textil con la técnica de macramé. 🧶✨
-
-Te compartimos nuestro catálogo para que conozcas nuestras piezas:
-📖 ${catalogUrl}
-
-💛 También hacemos *pedidos personalizados*: nos envías tus medidas, eliges los colores y creamos una pieza a tu gusto, especial para tu espacio.
-
-¿Tienes alguna idea en mente? Escríbenos y la hacemos realidad. ✨`;
-}
-
 export function CustomerWhatsApp({
   customer,
+  template,
 }: {
   customer: { full_name: string; phone?: string | null };
+  template: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [phone, setPhone] = useState("");
@@ -44,8 +35,9 @@ export function CustomerWhatsApp({
   const canOpen = validPhone && message.trim().length > 0;
 
   function startMessage() {
+    if (template === null) return;
     setPhone(customer.phone ?? "");
-    setMessage(defaultMessage(customer.full_name));
+    setMessage(personalizeCustomerMessage(template, customer.full_name, window.location.origin));
     setOpen(true);
   }
 
@@ -56,6 +48,7 @@ export function CustomerWhatsApp({
         variant="outline"
         className="border-green-700/30 text-green-800 hover:bg-green-50 hover:text-green-900"
         onClick={startMessage}
+        disabled={template === null}
         aria-label={`Escribir por WhatsApp a ${customer.full_name}`}
       >
         <MessageCircle className="h-4 w-4" /> WhatsApp
@@ -99,7 +92,15 @@ export function CustomerWhatsApp({
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => setMessage(defaultMessage(customer.full_name))}
+                onClick={() =>
+                  setMessage(
+                    personalizeCustomerMessage(
+                      template ?? "",
+                      customer.full_name,
+                      window.location.origin,
+                    ),
+                  )
+                }
               >
                 Restablecer mensaje
               </Button>

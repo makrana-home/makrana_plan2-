@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CustomerWhatsApp } from "@/components/admin/customer-whatsapp";
+import { CustomerMessageEditor } from "@/components/admin/customer-message-editor";
+import { getCustomerMessage } from "@/lib/customer-message-preferences";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -89,6 +91,19 @@ function ClientsPage() {
 }
 
 function CustomersTab() {
+  const [messageTemplate, setMessageTemplate] = useState<string | null>(null);
+  const [messageLoadError, setMessageLoadError] = useState(false);
+  async function loadMessage() {
+    setMessageLoadError(false);
+    try {
+      setMessageTemplate(await getCustomerMessage());
+    } catch {
+      setMessageLoadError(true);
+    }
+  }
+  useEffect(() => {
+    void loadMessage();
+  }, []);
   const list = useServerFn(adminListCustomers);
   const upsert = useServerFn(adminUpsertCustomer);
   const del = useServerFn(adminDeleteCustomer);
@@ -136,9 +151,18 @@ function CustomersTab() {
   }
   return (
     <div>
-      <div className="flex justify-end mb-3">
+      <div className="flex flex-wrap justify-end gap-2 mb-3">
+        <CustomerMessageEditor template={messageTemplate} onSave={setMessageTemplate} />
         <NewButton onClick={openNew} label="Nuevo cliente" />
       </div>
+      {messageLoadError && (
+        <p role="alert" className="mb-3 text-sm text-destructive">
+          No se pudo cargar tu mensaje general.{" "}
+          <button type="button" className="underline" onClick={() => void loadMessage()}>
+            Reintentar
+          </button>
+        </p>
+      )}
       <div className="border border-sand/60 rounded-xl overflow-hidden bg-warm-white">
         <Table>
           <TableHeader>
@@ -168,7 +192,7 @@ function CustomersTab() {
                 <TableCell>{r.location ?? "â€”"}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">{r.source ?? "â€”"}</TableCell>
                 <TableCell className="text-right whitespace-nowrap">
-                  <CustomerWhatsApp customer={r} />
+                  <CustomerWhatsApp customer={r} template={messageTemplate} />
                   <Button size="icon" variant="ghost" onClick={() => openEdit(r)}>
                     <Pencil className="h-4 w-4" />
                   </Button>
