@@ -70,8 +70,11 @@ import { ReceiptPreviewDialog, type ReceiptVariant } from "@/components/admin/re
 import { buildQuotationReceipt } from "@/lib/quotation-receipts";
 import { formatUnits } from "@/lib/format-units";
 import { getPresentationUnitLabel } from "@/lib/presentation-units";
-import { formatCalendarDate, limaLocalToUtc } from "@/lib/calendar-utils";
-import { adminQuickScheduleSaleEvent } from "@/lib/admin-calendar.functions";
+import { formatCalendarDate, limaLocalToUtc, utcToLimaLocal } from "@/lib/calendar-utils";
+import {
+  adminQuickScheduleSaleEvent,
+  adminSaveCalendarEvent,
+} from "@/lib/admin-calendar.functions";
 import {
   getChannelFromSaleNotes,
   getCleanSaleNotes,
@@ -2368,26 +2371,7 @@ function SaleAgenda({ sale, onScheduled }: { sale: any; onScheduled: () => Promi
       <div className="mt-4 space-y-2">
         {events.length ? (
           events.map((event: any) => (
-            <Link
-              key={event.id}
-              to="/admin/calendario"
-              search={{ event: event.id } as any}
-              className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-sand/60 bg-warm-white px-3 py-2 hover:border-accent/40"
-            >
-              <div className="min-w-0">
-                <div className="truncate text-sm font-semibold">{event.title}</div>
-                <div className="text-xs text-muted-foreground">
-                  {event.event_type?.name} ·{" "}
-                  {event.responsible?.full_name || event.responsible?.email || "Sin responsable"}
-                </div>
-              </div>
-              <div className="shrink-0 text-right text-xs">
-                <div>{formatCalendarDate(event.starts_at, { day: "2-digit", month: "short" })}</div>
-                <div className="text-muted-foreground">
-                  {formatCalendarDate(event.starts_at, { hour: "2-digit", minute: "2-digit" })}
-                </div>
-              </div>
-            </Link>
+            <SaleAgendaEvent key={event.id} event={event} onSaved={onScheduled} />
           ))
         ) : (
           <div className="rounded-xl border border-dashed border-sand/70 p-5 text-center text-sm text-muted-foreground">
@@ -2396,6 +2380,121 @@ function SaleAgenda({ sale, onScheduled }: { sale: any; onScheduled: () => Promi
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function SaleAgendaEvent({ event, onSaved }: { event: any; onSaved: () => Promise<void> }) {
+  const saveEvent = useServerFn(adminSaveCalendarEvent);
+  const [editing, setEditing] = useState(false);
+  const [date, setDate] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function saveDate() {
+    if (saving) return;
+    if (!date) return setError("Selecciona la fecha y hora.");
+    setSaving(true);
+    setError(null);
+    try {
+      const startsAt = limaLocalToUtc(date);
+      const duration = new Date(event.ends_at).getTime() - new Date(event.starts_at).getTime();
+      const result = await saveEvent({
+        data: {
+          event: {
+            ...event,
+            starts_at: startsAt,
+            ends_at: new Date(new Date(startsAt).getTime() + duration).toISOString(),
+          },
+          forceConflict: false,
+        },
+      });
+      if (!result.saved) {
+        setError("Ese horario coincide o está cerca de otro evento. Elige otra fecha u hora.");
+        return;
+      }
+      await onSaved();
+      setEditing(false);
+      toast.success("Fecha del evento actualizada");
+    } catch (error: any) {
+      setError(error.message ?? "No se pudo actualizar la fecha del evento.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-sand/60 bg-warm-white px-3 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          to="/admin/calendario"
+          search={{ event: event.id } as any}
+          className="min-w-0 flex-1 hover:underline"
+        >
+          <div className="truncate text-sm font-semibold">{event.title}</div>
+          <div className="text-xs text-muted-foreground">
+            {event.event_type?.name} ·{" "}
+            {event.responsible?.full_name || event.responsible?.email || "Sin responsable"}
+          </div>
+        </Link>
+        <div className="shrink-0 text-right text-xs">
+          <div>{formatCalendarDate(event.starts_at, { day: "2-digit", month: "short" })}</div>
+          <div className="text-muted-foreground">
+            {formatCalendarDate(event.starts_at, { hour: "2-digit", minute: "2-digit" })}
+          </div>
+        </div>
+        {!editing && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            aria-label={`Editar fecha de ${event.title}`}
+            onClick={() => {
+              setDate(utcToLimaLocal(event.starts_at));
+              setError(null);
+              setEditing(true);
+            }}
+          >
+            Editar fecha
+          </Button>
+        )}
+      </div>
+      {editing && (
+        <div className="mt-3 border-t border-sand/60 pt-3">
+          <Label htmlFor={`event-date-${event.id}`}>Fecha y hora (Lima)</Label>
+          <Input
+            id={`event-date-${event.id}`}
+            type="datetime-local"
+            className="mt-2"
+            value={date}
+            disabled={saving}
+            onChange={(e) => {
+              setDate(e.target.value);
+              setError(null);
+            }}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">Se conserva la duración del evento.</p>
+          {error && (
+            <p role="alert" className="mt-2 text-sm text-destructive">
+              {error}
+            </p>
+          )}
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Button type="button" size="sm" disabled={saving} onClick={() => void saveDate()}>
+              {saving ? "Guardando…" : "Guardar fecha"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={saving}
+              onClick={() => setEditing(false)}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
