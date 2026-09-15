@@ -55,6 +55,11 @@ const quotationTransferLines = [
   "Titular: Ana María Atachagua Pérez",
 ];
 
+const deliveryDateNoticeLines = [
+  "La fecha de entrega indicada es válida por 24 horas.",
+  "Pasado ese plazo, puede variar según disponibilidad.",
+];
+
 type ReceiptPreviewDialogProps = {
   receipt: any | null;
   open: boolean;
@@ -189,7 +194,14 @@ export function SaleNoteDocument({
           <SectionLabel>Cliente</SectionLabel>
           <div>{getSaleCustomerDisplayName(sale)}</div>
           <div>Canal de venta: {getSaleChannelDisplayName(sale) || "-"}</div>
-          {deliveryDate && <div className="mt-2">Fecha de entrega: {deliveryDate}</div>}
+          {deliveryDate && (
+            <div className="mt-2">
+              <div>Fecha de entrega: {deliveryDate}</div>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {deliveryDateNoticeLines.join(" ")}
+              </p>
+            </div>
+          )}
         </div>
         <div className="text-right leading-relaxed">
           <SectionLabel>Contactanos</SectionLabel>
@@ -917,17 +929,20 @@ function createSimpleReceiptPdfBlob(receipt: any, variant: ReceiptVariant) {
   ];
 
   if (deliveryDate) {
-    // Reservar una línea debajo del cliente y desplazar la tabla completa.
+    // Reservar espacio para la fecha y su aviso antes de la tabla.
     for (const element of lines) {
-      if (element.kind === "text" && element.y <= 604) element.y -= 18;
+      if (element.kind === "text" && element.y <= 604) element.y -= 44;
       if (element.kind === "line" && element.y1 <= 632) {
-        element.y1 -= 18;
-        element.y2 -= 18;
+        element.y1 -= 44;
+        element.y2 -= 44;
       }
     }
     lines.push({ kind: "text", text: `Fecha de entrega: ${deliveryDate}`, x: 56, y: 634, size: 9 });
+    deliveryDateNoticeLines.forEach((text, index) => {
+      lines.push({ kind: "text", text, x: 56, y: 620 - index * 12, size: 8, color: "6b5b50" });
+    });
   }
-  let y = deliveryDate ? 550 : 568;
+  let y = deliveryDate ? 524 : 568;
   for (const item of sale.items ?? []) {
     const itemName = getReceiptItemName(item);
     const itemDescription = getReceiptItemDescription(item, itemName);
