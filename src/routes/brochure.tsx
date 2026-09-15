@@ -42,7 +42,7 @@ export const Route = createFileRoute("/brochure")({
 
 function PieceCard({ piece, priority = false }: { piece: Piece; priority?: boolean }) {
   return (
-    <article id={piece.slug} className="scroll-mt-56">
+    <article id={piece.slug} className="scroll-mt-24">
       <a
         href={whatsapp(piece)}
         target="_blank"
@@ -50,7 +50,7 @@ function PieceCard({ piece, priority = false }: { piece: Piece; priority?: boole
         aria-label={`Consultar ${piece.name} por WhatsApp (abre en otra pestaña)`}
         className="group block focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#80342c]"
       >
-        <div className="relative flex aspect-[0.78] items-center justify-center overflow-hidden bg-[#f6f0e9]">
+        <div className="relative flex aspect-square max-h-[calc(100svh-12rem)] items-center justify-center">
           <img
             src={`/brochure/${piece.slug}-1280.webp`}
             srcSet={`/brochure/${piece.slug}-640.webp 640w, /brochure/${piece.slug}-1280.webp 1280w`}
@@ -60,7 +60,7 @@ function PieceCard({ piece, priority = false }: { piece: Piece; priority?: boole
             height={piece.height}
             loading={priority ? "eager" : "lazy"}
             decoding="async"
-            className={`h-full w-full ${piece.fit === "contain" ? "object-contain" : "object-cover"} motion-safe:transition-transform motion-safe:duration-700 motion-safe:group-hover:scale-[1.015]`}
+            className="h-full w-full object-contain"
           />
           <span className="absolute bottom-4 right-4 flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-xs text-[#473a32] shadow-sm md:translate-y-1 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-visible:translate-y-0 md:group-focus-visible:opacity-100 motion-safe:transition-all">
             <MessageCircle size={15} aria-hidden="true" /> Consultar
