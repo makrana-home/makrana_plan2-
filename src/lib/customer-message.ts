@@ -3,11 +3,13 @@ export const defaultCustomerMessage = `¡Hola, {nombre}! Somos *Makrana*, creamo
 Te compartimos nuestro catálogo para que conozcas nuestras piezas:
 {catalogo}
 
-Este es el brochure: https://makranahomeart.com/brochure
+Este es el *brochure*: https://makranahomeart.com/brochure
 
 También hacemos *pedidos personalizados*: nos envías tus medidas, eliges los colores y creamos una pieza a tu gusto, especial para tu espacio.
 
 ¿Tienes alguna idea en mente? Escríbenos y la hacemos realidad.`;
+
+export const previousBrochureMessage = defaultCustomerMessage.replace("*brochure*", "brochure");
 
 // Recognize the previous default even when it was saved as an account preference.
 export const legacyCustomerMessage = `¡Hola, {nombre}! 😊 Somos *Makrana*, creamos arte textil con la técnica de macramé. 🧶✨
