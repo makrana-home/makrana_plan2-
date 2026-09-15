@@ -111,10 +111,32 @@ function Brochure() {
             <br />
             tu espacio.
           </h1>
-          <p className="mt-6 max-w-md text-sm leading-7 text-[#74655b]">
+          <p className="mt-6 max-w-md text-sm leading-6 text-[#74655b]">
             Creamos piezas de macramé hechas a mano que aportan textura, calidez y personalidad a
             cada espacio.
           </p>
+          <p className="mt-3 max-w-md text-sm leading-6 text-[#74655b]">
+            En Makrana Home Art, el trabajo artesanal se transforma en decoración y accesorios.
+          </p>
+          <p className="mt-3 max-w-md text-sm leading-6 text-[#74655b]">
+            Diseñamos piezas a medida y colaboramos con interioristas, arquitectos y marcas para dar
+            forma a proyectos únicos.
+          </p>
+          <div className="mt-6 space-y-2 text-xs text-[#74655b]">
+            <p className="font-medium text-[#80342c]">Conversemos sobre tu pieza</p>
+            <a
+              href={whatsapp()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block hover:underline"
+            >
+              WhatsApp +51 986 608 552
+            </a>
+            <a href="mailto:makrnahome@gmail.com" className="block hover:underline">
+              makrnahome@gmail.com
+            </a>
+            <p>Lima, Perú</p>
+          </div>
           <a
             href="#colecciones"
             className="mt-8 inline-flex w-fit items-center gap-4 py-2 text-sm text-[#80342c] underline-offset-4 hover:underline focus-visible:outline-2"
@@ -123,6 +145,55 @@ function Brochure() {
             <ArrowDown size={17} aria-hidden="true" />
           </a>
         </div>
+      </section>
+
+      <section
+        className="mx-auto grid max-w-[1440px] gap-10 border-t border-[#e6d9ce] px-7 py-16 md:grid-cols-2 sm:px-12 lg:px-20"
+        aria-labelledby="custom-title"
+      >
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-[#80342c]">
+            Piezas personalizadas
+          </p>
+          <h2 id="custom-title" className="mt-4 font-serif text-4xl font-normal">
+            Tus ideas,
+            <br />
+            hechas a mano.
+          </h2>
+          <p className="mt-5 max-w-md text-sm leading-6 text-[#74655b]">
+            Creamos piezas de macramé personalizadas para tu espacio. Envíanos tus ideas y
+            coordinamos contigo la paleta de colores y las texturas de tu pieza.
+          </p>
+          <a
+            href={whatsapp()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-7 inline-flex min-h-11 items-center gap-3 text-sm text-[#80342c] underline underline-offset-4"
+          >
+            Conversemos por WhatsApp <ArrowUpRight size={16} aria-hidden="true" />
+          </a>
+        </div>
+        <ol className="space-y-7">
+          {[
+            [
+              "Comparte tus ideas",
+              "Envíanos tus referencias y cuéntanos qué imaginas para tu espacio.",
+            ],
+            [
+              "Elegimos colores y texturas",
+              "Coordinamos contigo una paleta de colores y las texturas que necesita tu proyecto.",
+            ],
+            ["Creamos tu pieza", "Damos forma a tu diseño con los detalles que acordamos juntos."],
+          ].map(([title, description], index) => (
+            <li key={title} className="flex gap-5">
+              <span className="pt-1 text-xs text-[#80342c]">0{index + 1}</span>
+              <div>
+                <h3 className="text-sm font-medium">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-[#74655b]">{description}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
       </section>
 
       <div id="colecciones" className="scroll-mt-36">
@@ -186,50 +257,6 @@ function Brochure() {
         </div>
       </div>
 
-      <section
-        className="mx-auto grid max-w-[1440px] gap-10 border-t border-[#e6d9ce] px-7 py-16 md:grid-cols-2 sm:px-12 lg:px-20"
-        aria-labelledby="custom-title"
-      >
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-[#80342c]">
-            Piezas personalizadas
-          </p>
-          <h2 id="custom-title" className="mt-4 font-serif text-4xl font-normal">
-            Tus ideas,
-            <br />
-            hechas a mano.
-          </h2>
-          <a
-            href={whatsapp()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-7 inline-flex min-h-11 items-center gap-3 text-sm text-[#80342c] underline underline-offset-4"
-          >
-            Conversemos por WhatsApp <ArrowUpRight size={16} aria-hidden="true" />
-          </a>
-        </div>
-        <ol className="space-y-7">
-          {[
-            [
-              "Comparte tus ideas",
-              "Envíanos tus referencias y cuéntanos qué imaginas para tu espacio.",
-            ],
-            [
-              "Elegimos colores y texturas",
-              "Coordinamos contigo una paleta de colores y las texturas que necesita tu proyecto.",
-            ],
-            ["Creamos tu pieza", "Damos forma a tu diseño con los detalles que acordamos juntos."],
-          ].map(([title, description], index) => (
-            <li key={title} className="flex gap-5">
-              <span className="pt-1 text-xs text-[#80342c]">0{index + 1}</span>
-              <div>
-                <h3 className="text-sm font-medium">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-[#74655b]">{description}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
       <footer className="mx-auto flex max-w-[1440px] flex-wrap justify-between gap-3 px-7 py-8 text-xs text-[#74655b] sm:px-12 lg:px-20">
         <span>Makrana Home Art · Lima, Perú</span>
         <a href="mailto:makrnahome@gmail.com" className="hover:underline">
