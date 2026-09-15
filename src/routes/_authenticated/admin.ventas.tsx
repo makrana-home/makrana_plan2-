@@ -1277,6 +1277,7 @@ function SaleDrawer({
   const [item, setItem] = useState<any>(() => blankSaleItem());
   const [pay, setPay] = useState<any>(() => blankPayment());
   const [confirming, setConfirming] = useState(false);
+  const [editingDiscount, setEditingDiscount] = useState(false);
   const [openSteps, setOpenSteps] = useState({
     details: false,
     products: true,
@@ -1300,6 +1301,7 @@ function SaleDrawer({
   }
   useEffect(() => {
     if (saleId) {
+      setEditingDiscount(false);
       setOpenSteps({ details: false, products: true, payment: true, agenda: false });
       refresh();
       Promise.all([
@@ -1336,6 +1338,7 @@ function SaleDrawer({
       });
       toast.success("Actualizado");
       await refresh();
+      setEditingDiscount(false);
       setOpenSteps((current) => ({ ...current, details: false, products: true, payment: true }));
     } catch (e: any) {
       toast.error(e.message);
@@ -1572,6 +1575,11 @@ function SaleDrawer({
                       setSale((s: any) => ({
                         ...s,
                         warehouse_id: v,
+                        channel: isFairWarehouse(warehouse)
+                          ? "Feria"
+                          : s.channel === "Feria"
+                            ? "Showroom"
+                            : s.channel,
                         delivery_status: getScheduledDeliveryEvent(s)
                           ? s.delivery_status
                           : getDefaultDeliveryStatusForWarehouse(warehouse, s.delivery_status),
@@ -1585,6 +1593,38 @@ function SaleDrawer({
                       {warehouses.map((w) => (
                         <SelectItem key={w.id} value={w.id}>
                           {w.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Canal de venta</Label>
+                  <Select
+                    disabled={
+                      sale.status !== "borrador" ||
+                      isFairWarehouse(
+                        warehouses.find((warehouse) => warehouse.id === sale.warehouse_id),
+                      )
+                    }
+                    value={sale.channel}
+                    onValueChange={(channel) => setSale((s: any) => ({ ...s, channel }))}
+                  >
+                    <SelectTrigger className="mt-1.5 bg-warm-white">
+                      <SelectValue placeholder="Selecciona el canal" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[
+                        "Showroom",
+                        "Instagram",
+                        "WhatsApp",
+                        "Página web",
+                        "Facebook",
+                        "TikTok",
+                        "Feria",
+                      ].map((channel) => (
+                        <SelectItem key={channel} value={channel}>
+                          {channel}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1611,22 +1651,6 @@ function SaleDrawer({
                   <p className="mt-1 text-xs text-muted-foreground">
                     Se guardará únicamente cuando pulses el botón Guardar cambios.
                   </p>
-                </div>
-                <div>
-                  <Label>
-                    Descuento en soles{" "}
-                    <span className="font-normal text-muted-foreground">(opcional)</span>
-                  </Label>
-                  <Input
-                    className="mt-1.5 bg-warm-white"
-                    type="number"
-                    step="0.01"
-                    disabled={sale.status !== "borrador"}
-                    value={Number(sale.discount ?? 0) === 0 ? "" : sale.discount}
-                    placeholder="0.00"
-                    inputMode="decimal"
-                    onChange={(e) => setSale((s: any) => ({ ...s, discount: e.target.value }))}
-                  />
                 </div>
                 <div>
                   <Label>Estado de entrega *</Label>
@@ -2034,10 +2058,50 @@ function SaleDrawer({
                     <span>Subtotal</span>
                     <span>{moneyPEN(sale.subtotal)}</span>
                   </div>
-                  <div className="flex justify-between text-sm py-1">
-                    <span>Descuento</span>
-                    <span>- {moneyPEN(sale.discount)}</span>
-                  </div>
+                  {sale.status === "borrador" && editingDiscount ? (
+                    <div className="py-2">
+                      <Label htmlFor="sale-discount">Descuento en soles (opcional)</Label>
+                      <Input
+                        id="sale-discount"
+                        className="mt-1.5 bg-warm-white"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={Number(sale.discount ?? 0) === 0 ? "" : sale.discount}
+                        placeholder="0.00"
+                        inputMode="decimal"
+                        onChange={(e) => setSale((s: any) => ({ ...s, discount: e.target.value }))}
+                      />
+                      <Button variant="outline" className="mt-2 w-full" onClick={onSaveHeader}>
+                        <CheckCircle2 className="h-4 w-4" /> Guardar cambios
+                      </Button>
+                    </div>
+                  ) : Number(sale.discount ?? 0) > 0 ? (
+                    <div className="flex items-center justify-between gap-2 text-sm py-1">
+                      {sale.status === "borrador" ? (
+                        <button
+                          type="button"
+                          className="underline underline-offset-4"
+                          onClick={() => setEditingDiscount(true)}
+                          aria-label="Editar descuento"
+                        >
+                          Descuento
+                        </button>
+                      ) : (
+                        <span>Descuento</span>
+                      )}
+                      <span>- {moneyPEN(sale.discount)}</span>
+                    </div>
+                  ) : sale.status === "borrador" ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="my-1"
+                      onClick={() => setEditingDiscount(true)}
+                    >
+                      <Plus className="h-4 w-4" /> Agregar descuento
+                    </Button>
+                  ) : null}
                   <div className="flex justify-between text-lg py-2 border-t border-sand/60 mt-1 font-display">
                     <span>Total</span>
                     <span>{moneyPEN(sale.total)}</span>
