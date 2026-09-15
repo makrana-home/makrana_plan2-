@@ -13,7 +13,6 @@ import { homeSectionDefaults, type HomeSectionVisibility } from "@/lib/site-sett
 const links = [
   { to: "/", label: "Inicio", section: null },
   { to: "/catalogo", label: "Catálogo", section: "catalog" },
-  { to: "/brochure", label: "Brochure", section: "catalog" },
   { to: "/novedades", label: "Novedades", section: "news" },
   { to: "/talleres", label: "Talleres", section: "workshops" },
   { to: "/sobre-makrana", label: "Sobre Makrana", section: "welcome" },

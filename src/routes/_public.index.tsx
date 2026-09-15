@@ -213,7 +213,7 @@ function Home_() {
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3 sm:gap-5">
                 <Button asChild variant="hero" size="lg" className="rounded-xl px-7">
-                  <Link to="/brochure">Explorar piezas</Link>
+                  <Link to="/catalogo">Explorar piezas</Link>
                 </Button>
                 <Button
                   asChild

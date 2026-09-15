@@ -15,7 +15,7 @@ function whatsapp(piece?: Piece) {
   return `https://wa.me/51986608552?text=${encodeURIComponent(message)}`;
 }
 
-export const Route = createFileRoute("/_public/brochure")({
+export const Route = createFileRoute("/brochure")({
   head: () => ({
     meta: [
       { title: "Brochure · Arte textil para tu espacio | Makrana Home Art" },
@@ -128,7 +128,7 @@ function Brochure() {
       <div id="colecciones" className="scroll-mt-36">
         <nav
           aria-label="Categorías del brochure"
-          className="sticky top-[6.75rem] z-20 border-b border-[#e6d9ce] bg-[#fffaf5]/95 backdrop-blur-sm lg:top-[7.75rem]"
+          className="sticky top-0 z-20 border-b border-[#e6d9ce] bg-[#fffaf5]/95 backdrop-blur-sm"
         >
           <div className="mx-auto flex max-w-[1600px] gap-5 overflow-x-auto px-5 py-4 sm:px-8">
             {["Todas", ...categories].map((name) => (
@@ -230,6 +230,15 @@ function Brochure() {
           ))}
         </ol>
       </section>
+      <footer className="mx-auto flex max-w-[1440px] flex-wrap justify-between gap-3 px-7 py-8 text-xs text-[#74655b] sm:px-12 lg:px-20">
+        <span>Makrana Home Art · Lima, Perú</span>
+        <a href="mailto:makrnahome@gmail.com" className="hover:underline">
+          makrnahome@gmail.com
+        </a>
+        <a href={whatsapp()} target="_blank" rel="noopener noreferrer" className="hover:underline">
+          WhatsApp +51 986 608 552
+        </a>
+      </footer>
     </div>
   );
 }
