@@ -61,6 +61,7 @@ import { Route as AuthenticatedAdminComprasRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminClientesRouteImport } from './routes/_authenticated/admin.clientes'
 import { Route as AuthenticatedAdminCalendarioRouteImport } from './routes/_authenticated/admin.calendario'
 import { Route as AuthenticatedAdminAlmacenesRouteImport } from './routes/_authenticated/admin.almacenes'
+import { Route as AuthenticatedAdminAbastecimientoRouteImport } from './routes/_authenticated/admin.abastecimiento'
 import { Route as AuthenticatedAdminPedidosOrderIdRouteImport } from './routes/_authenticated/admin.pedidos.$orderId'
 import { Route as AuthenticatedAdminConfiguracionTributariaRouteImport } from './routes/_authenticated/admin.configuracion.tributaria'
 import { Route as AuthenticatedAdminConfiguracionComercioRouteImport } from './routes/_authenticated/admin.configuracion.comercio'
@@ -349,6 +350,12 @@ const AuthenticatedAdminAlmacenesRoute =
     path: '/almacenes',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminAbastecimientoRoute =
+  AuthenticatedAdminAbastecimientoRouteImport.update({
+    id: '/abastecimiento',
+    path: '/abastecimiento',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminPedidosOrderIdRoute =
   AuthenticatedAdminPedidosOrderIdRouteImport.update({
     id: '/$orderId',
@@ -384,6 +391,7 @@ export interface FileRoutesByFullPath {
   '/sobre-makrana': typeof PublicSobreMakranaRoute
   '/talleres': typeof PublicTalleresRoute
   '/tienda': typeof PublicTiendaRoute
+  '/admin/abastecimiento': typeof AuthenticatedAdminAbastecimientoRoute
   '/admin/almacenes': typeof AuthenticatedAdminAlmacenesRoute
   '/admin/calendario': typeof AuthenticatedAdminCalendarioRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
@@ -437,6 +445,7 @@ export interface FileRoutesByTo {
   '/sobre-makrana': typeof PublicSobreMakranaRoute
   '/talleres': typeof PublicTalleresRoute
   '/tienda': typeof PublicTiendaRoute
+  '/admin/abastecimiento': typeof AuthenticatedAdminAbastecimientoRoute
   '/admin/almacenes': typeof AuthenticatedAdminAlmacenesRoute
   '/admin/calendario': typeof AuthenticatedAdminCalendarioRoute
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
@@ -495,6 +504,7 @@ export interface FileRoutesById {
   '/_public/talleres': typeof PublicTalleresRoute
   '/_public/tienda': typeof PublicTiendaRoute
   '/_public/': typeof PublicIndexRoute
+  '/_authenticated/admin/abastecimiento': typeof AuthenticatedAdminAbastecimientoRoute
   '/_authenticated/admin/almacenes': typeof AuthenticatedAdminAlmacenesRoute
   '/_authenticated/admin/calendario': typeof AuthenticatedAdminCalendarioRoute
   '/_authenticated/admin/clientes': typeof AuthenticatedAdminClientesRoute
@@ -552,6 +562,7 @@ export interface FileRouteTypes {
     | '/sobre-makrana'
     | '/talleres'
     | '/tienda'
+    | '/admin/abastecimiento'
     | '/admin/almacenes'
     | '/admin/calendario'
     | '/admin/clientes'
@@ -605,6 +616,7 @@ export interface FileRouteTypes {
     | '/sobre-makrana'
     | '/talleres'
     | '/tienda'
+    | '/admin/abastecimiento'
     | '/admin/almacenes'
     | '/admin/calendario'
     | '/admin/clientes'
@@ -662,6 +674,7 @@ export interface FileRouteTypes {
     | '/_public/talleres'
     | '/_public/tienda'
     | '/_public/'
+    | '/_authenticated/admin/abastecimiento'
     | '/_authenticated/admin/almacenes'
     | '/_authenticated/admin/calendario'
     | '/_authenticated/admin/clientes'
@@ -1077,6 +1090,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAlmacenesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/abastecimiento': {
+      id: '/_authenticated/admin/abastecimiento'
+      path: '/abastecimiento'
+      fullPath: '/admin/abastecimiento'
+      preLoaderRoute: typeof AuthenticatedAdminAbastecimientoRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/pedidos/$orderId': {
       id: '/_authenticated/admin/pedidos/$orderId'
       path: '/$orderId'
@@ -1135,6 +1155,7 @@ const AuthenticatedAdminPedidosRouteWithChildren =
   )
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminAbastecimientoRoute: typeof AuthenticatedAdminAbastecimientoRoute
   AuthenticatedAdminAlmacenesRoute: typeof AuthenticatedAdminAlmacenesRoute
   AuthenticatedAdminCalendarioRoute: typeof AuthenticatedAdminCalendarioRoute
   AuthenticatedAdminClientesRoute: typeof AuthenticatedAdminClientesRoute
@@ -1160,6 +1181,7 @@ interface AuthenticatedAdminRouteChildren {
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminAbastecimientoRoute: AuthenticatedAdminAbastecimientoRoute,
   AuthenticatedAdminAlmacenesRoute: AuthenticatedAdminAlmacenesRoute,
   AuthenticatedAdminCalendarioRoute: AuthenticatedAdminCalendarioRoute,
   AuthenticatedAdminClientesRoute: AuthenticatedAdminClientesRoute,

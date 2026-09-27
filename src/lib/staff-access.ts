@@ -103,6 +103,7 @@ export function moduleForAdminPath(path: string): StaffModuleKey | "admin" | nul
   if (path.startsWith("/admin/materiales")) return "materials";
   if (path.startsWith("/admin/almacenes")) return "warehouses";
   if (path.startsWith("/admin/movimientos")) return "inventory_movements";
+  if (path.startsWith("/admin/abastecimiento")) return "inventory_movements";
   if (path.startsWith("/admin/manual")) return "manual";
   if (path.startsWith("/admin/calendario")) return "calendar";
   if (

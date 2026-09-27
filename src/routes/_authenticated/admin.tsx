@@ -31,6 +31,7 @@ import {
   Warehouse,
   ArrowLeftRight,
   ShoppingCart,
+  ShoppingBag,
   ClipboardList,
   Users,
   Newspaper,
@@ -105,6 +106,7 @@ const menuGroups = [
     items: [
       { to: "/admin/productos", label: "Piezas", icon: Package },
       { to: "/admin/materiales", label: "Materiales", icon: Boxes },
+      { to: "/admin/abastecimiento", label: "Compras y proveedores", icon: ShoppingBag },
       { to: "/admin/almacenes", label: "Almacenes y stock", icon: Warehouse },
       { to: "/admin/movimientos", label: "Movimientos de inventario", icon: ArrowLeftRight },
     ],
