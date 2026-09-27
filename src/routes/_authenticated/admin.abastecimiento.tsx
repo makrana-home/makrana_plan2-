@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Camera, FileText, Package, Plus, ShoppingBag, Trash2, Users } from "lucide-react";
+import { Camera, FileText, Package, Plus, Search, ShoppingBag, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader, moneyPEN } from "@/components/admin-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -71,6 +72,65 @@ type Product = {
   presentations: { id: string; unit: string; label: string | null }[];
 };
 type Warehouse = { id: string; name: string; is_active: boolean };
+
+function InventoryMapping({
+  mapping,
+  products,
+  onChange,
+}: {
+  mapping: Mapping;
+  products: Product[];
+  onChange: (mapping: Mapping) => void;
+}) {
+  const selected = products.find((p) => p.id === mapping.product_id);
+  return (
+    <div className="space-y-2">
+      <label className="block text-sm">
+        Producto de inventario
+        <select
+          className={selectStyle}
+          value={mapping.product_id ?? `new:${mapping.type}`}
+          onChange={(e) =>
+            onChange(
+              e.target.value.startsWith("new:")
+                ? {
+                    product_id: null,
+                    presentation_id: null,
+                    type: e.target.value.slice(4) as Mapping["type"],
+                  }
+                : { ...mapping, product_id: e.target.value, presentation_id: null },
+            )
+          }
+        >
+          <option value="new:material">Crear nuevo material</option>
+          <option value="new:producto_terminado">Crear nueva pieza</option>
+          {products.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name} ({p.type === "material" ? "material" : "pieza"})
+            </option>
+          ))}
+        </select>
+      </label>
+      {!!selected?.presentations.length && (
+        <label className="block text-sm">
+          Presentación
+          <select
+            className={selectStyle}
+            value={mapping.presentation_id ?? ""}
+            onChange={(e) => onChange({ ...mapping, presentation_id: e.target.value || null })}
+          >
+            <option value="">Unidad base</option>
+            {selected.presentations.map((p) => (
+              <option key={p.id} value={p.id}>
+                {getPresentationUnitLabel(p.unit, p.label)}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+    </div>
+  );
+}
 
 function Attachment({ path, image = false }: { path: string | null; image?: boolean }) {
   const [url, setUrl] = useState("");
@@ -142,6 +202,34 @@ function PurchasesPage() {
     [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [warehouse, setWarehouse] = useState(""),
     [mappings, setMappings] = useState<Mapping[]>([]);
+  const [addToStock, setAddToStock] = useState(false);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [inventoryError, setInventoryError] = useState("");
+  const [lookup, setLookup] = useState<number | "supplier" | null>(null);
+  const [lookupSearch, setLookupSearch] = useState("");
+  async function loadInventory() {
+    setInventoryLoading(true);
+    setInventoryError("");
+    try {
+      const [p, w] = await Promise.all([listProducts({ data: {} }), listWarehouses()]);
+      setProducts(
+        p.filter(
+          (p) => p.type === "material" || p.type === "producto_terminado",
+        ) as unknown as Product[],
+      );
+      setWarehouses(w.filter((w) => w.is_active) as Warehouse[]);
+    } catch {
+      setInventoryError(
+        "No se pudo cargar el inventario. Reintenta o desactiva el ingreso al stock.",
+      );
+    } finally {
+      setInventoryLoading(false);
+    }
+  }
+  function openLookup(target: number | "supplier") {
+    setLookupSearch("");
+    setLookup(target);
+  }
   const refresh = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -222,12 +310,40 @@ function PurchasesPage() {
       toast.error(parsed.error.issues[0].message);
       return;
     }
+    if (addToStock && (!warehouse || inventoryLoading || inventoryError)) {
+      toast.error("Selecciona un almacén y revisa los productos de inventario antes de guardar.");
+      return;
+    }
     setBusy(true);
     try {
       await save({ data: parsed.data });
+      if (addToStock) {
+        try {
+          await stock({ data: { id: parsed.data.id, warehouse_id: warehouse, mappings } });
+        } catch (e) {
+          setOpen(false);
+          setForm(null);
+          setReceiving({
+            ...parsed.data,
+            total: purchaseTotal(parsed.data.items),
+            stocked_at: null,
+            warehouse_id: null,
+          });
+          toast.error(
+            "La compra quedó guardada, pero no ingresó al inventario. Puedes reintentar el ingreso sin duplicar la compra. " +
+              (e instanceof Error ? e.message : ""),
+          );
+          await refresh();
+          return;
+        }
+      }
       setOpen(false);
       setForm(null);
-      toast.success("Compra guardada. Puedes añadirla al inventario cuando desees.");
+      toast.success(
+        addToStock
+          ? "Compra guardada y añadida al inventario."
+          : "Compra guardada sin modificar el inventario.",
+      );
       await refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "No se pudo guardar");
@@ -301,6 +417,10 @@ function PurchasesPage() {
           <Button
             onClick={() => {
               setForm(newPurchase());
+              setAddToStock(false);
+              setWarehouse("");
+              setMappings([{ product_id: null, presentation_id: null, type: "material" }]);
+              setInventoryError("");
               setOpen(true);
             }}
           >
@@ -523,6 +643,72 @@ function PurchasesPage() {
           {form && (
             <form onSubmit={submit} className="space-y-6">
               <fieldset disabled={busy || uploading} className="space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-sand bg-warm-white p-4">
+                  <label className="flex cursor-pointer items-center gap-3 text-sm font-medium">
+                    <Switch
+                      checked={addToStock}
+                      disabled={busy || uploading}
+                      onCheckedChange={(value) => {
+                        setAddToStock(value);
+                        if (value) void loadInventory();
+                      }}
+                    />
+                    Añadir al inventario al guardar
+                  </label>
+                  <Button
+                    type="submit"
+                    disabled={addToStock && (inventoryLoading || !!inventoryError || !warehouse)}
+                  >
+                    {busy ? "Guardando…" : uploading ? "Subiendo archivo…" : "Guardar compra"}
+                  </Button>
+                </div>
+                {addToStock && (
+                  <div className="space-y-3 rounded-xl border border-sand p-4">
+                    <p className="text-sm text-muted-foreground">
+                      Autorizas el ingreso al guardar. Selecciona el almacén y vincula cada producto
+                      abajo.
+                    </p>
+                    {inventoryLoading ? (
+                      <p role="status">Cargando inventario…</p>
+                    ) : inventoryError ? (
+                      <div role="alert">
+                        <p>{inventoryError}</p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => void loadInventory()}
+                        >
+                          Reintentar
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <label className="block space-y-2 text-sm">
+                          Almacén de destino
+                          <select
+                            required
+                            className={selectStyle}
+                            value={warehouse}
+                            onChange={(e) => setWarehouse(e.target.value)}
+                          >
+                            <option value="">Selecciona un almacén</option>
+                            {warehouses.map((w) => (
+                              <option key={w.id} value={w.id}>
+                                {w.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        {!warehouses.length && (
+                          <p role="alert" className="text-sm text-destructive">
+                            Crea un almacén activo o desactiva el ingreso al inventario para guardar
+                            solo la compra.
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
                 {rows.length > 0 && (
                   <label className="block space-y-2 text-sm font-medium">
                     Usar un proveedor registrado
@@ -566,26 +752,40 @@ function PurchasesPage() {
                       ["purchased_on", "Fecha de compra", "date"],
                     ] as const
                   ).map(([key, label, type]) => (
-                    <label key={key} className="space-y-1 text-sm font-medium">
-                      {label}
-                      <Input
-                        type={type}
-                        required={key === "supplier_name" || key === "purchased_on"}
-                        maxLength={
-                          key === "supplier_ruc"
-                            ? 11
-                            : key === "supplier_address"
-                              ? 300
-                              : key === "supplier_phone"
-                                ? 40
-                                : key === "receipt_number"
-                                  ? 80
-                                  : 160
-                        }
-                        value={form[key]}
-                        onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                      />
-                    </label>
+                    <div key={key} className="space-y-1 text-sm font-medium">
+                      <label htmlFor={`purchase-${key}`}>{label}</label>
+                      <div className="flex gap-2">
+                        <Input
+                          id={`purchase-${key}`}
+                          type={type}
+                          required={key === "supplier_name" || key === "purchased_on"}
+                          maxLength={
+                            key === "supplier_ruc"
+                              ? 11
+                              : key === "supplier_address"
+                                ? 300
+                                : key === "supplier_phone"
+                                  ? 40
+                                  : key === "receipt_number"
+                                    ? 80
+                                    : 160
+                          }
+                          value={form[key]}
+                          onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                        />
+                        {key === "supplier_name" && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            aria-label="Buscar proveedor de compras anteriores"
+                            onClick={() => openLookup("supplier")}
+                          >
+                            <Search className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   ))}
                 </div>
                 <div className="rounded-lg border border-dashed border-sand p-4">
@@ -611,24 +811,37 @@ function PurchasesPage() {
                           size="icon"
                           aria-label={`Quitar producto ${index + 1}`}
                           disabled={form.items.length === 1}
-                          onClick={() =>
-                            setForm({ ...form, items: form.items.filter((_, i) => i !== index) })
-                          }
+                          onClick={() => {
+                            setForm({ ...form, items: form.items.filter((_, i) => i !== index) });
+                            setMappings((current) => current.filter((_, i) => i !== index));
+                          }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                      <label className="block text-sm">
-                        Nombre del producto
-                        <Input
-                          required
-                          minLength={2}
-                          maxLength={160}
-                          list="purchase-product-names"
-                          value={item.name}
-                          onChange={(e) => updateItem(index, { name: e.target.value })}
-                        />
-                      </label>
+                      <div className="text-sm">
+                        <label htmlFor={`purchase-item-${index}`}>Nombre del producto</label>
+                        <div className="flex gap-2">
+                          <Input
+                            id={`purchase-item-${index}`}
+                            required
+                            minLength={2}
+                            maxLength={160}
+                            list="purchase-product-names"
+                            value={item.name}
+                            onChange={(e) => updateItem(index, { name: e.target.value })}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            aria-label={`Buscar producto comprado para la línea ${index + 1}`}
+                            onClick={() => openLookup(index)}
+                          >
+                            <Search className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                         <label className="text-sm">
                           Cantidad
@@ -694,6 +907,23 @@ function PurchasesPage() {
                         </label>
                         <Attachment path={item.photo_path} image />
                       </div>
+                      {addToStock && !inventoryLoading && !inventoryError && mappings[index] && (
+                        <div className="space-y-2 border-t pt-3">
+                          <InventoryMapping
+                            mapping={mappings[index]}
+                            products={products}
+                            onChange={(mapping) =>
+                              setMappings((current) =>
+                                current.map((m, i) => (i === index ? mapping : m)),
+                              )
+                            }
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Comprueba que la unidad de stock corresponda a {item.unit}. Los
+                            productos nuevos se crean ocultos en el catálogo.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   ))}
                   <datalist id="purchase-product-names">
@@ -705,7 +935,13 @@ function PurchasesPage() {
                     type="button"
                     variant="outline"
                     disabled={form.items.length >= 100}
-                    onClick={() => setForm({ ...form, items: [...form.items, newItem()] })}
+                    onClick={() => {
+                      setForm({ ...form, items: [...form.items, newItem()] });
+                      setMappings((current) => [
+                        ...current,
+                        { product_id: null, presentation_id: null, type: "material" },
+                      ]);
+                    }}
                   >
                     <Plus className="h-4 w-4" />
                     Agregar otro producto
@@ -723,17 +959,155 @@ function PurchasesPage() {
                   <p className="text-lg font-semibold">
                     Total: {moneyPEN(purchaseTotal(form.items))}
                   </p>
-                  <Button type="submit">
+                  <Button
+                    type="submit"
+                    disabled={addToStock && (inventoryLoading || !!inventoryError || !warehouse)}
+                  >
                     {busy ? "Guardando…" : uploading ? "Subiendo archivo…" : "Guardar compra"}
                   </Button>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  El precio unitario debe incluir los impuestos y descuentos de tu boleta. Guardar
-                  la compra no modifica el inventario.
+                  El precio unitario debe incluir los impuestos y descuentos de tu boleta.{" "}
+                  {addToStock
+                    ? "Al guardar se registrará la compra y se ingresarán sus productos al almacén elegido."
+                    : "El inventario no se modificará mientras el interruptor esté desactivado."}
                 </p>
               </fieldset>
             </form>
           )}
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={lookup !== null}
+        onOpenChange={(value) => {
+          if (!value) setLookup(null);
+        }}
+      >
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {lookup === "supplier" ? "Buscar proveedor" : "Buscar producto comprado"}
+            </DialogTitle>
+            <DialogDescription>
+              {lookup === "supplier"
+                ? "Selecciona un proveedor para completar sus datos de contacto."
+                : "Busca en todo tu historial. Se copiarán el nombre, la presentación y el precio; revisa el precio antes de guardar."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              autoFocus
+              className="pl-9"
+              aria-label="Buscar en compras anteriores"
+              placeholder={
+                lookup === "supplier" ? "Nombre, RUC o teléfono…" : "Producto o proveedor…"
+              }
+              value={lookupSearch}
+              onChange={(e) => setLookupSearch(e.target.value)}
+            />
+          </div>
+          <div className="max-h-[50vh] space-y-2 overflow-y-auto">
+            {lookup === "supplier"
+              ? [...new Map([...rows].reverse().map((p) => [supplierKey(p), p])).values()]
+                  .filter((p) =>
+                    normalizePurchaseText(
+                      `${p.supplier_name} ${p.supplier_ruc} ${p.supplier_phone}`,
+                    ).includes(normalizePurchaseText(lookupSearch)),
+                  )
+                  .map((p) => (
+                    <Button
+                      key={p.id}
+                      type="button"
+                      variant="outline"
+                      className="h-auto w-full justify-start whitespace-normal p-3 text-left"
+                      onClick={() => {
+                        setForm(
+                          (f) =>
+                            f && {
+                              ...f,
+                              supplier_name: p.supplier_name,
+                              supplier_ruc: p.supplier_ruc,
+                              supplier_phone: p.supplier_phone,
+                              supplier_address: p.supplier_address,
+                            },
+                        );
+                        setLookup(null);
+                      }}
+                    >
+                      <span>
+                        <span className="block font-semibold">{p.supplier_name}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          {p.supplier_ruc} · {p.supplier_phone} · {p.supplier_address}
+                        </span>
+                      </span>
+                    </Button>
+                  ))
+              : rows
+                  .flatMap((p) => p.items.map((item, i) => ({ p, item, i })))
+                  .filter(({ p, item }) =>
+                    normalizePurchaseText(`${item.name} ${item.unit} ${p.supplier_name}`).includes(
+                      normalizePurchaseText(lookupSearch),
+                    ),
+                  )
+                  .map(({ p, item, i }) => (
+                    <Button
+                      key={`${p.id}-${i}`}
+                      type="button"
+                      variant="outline"
+                      className="h-auto w-full justify-between gap-3 whitespace-normal p-3 text-left"
+                      onClick={() => {
+                        if (typeof lookup === "number") {
+                          updateItem(lookup, {
+                            name: item.name,
+                            unit: item.unit,
+                            price: item.price,
+                            photo_path: null,
+                          });
+                          setMappings((current) =>
+                            current.map((m, index) =>
+                              index === lookup
+                                ? { product_id: null, presentation_id: null, type: "material" }
+                                : m,
+                            ),
+                          );
+                        }
+                        setLookup(null);
+                      }}
+                    >
+                      <span>
+                        <span className="block font-semibold">{item.name}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          {p.supplier_name} · {p.purchased_on} · {item.unit}
+                        </span>
+                      </span>
+                      <span>{moneyPEN(item.price)}</span>
+                    </Button>
+                  ))}
+            {!rows.length && (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                {error
+                  ? "No se pudo cargar el historial de compras. Inicia sesión con tu cuenta para consultarlo."
+                  : "Todavía no hay compras registradas."}
+              </p>
+            )}
+            {!!rows.length &&
+              !rows.some((p) =>
+                lookup === "supplier"
+                  ? normalizePurchaseText(
+                      `${p.supplier_name} ${p.supplier_ruc} ${p.supplier_phone}`,
+                    ).includes(normalizePurchaseText(lookupSearch))
+                  : p.items.some((item) =>
+                      normalizePurchaseText(
+                        `${item.name} ${item.unit} ${p.supplier_name}`,
+                      ).includes(normalizePurchaseText(lookupSearch)),
+                    ),
+              ) && (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  No hay coincidencias. Prueba con otro nombre.
+                </p>
+              )}
+          </div>
         </DialogContent>
       </Dialog>
       <Dialog

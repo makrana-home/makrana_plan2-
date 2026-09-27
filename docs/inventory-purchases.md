@@ -10,9 +10,11 @@ Aplicar `supabase/migrations/20260927120000_inventory_purchases.sql` antes de pu
 
 1. Registrar proveedor, contacto, dirección, RUC opcional, fecha y número de boleta.
 2. Adjuntar la boleta original (JPG, PNG, WebP o PDF de hasta 10 MB).
-3. Completar las líneas con nombre, cantidad, unidad/presentación y precio unitario final en soles. Se puede tomar o subir una foto de cada producto. La transcripción de la boleta es manual.
+3. Completar las líneas con nombre, cantidad, unidad/presentación y precio unitario final en soles. Las lupas junto al proveedor y al producto permiten buscar en todo el historial. Elegir un producto reutiliza su nombre, presentación y precio histórico; revisar el precio y adjuntar su foto para la nueva compra. La cantidad actual se conserva. La transcripción de la boleta es manual.
 4. Consultar compras por proveedor o comparar precios históricos por producto. La comparación agrupa por nombre normalizado y unidad; no convierte unidades ni interpreta equivalencias entre marcas o presentaciones.
-5. Pulsar «Añadir al inventario», elegir almacén activo y vincular cada línea a un producto/presentación existente o crear una nueva pieza/material. Verificar que la cantidad y unidad coincidan con la unidad de stock seleccionada.
+5. Antes de guardar, activar opcionalmente «Añadir al inventario al guardar», elegir almacén activo y vincular cada línea a un producto/presentación existente o crear una nueva pieza/material. Verificar que la cantidad y unidad coincidan con la unidad de stock seleccionada. «Guardar compra» está disponible arriba y abajo del formulario. Con el interruptor desactivado se guarda solo la compra; se conserva la opción de ingresarla posteriormente desde el historial.
+
+Si la compra se guarda pero el ingreso al stock falla, se muestra claramente que está guardada y se abre el ingreso pendiente para reintentarlo sin crear otra compra.
 
 El ingreso bloquea la compra durante la transacción, registra movimientos y marca la compra como ingresada. Los reintentos no duplican stock. Si falla alguna línea, se revierte toda la operación. Los productos nuevos quedan ocultos del catálogo público, con costo de compra y sin precio de venta configurado. Las fotos siguen disponibles en el historial privado de compras.
 
