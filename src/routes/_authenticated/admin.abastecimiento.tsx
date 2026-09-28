@@ -1,7 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Camera, FileText, Package, Plus, Search, ShoppingBag, Trash2, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  Camera,
+  FileText,
+  Package,
+  Plus,
+  Search,
+  ShoppingBag,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader, moneyPEN } from "@/components/admin-ui";
 import { Button } from "@/components/ui/button";
@@ -416,16 +426,19 @@ function PurchasesPage() {
         actions={
           <Button
             onClick={() => {
-              setForm(newPurchase());
-              setAddToStock(false);
-              setWarehouse("");
-              setMappings([{ product_id: null, presentation_id: null, type: "material" }]);
-              setInventoryError("");
+              if (!form) {
+                setForm(newPurchase());
+                setAddToStock(false);
+                setWarehouse("");
+                setMappings([{ product_id: null, presentation_id: null, type: "material" }]);
+                setInventoryError("");
+              }
+              setLookup(null);
               setOpen(true);
             }}
           >
             <Plus className="h-4 w-4" />
-            Nueva compra
+            {form ? "Continuar compra" : "Nueva compra"}
           </Button>
         }
       />
@@ -629,485 +642,524 @@ function PurchasesPage() {
       <Dialog
         open={open}
         onOpenChange={(v) => {
-          if (!busy && !uploading) setOpen(v);
+          if (v) setOpen(true);
         }}
       >
-        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Nueva compra</DialogTitle>
-            <DialogDescription>
-              Adjunta la boleta original y completa sus productos. Los archivos se guardan para
-              consulta; no se transcriben automáticamente.
-            </DialogDescription>
-          </DialogHeader>
-          {form && (
-            <form onSubmit={submit} className="space-y-6">
-              <fieldset disabled={busy || uploading} className="space-y-6">
-                <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-sand bg-warm-white p-4">
-                  <label className="flex cursor-pointer items-center gap-3 text-sm font-medium">
-                    <Switch
-                      checked={addToStock}
-                      disabled={busy || uploading}
-                      onCheckedChange={(value) => {
-                        setAddToStock(value);
-                        if (value) void loadInventory();
-                      }}
-                    />
-                    Añadir al inventario al guardar
-                  </label>
-                  <Button
-                    type="submit"
-                    disabled={addToStock && (inventoryLoading || !!inventoryError || !warehouse)}
-                  >
-                    {busy ? "Guardando…" : uploading ? "Subiendo archivo…" : "Guardar compra"}
-                  </Button>
-                </div>
-                {addToStock && (
-                  <div className="space-y-3 rounded-xl border border-sand p-4">
-                    <p className="text-sm text-muted-foreground">
-                      Autorizas el ingreso al guardar. Selecciona el almacén y vincula cada producto
-                      abajo.
-                    </p>
-                    {inventoryLoading ? (
-                      <p role="status">Cargando inventario…</p>
-                    ) : inventoryError ? (
-                      <div role="alert">
-                        <p>{inventoryError}</p>
+        <DialogContent
+          className="max-h-[90vh] max-w-4xl overflow-y-auto"
+          showCloseButton={false}
+          onInteractOutside={(event) => event.preventDefault()}
+          onEscapeKeyDown={(event) => {
+            event.preventDefault();
+            if (lookup !== null) setLookup(null);
+          }}
+        >
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-fit"
+            disabled={busy || uploading}
+            onClick={() => {
+              if (lookup !== null) setLookup(null);
+              else setOpen(false);
+            }}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {lookup !== null ? "Volver a la compra" : "Volver al listado"}
+          </Button>
+          {lookup !== null ? (
+            <>
+              {" "}
+              <DialogHeader>
+                <DialogTitle>
+                  {lookup === "supplier" ? "Buscar proveedor" : "Buscar producto comprado"}
+                </DialogTitle>
+                <DialogDescription>
+                  {lookup === "supplier"
+                    ? "Selecciona un proveedor para completar sus datos de contacto."
+                    : "Busca en todo tu historial. Se copiarán el nombre, la presentación y el precio; revisa el precio antes de guardar."}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  autoFocus
+                  className="pl-9"
+                  aria-label="Buscar en compras anteriores"
+                  placeholder={
+                    lookup === "supplier" ? "Nombre, RUC o teléfono…" : "Producto o proveedor…"
+                  }
+                  value={lookupSearch}
+                  onChange={(e) => setLookupSearch(e.target.value)}
+                />
+              </div>
+              <div className="max-h-[50vh] space-y-2 overflow-y-auto">
+                {lookup === "supplier"
+                  ? [...new Map([...rows].reverse().map((p) => [supplierKey(p), p])).values()]
+                      .filter((p) =>
+                        normalizePurchaseText(
+                          `${p.supplier_name} ${p.supplier_ruc} ${p.supplier_phone}`,
+                        ).includes(normalizePurchaseText(lookupSearch)),
+                      )
+                      .map((p) => (
                         <Button
+                          key={p.id}
                           type="button"
                           variant="outline"
-                          onClick={() => void loadInventory()}
-                        >
-                          Reintentar
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <label className="block space-y-2 text-sm">
-                          Almacén de destino
-                          <select
-                            required
-                            className={selectStyle}
-                            value={warehouse}
-                            onChange={(e) => setWarehouse(e.target.value)}
-                          >
-                            <option value="">Selecciona un almacén</option>
-                            {warehouses.map((w) => (
-                              <option key={w.id} value={w.id}>
-                                {w.name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        {!warehouses.length && (
-                          <p role="alert" className="text-sm text-destructive">
-                            Crea un almacén activo o desactiva el ingreso al inventario para guardar
-                            solo la compra.
-                          </p>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
-                {rows.length > 0 && (
-                  <label className="block space-y-2 text-sm font-medium">
-                    Usar un proveedor registrado
-                    <select
-                      className={selectStyle}
-                      defaultValue=""
-                      onChange={(e) => {
-                        const previous = rows.find((p) => p.id === e.target.value);
-                        if (previous)
-                          setForm({
-                            ...form,
-                            supplier_name: previous.supplier_name,
-                            supplier_ruc: previous.supplier_ruc,
-                            supplier_phone: previous.supplier_phone,
-                            supplier_address: previous.supplier_address,
-                          });
-                      }}
-                    >
-                      <option value="" disabled>
-                        Selecciona un proveedor o completa los datos abajo
-                      </option>
-                      {[
-                        ...new Map([...rows].reverse().map((p) => [supplierKey(p), p])).values(),
-                      ].map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.supplier_name}
-                          {p.supplier_ruc ? ` · ${p.supplier_ruc}` : ""}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {(
-                    [
-                      ["supplier_name", "Nombre del proveedor", "text"],
-                      ["supplier_phone", "Teléfono / número de contacto", "tel"],
-                      ["supplier_address", "Lugar / dirección", "text"],
-                      ["supplier_ruc", "RUC (opcional)", "text"],
-                      ["receipt_number", "Número de boleta o factura", "text"],
-                      ["purchased_on", "Fecha de compra", "date"],
-                    ] as const
-                  ).map(([key, label, type]) => (
-                    <div key={key} className="space-y-1 text-sm font-medium">
-                      <label htmlFor={`purchase-${key}`}>{label}</label>
-                      <div className="flex gap-2">
-                        <Input
-                          id={`purchase-${key}`}
-                          type={type}
-                          required={key === "supplier_name" || key === "purchased_on"}
-                          maxLength={
-                            key === "supplier_ruc"
-                              ? 11
-                              : key === "supplier_address"
-                                ? 300
-                                : key === "supplier_phone"
-                                  ? 40
-                                  : key === "receipt_number"
-                                    ? 80
-                                    : 160
-                          }
-                          value={form[key]}
-                          onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                        />
-                        {key === "supplier_name" && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            aria-label="Buscar proveedor de compras anteriores"
-                            onClick={() => openLookup("supplier")}
-                          >
-                            <Search className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="rounded-lg border border-dashed border-sand p-4">
-                  <label className="block space-y-2 text-sm font-medium">
-                    Boleta original (foto o PDF, máximo 10 MB)
-                    <Input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,application/pdf"
-                      onChange={(e) => void upload(e.target.files?.[0])}
-                    />
-                  </label>
-                  <Attachment path={form.receipt_path} />
-                </div>
-                <div className="space-y-4">
-                  <h3 className="font-semibold">Productos de la compra</h3>
-                  {form.items.map((item, index) => (
-                    <div key={index} className="space-y-3 rounded-xl border border-sand p-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold">Producto {index + 1}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Quitar producto ${index + 1}`}
-                          disabled={form.items.length === 1}
+                          className="h-auto w-full justify-start whitespace-normal p-3 text-left"
                           onClick={() => {
-                            setForm({ ...form, items: form.items.filter((_, i) => i !== index) });
-                            setMappings((current) => current.filter((_, i) => i !== index));
+                            setForm(
+                              (f) =>
+                                f && {
+                                  ...f,
+                                  supplier_name: p.supplier_name,
+                                  supplier_ruc: p.supplier_ruc,
+                                  supplier_phone: p.supplier_phone,
+                                  supplier_address: p.supplier_address,
+                                },
+                            );
+                            setLookup(null);
                           }}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <span>
+                            <span className="block font-semibold">{p.supplier_name}</span>
+                            <span className="block text-xs text-muted-foreground">
+                              {p.supplier_ruc} · {p.supplier_phone} · {p.supplier_address}
+                            </span>
+                          </span>
                         </Button>
-                      </div>
-                      <div className="text-sm">
-                        <label htmlFor={`purchase-item-${index}`}>Nombre del producto</label>
-                        <div className="flex gap-2">
-                          <Input
-                            id={`purchase-item-${index}`}
-                            required
-                            minLength={2}
-                            maxLength={160}
-                            list="purchase-product-names"
-                            value={item.name}
-                            onChange={(e) => updateItem(index, { name: e.target.value })}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            aria-label={`Buscar producto comprado para la línea ${index + 1}`}
-                            onClick={() => openLookup(index)}
-                          >
-                            <Search className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                        <label className="text-sm">
-                          Cantidad
-                          <Input
-                            required
-                            type="number"
-                            min="0.01"
-                            step="0.01"
-                            max="999999"
-                            value={item.quantity}
-                            onChange={(e) =>
-                              updateItem(index, { quantity: Number(e.target.value) })
-                            }
-                          />
-                        </label>
-                        <label className="text-sm">
-                          Unidad / presentación
-                          <Input
-                            required
-                            maxLength={60}
-                            placeholder="unidad, kg, rollo 100 m"
-                            value={item.unit}
-                            onChange={(e) => updateItem(index, { unit: e.target.value })}
-                          />
-                        </label>
-                        <label className="text-sm">
-                          Precio unitario S/
-                          <Input
-                            required
-                            type="number"
-                            min="0"
-                            max="999999"
-                            step="0.01"
-                            value={item.price}
-                            onChange={(e) => updateItem(index, { price: Number(e.target.value) })}
-                          />
-                        </label>
-                        <div className="text-sm">
-                          Subtotal
-                          <p className="py-2 font-semibold">{moneyPEN(purchaseTotal([item]))}</p>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <label className="flex cursor-pointer items-center gap-2 text-sm text-primary">
-                          <Camera className="h-4 w-4" />
-                          Tomar foto
-                          <input
-                            type="file"
-                            className="sr-only"
-                            accept="image/jpeg,image/png,image/webp"
-                            capture="environment"
-                            onChange={(e) => void upload(e.target.files?.[0], index)}
-                          />
-                        </label>
-                        <label className="cursor-pointer text-sm text-primary underline">
-                          Subir imagen
-                          <input
-                            className="sr-only"
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp"
-                            onChange={(e) => void upload(e.target.files?.[0], index)}
-                          />
-                        </label>
-                        <Attachment path={item.photo_path} image />
-                      </div>
-                      {addToStock && !inventoryLoading && !inventoryError && mappings[index] && (
-                        <div className="space-y-2 border-t pt-3">
-                          <InventoryMapping
-                            mapping={mappings[index]}
-                            products={products}
-                            onChange={(mapping) =>
+                      ))
+                  : rows
+                      .flatMap((p) => p.items.map((item, i) => ({ p, item, i })))
+                      .filter(({ p, item }) =>
+                        normalizePurchaseText(
+                          `${item.name} ${item.unit} ${p.supplier_name}`,
+                        ).includes(normalizePurchaseText(lookupSearch)),
+                      )
+                      .map(({ p, item, i }) => (
+                        <Button
+                          key={`${p.id}-${i}`}
+                          type="button"
+                          variant="outline"
+                          className="h-auto w-full justify-between gap-3 whitespace-normal p-3 text-left"
+                          onClick={() => {
+                            if (typeof lookup === "number") {
+                              updateItem(lookup, {
+                                name: item.name,
+                                unit: item.unit,
+                                price: item.price,
+                                photo_path: null,
+                              });
                               setMappings((current) =>
-                                current.map((m, i) => (i === index ? mapping : m)),
-                              )
+                                current.map((m, index) =>
+                                  index === lookup
+                                    ? { product_id: null, presentation_id: null, type: "material" }
+                                    : m,
+                                ),
+                              );
                             }
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            Comprueba que la unidad de stock corresponda a {item.unit}. Los
-                            productos nuevos se crean ocultos en el catálogo.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  <datalist id="purchase-product-names">
-                    {[...new Set(rows.flatMap((p) => p.items.map((i) => i.name)))].map((name) => (
-                      <option key={name} value={name} />
-                    ))}
-                  </datalist>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={form.items.length >= 100}
-                    onClick={() => {
-                      setForm({ ...form, items: [...form.items, newItem()] });
-                      setMappings((current) => [
-                        ...current,
-                        { product_id: null, presentation_id: null, type: "material" },
-                      ]);
-                    }}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Agregar otro producto
-                  </Button>
-                </div>
-                <label className="block text-sm">
-                  Notas
-                  <Input
-                    maxLength={2000}
-                    value={form.notes}
-                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  />
-                </label>
-                <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-4">
-                  <p className="text-lg font-semibold">
-                    Total: {moneyPEN(purchaseTotal(form.items))}
+                            setLookup(null);
+                          }}
+                        >
+                          <span>
+                            <span className="block font-semibold">{item.name}</span>
+                            <span className="block text-xs text-muted-foreground">
+                              {p.supplier_name} · {p.purchased_on} · {item.unit}
+                            </span>
+                          </span>
+                          <span>{moneyPEN(item.price)}</span>
+                        </Button>
+                      ))}
+                {!rows.length && (
+                  <p className="py-6 text-center text-sm text-muted-foreground">
+                    {error
+                      ? "No se pudo cargar el historial de compras. Inicia sesión con tu cuenta para consultarlo."
+                      : "Todavía no hay compras registradas."}
                   </p>
-                  <Button
-                    type="submit"
-                    disabled={addToStock && (inventoryLoading || !!inventoryError || !warehouse)}
-                  >
-                    {busy ? "Guardando…" : uploading ? "Subiendo archivo…" : "Guardar compra"}
-                  </Button>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  El precio unitario debe incluir los impuestos y descuentos de tu boleta.{" "}
-                  {addToStock
-                    ? "Al guardar se registrará la compra y se ingresarán sus productos al almacén elegido."
-                    : "El inventario no se modificará mientras el interruptor esté desactivado."}
-                </p>
-              </fieldset>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
-      <Dialog
-        open={lookup !== null}
-        onOpenChange={(value) => {
-          if (!value) setLookup(null);
-        }}
-      >
-        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {lookup === "supplier" ? "Buscar proveedor" : "Buscar producto comprado"}
-            </DialogTitle>
-            <DialogDescription>
-              {lookup === "supplier"
-                ? "Selecciona un proveedor para completar sus datos de contacto."
-                : "Busca en todo tu historial. Se copiarán el nombre, la presentación y el precio; revisa el precio antes de guardar."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              autoFocus
-              className="pl-9"
-              aria-label="Buscar en compras anteriores"
-              placeholder={
-                lookup === "supplier" ? "Nombre, RUC o teléfono…" : "Producto o proveedor…"
-              }
-              value={lookupSearch}
-              onChange={(e) => setLookupSearch(e.target.value)}
-            />
-          </div>
-          <div className="max-h-[50vh] space-y-2 overflow-y-auto">
-            {lookup === "supplier"
-              ? [...new Map([...rows].reverse().map((p) => [supplierKey(p), p])).values()]
-                  .filter((p) =>
-                    normalizePurchaseText(
-                      `${p.supplier_name} ${p.supplier_ruc} ${p.supplier_phone}`,
-                    ).includes(normalizePurchaseText(lookupSearch)),
-                  )
-                  .map((p) => (
-                    <Button
-                      key={p.id}
-                      type="button"
-                      variant="outline"
-                      className="h-auto w-full justify-start whitespace-normal p-3 text-left"
-                      onClick={() => {
-                        setForm(
-                          (f) =>
-                            f && {
-                              ...f,
-                              supplier_name: p.supplier_name,
-                              supplier_ruc: p.supplier_ruc,
-                              supplier_phone: p.supplier_phone,
-                              supplier_address: p.supplier_address,
-                            },
-                        );
-                        setLookup(null);
-                      }}
-                    >
-                      <span>
-                        <span className="block font-semibold">{p.supplier_name}</span>
-                        <span className="block text-xs text-muted-foreground">
-                          {p.supplier_ruc} · {p.supplier_phone} · {p.supplier_address}
-                        </span>
-                      </span>
-                    </Button>
-                  ))
-              : rows
-                  .flatMap((p) => p.items.map((item, i) => ({ p, item, i })))
-                  .filter(({ p, item }) =>
-                    normalizePurchaseText(`${item.name} ${item.unit} ${p.supplier_name}`).includes(
-                      normalizePurchaseText(lookupSearch),
-                    ),
-                  )
-                  .map(({ p, item, i }) => (
-                    <Button
-                      key={`${p.id}-${i}`}
-                      type="button"
-                      variant="outline"
-                      className="h-auto w-full justify-between gap-3 whitespace-normal p-3 text-left"
-                      onClick={() => {
-                        if (typeof lookup === "number") {
-                          updateItem(lookup, {
-                            name: item.name,
-                            unit: item.unit,
-                            price: item.price,
-                            photo_path: null,
-                          });
-                          setMappings((current) =>
-                            current.map((m, index) =>
-                              index === lookup
-                                ? { product_id: null, presentation_id: null, type: "material" }
-                                : m,
-                            ),
-                          );
+                )}
+                {!!rows.length &&
+                  !rows.some((p) =>
+                    lookup === "supplier"
+                      ? normalizePurchaseText(
+                          `${p.supplier_name} ${p.supplier_ruc} ${p.supplier_phone}`,
+                        ).includes(normalizePurchaseText(lookupSearch))
+                      : p.items.some((item) =>
+                          normalizePurchaseText(
+                            `${item.name} ${item.unit} ${p.supplier_name}`,
+                          ).includes(normalizePurchaseText(lookupSearch)),
+                        ),
+                  ) && (
+                    <p className="py-6 text-center text-sm text-muted-foreground">
+                      No hay coincidencias. Prueba con otro nombre.
+                    </p>
+                  )}
+              </div>
+            </>
+          ) : (
+            <>
+              {" "}
+              <DialogHeader>
+                <DialogTitle>Nueva compra</DialogTitle>
+                <DialogDescription>
+                  Adjunta la boleta original y completa sus productos. Los archivos se guardan para
+                  consulta; no se transcriben automáticamente.
+                </DialogDescription>
+              </DialogHeader>
+              {form && (
+                <form onSubmit={submit} className="space-y-6">
+                  <fieldset disabled={busy || uploading} className="space-y-6">
+                    <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-sand bg-warm-white p-4">
+                      <label className="flex cursor-pointer items-center gap-3 text-sm font-medium">
+                        <Switch
+                          checked={addToStock}
+                          disabled={busy || uploading}
+                          onCheckedChange={(value) => {
+                            setAddToStock(value);
+                            if (value) void loadInventory();
+                          }}
+                        />
+                        Añadir al inventario al guardar
+                      </label>
+                      <Button
+                        type="submit"
+                        disabled={
+                          addToStock && (inventoryLoading || !!inventoryError || !warehouse)
                         }
-                        setLookup(null);
-                      }}
-                    >
-                      <span>
-                        <span className="block font-semibold">{item.name}</span>
-                        <span className="block text-xs text-muted-foreground">
-                          {p.supplier_name} · {p.purchased_on} · {item.unit}
-                        </span>
-                      </span>
-                      <span>{moneyPEN(item.price)}</span>
-                    </Button>
-                  ))}
-            {!rows.length && (
-              <p className="py-6 text-center text-sm text-muted-foreground">
-                {error
-                  ? "No se pudo cargar el historial de compras. Inicia sesión con tu cuenta para consultarlo."
-                  : "Todavía no hay compras registradas."}
-              </p>
-            )}
-            {!!rows.length &&
-              !rows.some((p) =>
-                lookup === "supplier"
-                  ? normalizePurchaseText(
-                      `${p.supplier_name} ${p.supplier_ruc} ${p.supplier_phone}`,
-                    ).includes(normalizePurchaseText(lookupSearch))
-                  : p.items.some((item) =>
-                      normalizePurchaseText(
-                        `${item.name} ${item.unit} ${p.supplier_name}`,
-                      ).includes(normalizePurchaseText(lookupSearch)),
-                    ),
-              ) && (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  No hay coincidencias. Prueba con otro nombre.
-                </p>
+                      >
+                        {busy ? "Guardando…" : uploading ? "Subiendo archivo…" : "Guardar compra"}
+                      </Button>
+                    </div>
+                    {addToStock && (
+                      <div className="space-y-3 rounded-xl border border-sand p-4">
+                        <p className="text-sm text-muted-foreground">
+                          Autorizas el ingreso al guardar. Selecciona el almacén y vincula cada
+                          producto abajo.
+                        </p>
+                        {inventoryLoading ? (
+                          <p role="status">Cargando inventario…</p>
+                        ) : inventoryError ? (
+                          <div role="alert">
+                            <p>{inventoryError}</p>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => void loadInventory()}
+                            >
+                              Reintentar
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <label className="block space-y-2 text-sm">
+                              Almacén de destino
+                              <select
+                                required
+                                className={selectStyle}
+                                value={warehouse}
+                                onChange={(e) => setWarehouse(e.target.value)}
+                              >
+                                <option value="">Selecciona un almacén</option>
+                                {warehouses.map((w) => (
+                                  <option key={w.id} value={w.id}>
+                                    {w.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            {!warehouses.length && (
+                              <p role="alert" className="text-sm text-destructive">
+                                Crea un almacén activo o desactiva el ingreso al inventario para
+                                guardar solo la compra.
+                              </p>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                    {rows.length > 0 && (
+                      <label className="block space-y-2 text-sm font-medium">
+                        Usar un proveedor registrado
+                        <select
+                          className={selectStyle}
+                          defaultValue=""
+                          onChange={(e) => {
+                            const previous = rows.find((p) => p.id === e.target.value);
+                            if (previous)
+                              setForm({
+                                ...form,
+                                supplier_name: previous.supplier_name,
+                                supplier_ruc: previous.supplier_ruc,
+                                supplier_phone: previous.supplier_phone,
+                                supplier_address: previous.supplier_address,
+                              });
+                          }}
+                        >
+                          <option value="" disabled>
+                            Selecciona un proveedor o completa los datos abajo
+                          </option>
+                          {[
+                            ...new Map(
+                              [...rows].reverse().map((p) => [supplierKey(p), p]),
+                            ).values(),
+                          ].map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.supplier_name}
+                              {p.supplier_ruc ? ` · ${p.supplier_ruc}` : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {(
+                        [
+                          ["supplier_name", "Nombre del proveedor", "text"],
+                          ["supplier_phone", "Teléfono / número de contacto", "tel"],
+                          ["supplier_address", "Lugar / dirección", "text"],
+                          ["supplier_ruc", "RUC (opcional)", "text"],
+                          ["receipt_number", "Número de boleta o factura", "text"],
+                          ["purchased_on", "Fecha de compra", "date"],
+                        ] as const
+                      ).map(([key, label, type]) => (
+                        <div key={key} className="space-y-1 text-sm font-medium">
+                          <label htmlFor={`purchase-${key}`}>{label}</label>
+                          <div className="flex gap-2">
+                            <Input
+                              id={`purchase-${key}`}
+                              type={type}
+                              required={key === "supplier_name" || key === "purchased_on"}
+                              maxLength={
+                                key === "supplier_ruc"
+                                  ? 11
+                                  : key === "supplier_address"
+                                    ? 300
+                                    : key === "supplier_phone"
+                                      ? 40
+                                      : key === "receipt_number"
+                                        ? 80
+                                        : 160
+                              }
+                              value={form[key]}
+                              onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                            />
+                            {key === "supplier_name" && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                aria-label="Buscar proveedor de compras anteriores"
+                                onClick={() => openLookup("supplier")}
+                              >
+                                <Search className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="rounded-lg border border-dashed border-sand p-4">
+                      <label className="block space-y-2 text-sm font-medium">
+                        Boleta original (foto o PDF, máximo 10 MB)
+                        <Input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,application/pdf"
+                          onChange={(e) => void upload(e.target.files?.[0])}
+                        />
+                      </label>
+                      <Attachment path={form.receipt_path} />
+                    </div>
+                    <div className="space-y-4">
+                      <h3 className="font-semibold">Productos de la compra</h3>
+                      {form.items.map((item, index) => (
+                        <div key={index} className="space-y-3 rounded-xl border border-sand p-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-semibold">Producto {index + 1}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Quitar producto ${index + 1}`}
+                              disabled={form.items.length === 1}
+                              onClick={() => {
+                                setForm({
+                                  ...form,
+                                  items: form.items.filter((_, i) => i !== index),
+                                });
+                                setMappings((current) => current.filter((_, i) => i !== index));
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="text-sm">
+                            <label htmlFor={`purchase-item-${index}`}>Nombre del producto</label>
+                            <div className="flex gap-2">
+                              <Input
+                                id={`purchase-item-${index}`}
+                                required
+                                minLength={2}
+                                maxLength={160}
+                                list="purchase-product-names"
+                                value={item.name}
+                                onChange={(e) => updateItem(index, { name: e.target.value })}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                aria-label={`Buscar producto comprado para la línea ${index + 1}`}
+                                onClick={() => openLookup(index)}
+                              >
+                                <Search className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            <label className="text-sm">
+                              Cantidad
+                              <Input
+                                required
+                                type="number"
+                                min="0.01"
+                                step="0.01"
+                                max="999999"
+                                value={item.quantity}
+                                onChange={(e) =>
+                                  updateItem(index, { quantity: Number(e.target.value) })
+                                }
+                              />
+                            </label>
+                            <label className="text-sm">
+                              Unidad / presentación
+                              <Input
+                                required
+                                maxLength={60}
+                                placeholder="unidad, kg, rollo 100 m"
+                                value={item.unit}
+                                onChange={(e) => updateItem(index, { unit: e.target.value })}
+                              />
+                            </label>
+                            <label className="text-sm">
+                              Precio unitario S/
+                              <Input
+                                required
+                                type="number"
+                                min="0"
+                                max="999999"
+                                step="0.01"
+                                value={item.price}
+                                onChange={(e) =>
+                                  updateItem(index, { price: Number(e.target.value) })
+                                }
+                              />
+                            </label>
+                            <div className="text-sm">
+                              Subtotal
+                              <p className="py-2 font-semibold">
+                                {moneyPEN(purchaseTotal([item]))}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <label className="flex cursor-pointer items-center gap-2 text-sm text-primary">
+                              <Camera className="h-4 w-4" />
+                              Tomar foto
+                              <input
+                                type="file"
+                                className="sr-only"
+                                accept="image/jpeg,image/png,image/webp"
+                                capture="environment"
+                                onChange={(e) => void upload(e.target.files?.[0], index)}
+                              />
+                            </label>
+                            <label className="cursor-pointer text-sm text-primary underline">
+                              Subir imagen
+                              <input
+                                className="sr-only"
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={(e) => void upload(e.target.files?.[0], index)}
+                              />
+                            </label>
+                            <Attachment path={item.photo_path} image />
+                          </div>
+                          {addToStock &&
+                            !inventoryLoading &&
+                            !inventoryError &&
+                            mappings[index] && (
+                              <div className="space-y-2 border-t pt-3">
+                                <InventoryMapping
+                                  mapping={mappings[index]}
+                                  products={products}
+                                  onChange={(mapping) =>
+                                    setMappings((current) =>
+                                      current.map((m, i) => (i === index ? mapping : m)),
+                                    )
+                                  }
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                  Comprueba que la unidad de stock corresponda a {item.unit}. Los
+                                  productos nuevos se crean ocultos en el catálogo.
+                                </p>
+                              </div>
+                            )}
+                        </div>
+                      ))}
+                      <datalist id="purchase-product-names">
+                        {[...new Set(rows.flatMap((p) => p.items.map((i) => i.name)))].map(
+                          (name) => (
+                            <option key={name} value={name} />
+                          ),
+                        )}
+                      </datalist>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={form.items.length >= 100}
+                        onClick={() => {
+                          setForm({ ...form, items: [...form.items, newItem()] });
+                          setMappings((current) => [
+                            ...current,
+                            { product_id: null, presentation_id: null, type: "material" },
+                          ]);
+                        }}
+                      >
+                        <Plus className="h-4 w-4" />
+                        Agregar otro producto
+                      </Button>
+                    </div>
+                    <label className="block text-sm">
+                      Notas
+                      <Input
+                        maxLength={2000}
+                        value={form.notes}
+                        onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                      />
+                    </label>
+                    <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-4">
+                      <p className="text-lg font-semibold">
+                        Total: {moneyPEN(purchaseTotal(form.items))}
+                      </p>
+                      <Button
+                        type="submit"
+                        disabled={
+                          addToStock && (inventoryLoading || !!inventoryError || !warehouse)
+                        }
+                      >
+                        {busy ? "Guardando…" : uploading ? "Subiendo archivo…" : "Guardar compra"}
+                      </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      El precio unitario debe incluir los impuestos y descuentos de tu boleta.{" "}
+                      {addToStock
+                        ? "Al guardar se registrará la compra y se ingresarán sus productos al almacén elegido."
+                        : "El inventario no se modificará mientras el interruptor esté desactivado."}
+                    </p>
+                  </fieldset>
+                </form>
               )}
-          </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
       <Dialog
@@ -1117,6 +1169,10 @@ function PurchasesPage() {
         }}
       >
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+          <Button type="button" variant="ghost" className="w-fit" onClick={() => setDetail(null)}>
+            <ArrowLeft className="h-4 w-4" />
+            Volver al listado
+          </Button>
           <DialogHeader>
             <DialogTitle>{detail?.supplier_name}</DialogTitle>
             <DialogDescription>
@@ -1155,7 +1211,22 @@ function PurchasesPage() {
           if (!v && !busy) setReceiving(null);
         }}
       >
-        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+        <DialogContent
+          className="max-h-[90vh] max-w-2xl overflow-y-auto"
+          showCloseButton={false}
+          onInteractOutside={(event) => event.preventDefault()}
+          onEscapeKeyDown={(event) => event.preventDefault()}
+        >
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-fit"
+            disabled={busy}
+            onClick={() => setReceiving(null)}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Volver al listado
+          </Button>
           <DialogHeader>
             <DialogTitle>Añadir compra al inventario</DialogTitle>
             <DialogDescription>

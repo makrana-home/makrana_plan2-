@@ -16,6 +16,8 @@ Aplicar `supabase/migrations/20260927120000_inventory_purchases.sql` antes de pu
 
 Si la compra se guarda pero el ingreso al stock falla, se muestra claramente que está guardada y se abre el ingreso pendiente para reintentarlo sin crear otra compra.
 
+El buscador usa una vista dentro del mismo diálogo: «Volver a la compra» conserva el formulario. Tocar fuera o presionar Escape no cierra el formulario de compra. Escape dentro del buscador vuelve al formulario. «Volver al listado» conserva el borrador en memoria; «Continuar compra» permite retomarlo durante la misma visita. El borrador no persiste tras recargar la página.
+
 El ingreso bloquea la compra durante la transacción, registra movimientos y marca la compra como ingresada. Los reintentos no duplican stock. Si falla alguna línea, se revierte toda la operación. Los productos nuevos quedan ocultos del catálogo público, con costo de compra y sin precio de venta configurado. Las fotos siguen disponibles en el historial privado de compras.
 
 ## Validación
