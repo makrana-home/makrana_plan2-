@@ -1,15 +1,27 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import {
   inventoryPurchaseSchema,
   purchaseTotal,
   type InventoryPurchase,
 } from "./inventory-purchases";
 
+async function assertPurchaseAccess(supabase: SupabaseClient<Database>) {
+  const { data, error } = await supabase.rpc("can_manage_inventory_purchases" as never);
+  if (error) throw error;
+  if (!data)
+    throw new Error(
+      "No tienes permiso para usar Compras y proveedores. Solicita acceso al administrador.",
+    );
+}
+
 export const listInventoryPurchases = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await assertPurchaseAccess(context.supabase);
     const purchases: InventoryPurchase[] = [];
     // Fetch the complete history so a lower price is not hidden by the API row limit.
     for (let offset = 0; ; offset += 500) {
@@ -29,6 +41,7 @@ export const saveInventoryPurchase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((data) => inventoryPurchaseSchema.parse(data))
   .handler(async ({ data, context }) => {
+    await assertPurchaseAccess(context.supabase);
     if (data.receipt_path && !data.receipt_path.startsWith(context.userId + "/"))
       throw new Error("Archivo no válido");
     // Product photos can be reused from purchases recorded by another staff member.
@@ -91,6 +104,7 @@ export const stockInventoryPurchase = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
+    await assertPurchaseAccess(context.supabase);
     const { error } = await context.supabase.rpc(
       "stock_inventory_purchase" as never,
       { _id: data.id, _warehouse_id: data.warehouse_id, _mappings: data.mappings } as never,

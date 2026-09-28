@@ -1,6 +1,8 @@
 # Compras y proveedores
 
-Ruta: `/admin/abastecimiento`, dentro de Inventario y almacenes. Comparte el permiso `inventory_movements`. El registro tributario `/admin/compras` conserva su funcionamiento.
+Ruta: `/admin/abastecimiento`, dentro de Inventario y almacenes. Tiene el permiso independiente `inventory_purchases` («Compras y proveedores»), configurable por usuario. El registro tributario `/admin/compras` conserva su funcionamiento.
+
+Aplicar también `20260928010000_inventory_purchase_permissions.sql`: conserva el acceso anterior al separar el permiso de movimientos, protege consultas/escrituras y adjuntos con RLS, y valida el permiso en el ingreso al stock. En Configuración → usuarios, activar o desactivar «Compras y proveedores» dentro de «Inventario y almacenes» y guardar el usuario.
 
 ## Activación
 

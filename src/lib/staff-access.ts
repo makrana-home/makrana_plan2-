@@ -10,6 +10,7 @@ export const staffModuleGroups = [
     modules: [
       { key: "products", label: "Piezas" },
       { key: "materials", label: "Materiales" },
+      { key: "inventory_purchases", label: "Compras y proveedores" },
       { key: "warehouses", label: "Almacenes y stock" },
       { key: "inventory_movements", label: "Movimientos de inventario" },
     ],
@@ -91,6 +92,7 @@ export const defaultModulesByRole: Record<"admin" | "ventas" | "almacen", StaffM
     "materials",
     "warehouses",
     "inventory_movements",
+    "inventory_purchases",
     "manual",
     "calendar",
     "reports",
@@ -103,7 +105,7 @@ export function moduleForAdminPath(path: string): StaffModuleKey | "admin" | nul
   if (path.startsWith("/admin/materiales")) return "materials";
   if (path.startsWith("/admin/almacenes")) return "warehouses";
   if (path.startsWith("/admin/movimientos")) return "inventory_movements";
-  if (path.startsWith("/admin/abastecimiento")) return "inventory_movements";
+  if (path.startsWith("/admin/abastecimiento")) return "inventory_purchases";
   if (path.startsWith("/admin/manual")) return "manual";
   if (path.startsWith("/admin/calendario")) return "calendar";
   if (
@@ -140,6 +142,7 @@ export function canAccessAdminPath(path: string, roles: string[], modules: strin
 export function firstAccessibleAdminPath(roles: string[], modules: string[] | null) {
   const candidates = [
     "/admin/ventas",
+    "/admin/abastecimiento",
     "/admin/calendario",
     "/admin/productos",
     "/admin/pedidos",
