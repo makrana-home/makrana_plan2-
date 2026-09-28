@@ -677,7 +677,7 @@ function PurchasesPage() {
                 <DialogDescription>
                   {lookup === "supplier"
                     ? "Selecciona un proveedor para completar sus datos de contacto."
-                    : "Busca en todo tu historial. Se copiarán el nombre, la presentación y el precio; revisa el precio antes de guardar."}
+                    : "Selecciona un producto para reutilizar su nombre, presentación y foto. Revisa el precio para esta nueva compra; el proveedor de la compra se mantiene."}
                 </DialogDescription>
               </DialogHeader>
               <div className="relative">
@@ -748,7 +748,7 @@ function PurchasesPage() {
                                 name: item.name,
                                 unit: item.unit,
                                 price: item.price,
-                                photo_path: null,
+                                photo_path: item.photo_path,
                               });
                               setMappings((current) =>
                                 current.map((m, index) =>
@@ -959,7 +959,7 @@ function PurchasesPage() {
                     </div>
                     <div className="rounded-lg border border-dashed border-sand p-4">
                       <label className="block space-y-2 text-sm font-medium">
-                        Boleta original (foto o PDF, máximo 10 MB)
+                        Foto de la boleta de esta compra (o PDF, máximo 10 MB)
                         <Input
                           type="file"
                           accept="image/jpeg,image/png,image/webp,application/pdf"
@@ -1063,7 +1063,9 @@ function PurchasesPage() {
                           <div className="flex flex-wrap items-center gap-3">
                             <label className="flex cursor-pointer items-center gap-2 text-sm text-primary">
                               <Camera className="h-4 w-4" />
-                              Tomar foto
+                              {item.photo_path
+                                ? "Cambiar foto del producto"
+                                : "Tomar foto del producto"}
                               <input
                                 type="file"
                                 className="sr-only"
@@ -1073,7 +1075,7 @@ function PurchasesPage() {
                               />
                             </label>
                             <label className="cursor-pointer text-sm text-primary underline">
-                              Subir imagen
+                              {item.photo_path ? "Reemplazar imagen" : "Subir foto del producto"}
                               <input
                                 className="sr-only"
                                 type="file"

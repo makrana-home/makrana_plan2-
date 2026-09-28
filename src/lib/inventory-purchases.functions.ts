@@ -29,9 +29,26 @@ export const saveInventoryPurchase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((data) => inventoryPurchaseSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const paths = [data.receipt_path, ...data.items.map((item) => item.photo_path)].filter(Boolean);
-    if (paths.some((path) => !path!.startsWith(context.userId + "/")))
+    if (data.receipt_path && !data.receipt_path.startsWith(context.userId + "/"))
       throw new Error("Archivo no válido");
+    // Product photos can be reused from purchases recorded by another staff member.
+    // A receipt is still specific to the new purchase; arbitrary private paths are not accepted.
+    const reusedPhotos = [
+      ...new Set(
+        data.items
+          .map((item) => item.photo_path)
+          .filter((path): path is string => !!path && !path.startsWith(context.userId + "/")),
+      ),
+    ];
+    for (const path of reusedPhotos) {
+      const { data: references, error: referenceError } = await context.supabase
+        .from("inventory_purchases" as never)
+        .select("id")
+        .contains("items", [{ photo_path: path }])
+        .limit(1);
+      if (referenceError || !references?.length)
+        throw new Error("La foto no pertenece a un producto del historial de compras.");
+    }
     const { error } = await context.supabase
       .from("inventory_purchases" as never)
       .insert({ ...data, total: purchaseTotal(data.items), created_by: context.userId } as never);
